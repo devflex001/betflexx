@@ -413,9 +413,6 @@ export function AdminUsersPanel() {
             <Users className="size-5 text-primary" />
             User Management
           </h1>
-          <p className="text-xs text-muted-foreground">
-            Manage registered users — ban, unban, and edit profiles.
-          </p>
         </div>
 
         {/* Search */}
