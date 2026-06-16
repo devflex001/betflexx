@@ -3,6 +3,9 @@ import { Geist, Geist_Mono, Figtree, Roboto } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils";
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { Toaster } from "@/components/ui/sonner"
+import { BetStoreProvider } from "@/hooks/use-bet-store"
 
 const robotoHeading = Roboto({subsets:['latin'],variable:'--font-heading'});
 
@@ -25,7 +28,14 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, "font-sans", figtree.variable, robotoHeading.variable)}
     >
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <BetStoreProvider>
+            <TooltipProvider>
+              {children}
+              <Toaster />
+            </TooltipProvider>
+          </BetStoreProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
