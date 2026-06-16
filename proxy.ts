@@ -17,5 +17,5 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
 });
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/auth/:path*"],
 };

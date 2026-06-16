@@ -36,7 +36,7 @@ export default function RootLayout({
               <BetStoreProvider>
                 <TooltipProvider>
                   {children}
-                  <Toaster />
+                  <Toaster richColors position="top-right"/>
                 </TooltipProvider>
               </BetStoreProvider>
             </ConvexProvider>
