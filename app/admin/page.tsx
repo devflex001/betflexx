@@ -139,14 +139,14 @@ export default function AdminDashboard() {
   const depositChartConfig = {
     amount: {
       label: "Deposits (KES)",
-      color: "hsl(var(--primary))",
+      color: "var(--primary)",
     },
   }
 
   const userChartConfig = {
     count: {
       label: "New Registrations",
-      color: "hsl(var(--primary))",
+      color: "var(--primary)",
     },
   }
 
@@ -427,13 +427,13 @@ export default function AdminDashboard() {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                         <XAxis 
                           dataKey="day" 
-                          stroke="hsl(var(--muted-foreground))" 
+                          stroke="var(--muted-foreground)" 
                           fontSize={10} 
                           tickLine={false} 
                           axisLine={false} 
                         />
                         <YAxis 
-                          stroke="hsl(var(--muted-foreground))" 
+                          stroke="var(--muted-foreground)" 
                           fontSize={10} 
                           tickLine={false} 
                           axisLine={false} 
@@ -451,13 +451,6 @@ export default function AdminDashboard() {
                         />
                       </AreaChart>
                     </ChartContainer>
-                  </div>
-                  
-                  {/* Slider simulation footer */}
-                  <div className="flex items-center gap-2 px-1 pt-2">
-                    <div className="h-1 flex-1 bg-muted rounded-full overflow-hidden relative">
-                      <div className="absolute top-0 left-1/3 right-1/4 h-full bg-primary/40 rounded-full" />
-                    </div>
                   </div>
                 </div>
 
@@ -479,13 +472,13 @@ export default function AdminDashboard() {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                         <XAxis 
                           dataKey="day" 
-                          stroke="hsl(var(--muted-foreground))" 
+                          stroke="var(--muted-foreground)" 
                           fontSize={10} 
                           tickLine={false} 
                           axisLine={false} 
                         />
                         <YAxis 
-                          stroke="hsl(var(--muted-foreground))" 
+                          stroke="var(--muted-foreground)" 
                           fontSize={10} 
                           tickLine={false} 
                           axisLine={false} 
@@ -499,13 +492,6 @@ export default function AdminDashboard() {
                         />
                       </BarChart>
                     </ChartContainer>
-                  </div>
-
-                  {/* Slider simulation footer */}
-                  <div className="flex items-center gap-2 px-1 pt-2">
-                    <div className="h-1 flex-1 bg-muted rounded-full overflow-hidden relative">
-                      <div className="absolute top-0 left-1/4 right-1/3 h-full bg-primary/40 rounded-full" />
-                    </div>
                   </div>
                 </div>
 
