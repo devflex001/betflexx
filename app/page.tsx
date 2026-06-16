@@ -6,6 +6,7 @@ import { Header } from "@/components/header"
 import { Sidebar } from "@/components/sidebar"
 import { MatchCard } from "@/components/match-card"
 import { Betslip } from "@/components/betslip"
+import { BottomNav } from "@/components/bottom-nav"
 import { MOCK_MATCHES, MOCK_SLIDES, type Match } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -772,6 +773,7 @@ export default function Page() {
         </aside>
 
       </div>
+      <BottomNav liveCount={matches.filter((m) => m.status === "live").length} />
     </div>
   )
 }
