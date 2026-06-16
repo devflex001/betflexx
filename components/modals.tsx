@@ -54,7 +54,7 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
       setIsSubmitting(true)
       const normalizedPhone = normalizeKenyanPhone(phone)
       await signIn("password", {
-        email: normalizedPhone, // We pass phone number as the primary identifier email
+        phone: normalizedPhone,
         password,
         flow: "signIn"
       })
@@ -63,7 +63,6 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
       setPhone("")
       setPassword("")
     } catch (error) {
-      console.error(error)
       const errMsg = error instanceof Error ? error.message : "Failed to log in. Please check your credentials."
       toast.error(errMsg)
     } finally {
@@ -167,7 +166,7 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
       setIsSubmitting(true)
       const normalizedPhone = normalizeKenyanPhone(phone)
       await signIn("password", {
-        email: normalizedPhone,
+        phone: normalizedPhone,
         password,
         flow: "signUp"
       })
@@ -177,7 +176,6 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
       setPassword("")
       setConfirmPassword("")
     } catch (error) {
-      console.error(error)
       const errMsg = error instanceof Error ? error.message : "Failed to create account. Phone number might be already registered."
       toast.error(errMsg)
     } finally {
