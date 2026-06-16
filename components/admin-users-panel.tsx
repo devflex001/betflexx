@@ -356,14 +356,6 @@ function EditDrawer({ user, open, onClose }: EditDrawerProps) {
       </DrawerContent>
     </Drawer>
   )
-}
-            </Button>
-          </DrawerFooter>
-        </div>
-      </DrawerContent>
-    </Drawer>
-  )
-}
 
 // ─── Main Users Panel ─────────────────────────────────────────────────────────
 
