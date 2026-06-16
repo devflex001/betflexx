@@ -1,6 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import { useBetStore } from "@/hooks/use-bet-store"
 import { useTheme } from "next-themes"
 import { Input } from "@/components/ui/input"
@@ -70,14 +73,23 @@ const USER_REG_DATA = [
 ]
 
 export default function AdminDashboard() {
+  const router = useRouter()
+  const adminStatus = useQuery(api.admin.getAdminStatus)
+  const { theme, setTheme } = useTheme()
   const { 
     transactions, 
     adminStats, 
     updateAdminTransactionStatus 
   } = useBetStore()
 
-  const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
+
+  // Redirect non-admin users after checking status
+  React.useEffect(() => {
+    if (adminStatus && !adminStatus.isAdmin) {
+      router.push("/admin/login")
+    }
+  }, [adminStatus, router])
 
   // Independent layout states
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
@@ -193,6 +205,10 @@ export default function AdminDashboard() {
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "reports", label: "Reports", icon: FileText },
   ]
+
+  if (!adminStatus) {
+    return null
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">

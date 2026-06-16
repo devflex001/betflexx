@@ -139,7 +139,6 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
 
 export function RegisterModal({ open, onOpenChange }: ModalProps) {
   const { signIn } = useAuthActions()
-  const [username, setUsername] = React.useState("")
   const [phone, setPhone] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [confirmPassword, setConfirmPassword] = React.useState("")
@@ -147,10 +146,6 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!username.trim()) {
-      toast.error("Please enter a username")
-      return
-    }
     if (!phone.trim()) {
       toast.error("Please enter a phone number")
       return
@@ -172,14 +167,12 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
       setIsSubmitting(true)
       const normalizedPhone = normalizeKenyanPhone(phone)
       await signIn("password", {
-        email: normalizedPhone, // Store phone number as primary credential identity
-        username: username,
+        email: normalizedPhone,
         password,
         flow: "signUp"
       })
       toast.success("Account created successfully!")
       onOpenChange(false)
-      setUsername("")
       setPhone("")
       setPassword("")
       setConfirmPassword("")
@@ -200,20 +193,6 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
       description="Create an account to start tracking your bets and managing your insights."
     >
       <form onSubmit={handleSubmit} className="space-y-4 py-2">
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground block" htmlFor="reg-username">
-            Username <span className="text-destructive">*</span>
-          </label>
-          <Input
-            id="reg-username"
-            placeholder="e.g. jdoe"
-            value={username}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
-            disabled={isSubmitting}
-            required
-            className="focus-visible:ring-primary"
-          />
-        </div>
         <div className="space-y-2">
           <label className="text-xs font-semibold text-muted-foreground block" htmlFor="reg-phone">
             M-Pesa Phone Number <span className="text-destructive">*</span>

@@ -59,7 +59,7 @@ interface BetStoreContextType {
   deposit: (amount: number, phone: string) => Promise<boolean>
   withdraw: (amount: number) => Promise<boolean>
   placeBet: (stake: number) => boolean
-  login: (username: string) => void
+  login: () => void
   logout: () => void
   setActiveTab: (tab: string) => void
   setSearchQuery: (query: string) => void
@@ -221,7 +221,7 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
     })
   }
 
-  const login = (_username: string) => {
+  const login = () => {
     // Handled by Convex Auth
   }
 
