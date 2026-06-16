@@ -95,9 +95,21 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
           />
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground block" htmlFor="login-password">
-            Password <span className="text-destructive">*</span>
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-muted-foreground block" htmlFor="login-password">
+              Password <span className="text-destructive">*</span>
+            </label>
+            <Button
+              type="button"
+              variant="link"
+              className="text-[11px] h-auto p-0 text-muted-foreground hover:text-foreground hover:no-underline"
+              onClick={() => {
+                toast.info("Password reset request simulated. If this number is registered, you will receive an SMS.")
+              }}
+            >
+              Forgot password?
+            </Button>
+          </div>
           <Input
             id="login-password"
             type="password"
@@ -109,7 +121,7 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
             className="focus-visible:ring-primary"
           />
         </div>
-        <div className="pt-4 flex flex-col gap-2">
+        <div className="pt-2 flex flex-col gap-2">
           <Button type="submit" disabled={isSubmitting} className="w-full bg-primary text-primary-foreground hover:opacity-90 font-semibold">
             {isSubmitting ? (
               <>
@@ -249,7 +261,36 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
             />
           </div>
         </div>
-        <div className="pt-4 flex flex-col gap-2">
+        <div className="flex items-start gap-2 pt-1">
+          <input
+            id="reg-terms"
+            type="checkbox"
+            required
+            className="mt-0.5 rounded border-muted bg-muted/40 focus:ring-primary size-3.5 accent-primary cursor-pointer"
+          />
+          <label htmlFor="reg-terms" className="text-[11px] text-muted-foreground leading-normal select-none cursor-pointer">
+            I agree to the{" "}
+            <Button
+              type="button"
+              variant="link"
+              className="text-[11px] p-0 h-auto text-foreground font-semibold inline hover:underline"
+              onClick={() => toast.info("Terms of Service: Play responsibly. Mock platform is for testing purposes only.")}
+            >
+              Terms of Service
+            </Button>{" "}
+            and{" "}
+            <Button
+              type="button"
+              variant="link"
+              className="text-[11px] p-0 h-auto text-foreground font-semibold inline hover:underline"
+              onClick={() => toast.info("Privacy Policy: Your data is secure and will never be shared.")}
+            >
+              Privacy Policy
+            </Button>
+            .
+          </label>
+        </div>
+        <div className="pt-2 flex flex-col gap-2">
           <Button type="submit" disabled={isSubmitting} className="w-full bg-primary text-primary-foreground hover:opacity-90 font-semibold">
             {isSubmitting ? (
               <>
