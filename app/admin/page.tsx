@@ -1,6 +1,10 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
+import { useQuery } from "convex/react"
+import { useConvexAuth } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import { useBetStore } from "@/hooks/use-bet-store"
 import { useTheme } from "next-themes"
 import { Input } from "@/components/ui/input"
@@ -70,14 +74,32 @@ const USER_REG_DATA = [
 ]
 
 export default function AdminDashboard() {
+  const router = useRouter()
+  const { isAuthenticated, isLoading: authLoading } = useConvexAuth()
+  const adminStatus = useQuery(
+    api.admin.getAdminStatus,
+    isAuthenticated ? {} : "skip"
+  )
+  const { theme, setTheme } = useTheme()
   const { 
     transactions, 
     adminStats, 
     updateAdminTransactionStatus 
   } = useBetStore()
 
-  const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
+
+  // Redirect logic: only redirect once we know auth + admin status
+  React.useEffect(() => {
+    if (authLoading) return
+    if (!isAuthenticated) {
+      router.replace("/")
+      return
+    }
+    if (adminStatus !== undefined && !adminStatus.isAdmin) {
+      router.replace("/")
+    }
+  }, [authLoading, isAuthenticated, adminStatus, router])
 
   // Independent layout states
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
@@ -193,6 +215,23 @@ export default function AdminDashboard() {
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "reports", label: "Reports", icon: FileText },
   ]
+
+  const isPageLoading = authLoading || !isAuthenticated || adminStatus === undefined
+
+  if (isPageLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+          <p className="text-sm font-medium">Verifying access...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!adminStatus?.isAdmin) {
+    return null
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
