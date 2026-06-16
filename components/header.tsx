@@ -100,7 +100,7 @@ export function Header() {
             </Button>
 
             {/* Betslip Sheet trigger for mobile/tablet (always accessible) */}
-            <div className="xl:hidden">
+            <div className="hidden lg:block xl:hidden">
               <Sheet open={betslipOpen} onOpenChange={setBetslipOpen}>
                 <SheetTrigger asChild>
                   <Button
