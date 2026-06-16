@@ -428,8 +428,6 @@ export function AdminUsersPanel() {
         </div>
       </div>
 
-      <Separator />
-
       {/* Table */}
       <div className="rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
