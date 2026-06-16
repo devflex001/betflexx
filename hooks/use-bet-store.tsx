@@ -31,6 +31,13 @@ export interface Transaction {
   phone?: string
   time: string
   status: "success" | "pending" | "failed"
+  errorDetail?: string
+}
+
+export interface AdminStats {
+  totalUsers: number
+  totalDeposits: number
+  activeBets: number
 }
 
 interface BetStoreContextType {
@@ -56,9 +63,84 @@ interface BetStoreContextType {
   setSelectedSport: (sport: string) => void
   setSelectedLeague: (league: string) => void
   settleAllBets: () => void
+  adminStats: AdminStats
+  updateAdminTransactionStatus: (txId: string, status: "success" | "pending" | "failed", errorDetail?: string) => void
+  addNewUserCount: () => void
+  settleSingleBet: (betId: string, status: "won" | "lost") => void
 }
 
 const BetStoreContext = React.createContext<BetStoreContextType | undefined>(undefined)
+
+const SEED_TRANSACTIONS: Transaction[] = [
+  {
+    id: "TX-9A8B7C",
+    type: "deposit",
+    amount: 6000,
+    phone: "+254758757558",
+    time: "16 Jun, 10:31",
+    status: "failed",
+    errorDetail: "Request Cancelled by user."
+  },
+  {
+    id: "TX-5D4E6F",
+    type: "deposit",
+    amount: 6000,
+    phone: "+254111280402",
+    time: "16 Jun, 10:19",
+    status: "pending"
+  },
+  {
+    id: "TX-1A2B3C",
+    type: "deposit",
+    amount: 500,
+    phone: "+254710552082",
+    time: "16 Jun, 10:17",
+    status: "failed",
+    errorDetail: "No response from user."
+  },
+  {
+    id: "TX-8F7E6D",
+    type: "deposit",
+    amount: 500,
+    phone: "+254710552082",
+    time: "16 Jun, 10:16",
+    status: "failed",
+    errorDetail: "Request Cancelled by user."
+  },
+  {
+    id: "TX-3C2B1A",
+    type: "deposit",
+    amount: 750,
+    phone: "+254715546127",
+    time: "16 Jun, 08:19",
+    status: "failed",
+    errorDetail: "The balance is insufficient for the transaction."
+  },
+  {
+    id: "TX-SUCC1",
+    type: "deposit",
+    amount: 100000,
+    phone: "+254700000000",
+    time: "15 Jun, 14:20",
+    status: "success"
+  },
+  {
+    id: "TX-SUCC2",
+    type: "deposit",
+    amount: 31860,
+    phone: "+254711111111",
+    time: "15 Jun, 18:30",
+    status: "success"
+  },
+  {
+    id: "TX-SUCC3",
+    type: "deposit",
+    amount: 13000,
+    phone: "+254722222222",
+    time: "15 Jun, 21:05",
+    status: "success"
+  }
+]
 
 export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   const [betslip, setBetslip] = React.useState<Selection[]>([])
@@ -81,7 +163,7 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
       const stored = localStorage.getItem("bet_transactions")
       if (stored) return JSON.parse(stored)
     }
-    return []
+    return SEED_TRANSACTIONS
   })
   const [user, setUser] = React.useState<{ username: string } | null>(() => {
     if (typeof window !== "undefined") {
@@ -94,6 +176,18 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = React.useState<string>("")
   const [selectedSport, setSelectedSport] = React.useState<string>("all")
   const [selectedLeague, setSelectedLeague] = React.useState<string>("All Leagues")
+
+  const [adminStats, setAdminStats] = React.useState<AdminStats>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("bet_admin_stats")
+      if (stored) return JSON.parse(stored)
+    }
+    return {
+      totalUsers: 311,
+      totalDeposits: 144860,
+      activeBets: 53
+    }
+  })
 
   // Sync state helpers
   const saveBalance = (newBalance: number) => {
@@ -111,10 +205,23 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("bet_transactions", JSON.stringify(newTx))
   }
 
+  const saveAdminStats = (newStats: AdminStats) => {
+    setAdminStats(newStats)
+    localStorage.setItem("bet_admin_stats", JSON.stringify(newStats))
+  }
+
+  const addNewUserCount = () => {
+    saveAdminStats({
+      ...adminStats,
+      totalUsers: adminStats.totalUsers + 1
+    })
+  }
+
   const login = (username: string) => {
     const newUser = { username }
     setUser(newUser)
     localStorage.setItem("bet_user", JSON.stringify(newUser))
+    addNewUserCount() // register a new user registration in statistics
   }
 
   const logout = () => {
@@ -125,7 +232,6 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
 
   const setActiveTab = (tab: string) => {
     setActiveTabState(tab)
-    // Clear search and filters on navigation if necessary, or preserve them
     if (tab !== "home" && !tab.startsWith("sport-")) {
       setSelectedSport("all")
       setSelectedLeague("All Leagues")
@@ -160,7 +266,6 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   }
 
   const deposit = async (amount: number, phone: string): Promise<boolean> => {
-    // Simulate API delay for M-Pesa push request
     await new Promise((resolve) => setTimeout(resolve, 1500))
     const newBalance = walletBalance + amount
     saveBalance(newBalance)
@@ -170,16 +275,23 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
       type: "deposit",
       amount,
       phone,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + " " + new Date().toLocaleDateString(),
+      time: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ", " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       status: "success",
     }
+    
     saveTx([newTx, ...transactions])
+    
+    // Update admin stats deposits
+    saveAdminStats({
+      ...adminStats,
+      totalDeposits: adminStats.totalDeposits + amount
+    })
+    
     return true
   }
 
   const withdraw = async (amount: number): Promise<boolean> => {
     if (amount > walletBalance) return false
-    // Simulate delay
     await new Promise((resolve) => setTimeout(resolve, 1500))
     const newBalance = walletBalance - amount
     saveBalance(newBalance)
@@ -188,7 +300,7 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
       id: "TX-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
       type: "withdrawal",
       amount,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + " " + new Date().toLocaleDateString(),
+      time: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ", " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       status: "success",
     }
     saveTx([newTx, ...transactions])
@@ -208,7 +320,7 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
 
     const newBet: PlacedBet = {
       id: "BET-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + " " + new Date().toLocaleDateString(),
+      time: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ", " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       selections: [...betslip],
       totalOdds,
       stake,
@@ -218,14 +330,37 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
 
     saveBets([newBet, ...myBets])
     setBetslip([])
+    
+    // Update active bets in admin stats
+    saveAdminStats({
+      ...adminStats,
+      activeBets: adminStats.activeBets + 1
+    })
+
     return true
   }
 
-  // Helper to resolve random match outcomes for entertainment/mocking purposes
+  const settleSingleBet = (betId: string, status: "won" | "lost") => {
+    const updated = myBets.map((bet) => {
+      if (bet.id === betId) {
+        return { ...bet, status }
+      }
+      return bet
+    })
+    saveBets(updated)
+    
+    // Decrement active bets
+    saveAdminStats({
+      ...adminStats,
+      activeBets: Math.max(0, adminStats.activeBets - 1)
+    })
+  }
+
   const settleAllBets = () => {
+    let settledCount = 0
     const updated = myBets.map((bet) => {
       if (bet.status !== "active") return bet
-      // Simulate random win/loss
+      settledCount++
       const won = Math.random() > 0.4
       return {
         ...bet,
@@ -233,6 +368,29 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
       }
     })
     saveBets(updated)
+    
+    // Decrement active bets by settled count
+    saveAdminStats({
+      ...adminStats,
+      activeBets: Math.max(0, adminStats.activeBets - settledCount)
+    })
+  }
+
+  const updateAdminTransactionStatus = (txId: string, status: "success" | "pending" | "failed", errorDetail?: string) => {
+    const updated = transactions.map((t) => {
+      if (t.id === txId) {
+        // If it transitions to success, credit total deposits
+        if (status === "success" && t.status !== "success" && t.type === "deposit") {
+          saveAdminStats({
+            ...adminStats,
+            totalDeposits: adminStats.totalDeposits + t.amount
+          })
+        }
+        return { ...t, status, errorDetail }
+      }
+      return t
+    })
+    saveTx(updated)
   }
 
   return (
@@ -260,6 +418,10 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
         setSelectedSport,
         setSelectedLeague,
         settleAllBets,
+        adminStats,
+        updateAdminTransactionStatus,
+        addNewUserCount,
+        settleSingleBet,
       }}
     >
       {children}
