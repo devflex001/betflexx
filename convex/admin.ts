@@ -92,29 +92,51 @@ export const seedAdminByPhone = mutation({
 });
 
 /**
- * Wipes all admin records from the admins table.
- * Run via: pnpm db:reset  (calls `npx convex run admin:resetDatabase`)
- * Optionally pass a secret when calling from a client.
+ * Wipes every record from every table — full clean slate.
+ * Deletes in dependency order (children before parents) to avoid FK conflicts.
+ *
+ * Run via:  pnpm db:reset
+ *   (calls `npx convex run admin:resetDatabase`)
  */
 export const resetDatabase = mutation({
   args: {
     secret: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    if (args.secret !== undefined && args.secret !== process.env.ADMIN_SEED_SECRET) {
+    if (
+      args.secret !== undefined &&
+      args.secret !== process.env.ADMIN_SEED_SECRET
+    ) {
       throw new Error("Invalid reset secret");
     }
 
-    let deleted = 0;
-    while (true) {
-      const batch = await ctx.db.query("admins").take(50);
-      if (batch.length === 0) break;
-      for (const doc of batch) {
-        await ctx.db.delete(doc._id);
-        deleted++;
+    const totals: Record<string, number> = {};
+
+    async function clearTable(tableName: string) {
+      let count = 0;
+      while (true) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const batch = await (ctx.db.query(tableName as any) as any).take(100);
+        if (batch.length === 0) break;
+        for (const doc of batch) {
+          await ctx.db.delete(doc._id);
+          count++;
+        }
       }
+      totals[tableName] = count;
     }
 
-    return { success: true, deleted };
+    // Delete in dependency order — children before parents
+    await clearTable("authVerificationCodes"); // refs authAccounts
+    await clearTable("authVerifiers");          // refs authSessions
+    await clearTable("authRefreshTokens");      // refs authSessions
+    await clearTable("authSessions");           // refs users
+    await clearTable("authAccounts");           // refs users
+    await clearTable("authRateLimits");         // standalone
+    await clearTable("admins");                 // refs users
+    await clearTable("users");                  // root
+
+    return { success: true, deleted: totals };
   },
 });
+

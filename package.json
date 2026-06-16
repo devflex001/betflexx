@@ -24,7 +24,7 @@
 
     "seed:admin": "node scripts/seed-admin.mjs",
 
-    "dev:all": "concurrently \"npm run dev\" \"npm run convex:dev\""
+    "dev:all": "concurrently \"pnpm dev\" \"pnpm convex:dev\""
   },
   "dependencies": {
     "@auth/core": "0.37.0",
