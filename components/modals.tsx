@@ -6,7 +6,7 @@ import { ResponsiveModal } from "@/components/ui/responsive-modal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { CopyIcon, CheckIcon, Loader2 } from "lucide-react"
+import { CopyIcon, CheckIcon, Loader2, Eye, EyeOff } from "lucide-react"
 import { useAuthActions } from "@convex-dev/auth/react"
 
 interface ModalProps {
@@ -33,6 +33,7 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
   const { signIn } = useAuthActions()
   const [phone, setPhone] = React.useState("")
   const [password, setPassword] = React.useState("")
+  const [showPassword, setShowPassword] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -109,16 +110,26 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
               Forgot password?
             </Button>
           </div>
-          <Input
-            id="login-password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-            disabled={isSubmitting}
-            required
-            className="focus-visible:ring-primary"
-          />
+          <div className="relative">
+            <Input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+              disabled={isSubmitting}
+              required
+              className="focus-visible:ring-primary pr-9"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
         <div className="pt-2 flex flex-col gap-2">
           <Button type="submit" disabled={isSubmitting} className="w-full bg-primary text-primary-foreground hover:opacity-90 font-semibold">
@@ -140,7 +151,9 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
   const { signIn } = useAuthActions()
   const [phone, setPhone] = React.useState("")
   const [password, setPassword] = React.useState("")
+  const [showPassword, setShowPassword] = React.useState(false)
   const [confirmPassword, setConfirmPassword] = React.useState("")
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -211,31 +224,51 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
             <label className="text-xs font-semibold text-muted-foreground block" htmlFor="reg-password">
               Password <span className="text-destructive">*</span>
             </label>
-            <Input
-              id="reg-password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-              disabled={isSubmitting}
-              required
-              className="focus-visible:ring-primary"
-            />
+            <div className="relative">
+              <Input
+                id="reg-password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                disabled={isSubmitting}
+                required
+                className="focus-visible:ring-primary pr-9"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-xs font-semibold text-muted-foreground block" htmlFor="reg-confirm-password">
               Confirm Password <span className="text-destructive">*</span>
             </label>
-            <Input
-              id="reg-confirm-password"
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
-              disabled={isSubmitting}
-              required
-              className="focus-visible:ring-primary"
-            />
+            <div className="relative">
+              <Input
+                id="reg-confirm-password"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
+                disabled={isSubmitting}
+                required
+                className="focus-visible:ring-primary pr-9"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
         </div>
         <div className="flex items-start gap-2 pt-1">

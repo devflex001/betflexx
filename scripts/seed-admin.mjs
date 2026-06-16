@@ -13,12 +13,23 @@ const env = Object.fromEntries(
     .map((l) => l.split("=").map((s) => s.trim())),
 );
 
-const phone = process.argv[2];
-if (!phone) {
+const rawPhone = process.argv[2];
+if (!rawPhone) {
   console.error("Usage: node scripts/seed-admin.mjs <phone>");
-  console.error("Example: node scripts/seed-admin.mjs +254712345678");
+  console.error("Example: node scripts/seed-admin.mjs 0712345678");
   process.exit(1);
 }
+
+function normalizeKenyanPhone(phone) {
+  const regex = /^(?:\+254|254|0)?([71]\d{8})$/;
+  const match = phone.trim().match(regex);
+  if (match) {
+    return `+254${match[1]}`;
+  }
+  return phone.trim();
+}
+
+const phone = normalizeKenyanPhone(rawPhone);
 
 const client = new ConvexClient(env.NEXT_PUBLIC_CONVEX_URL);
 
