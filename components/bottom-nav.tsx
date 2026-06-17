@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { useBetStore } from "@/hooks/use-bet-store"
 import { Home, PlayCircle, FileText, User, Receipt, Wallet, ArrowUpRight, ArrowDownLeft, LogOut, History } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -10,6 +11,7 @@ import { LoginModal, RegisterModal, DepositModal, WithdrawModal } from "./modals
 import { Button } from "@/components/ui/button"
 
 export function BottomNav({ liveCount }: { liveCount: number }) {
+  const router = useRouter()
   const { activeTab, setActiveTab, betslip, user, walletBalance, logout } = useBetStore()
   
   const [betslipOpen, setBetslipOpen] = React.useState(false)
@@ -19,9 +21,6 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
   const [depositOpen, setDepositOpen] = React.useState(false)
   const [withdrawOpen, setWithdrawOpen] = React.useState(false)
 
-  // We display live matches count with an offset to match the screenshot "193" when count is 4
-  const displayLiveCount = 189 + liveCount
-
   const handleProfileClick = () => {
     if (user) {
       setProfileOpen(true)
@@ -30,13 +29,22 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
     }
   }
 
+  const handleLogout = async () => {
+    await logout()
+    setProfileOpen(false)
+    router.replace("/")
+  }
+
   return (
     <>
       <div className="lg:hidden h-16 bg-card border-t border-border relative z-40 overflow-visible shrink-0 pb-safe">
         <div className="grid grid-cols-5 h-full items-center text-center">
           {/* Home Tab */}
           <button
-            onClick={() => setActiveTab("home")}
+            onClick={() => {
+              setActiveTab("home")
+              router.push("/")
+            }}
             className={cn(
               "flex flex-col items-center justify-center gap-1 h-full text-[10px] font-medium transition-colors",
               activeTab === "home" 
@@ -50,7 +58,10 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
 
           {/* Live Tab */}
           <button
-            onClick={() => setActiveTab("live")}
+            onClick={() => {
+              setActiveTab("live")
+              router.push("/")
+            }}
             className={cn(
               "flex flex-col items-center justify-center gap-1 h-full text-[10px] font-medium transition-colors",
               activeTab === "live" 
@@ -59,7 +70,7 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
             )}
           >
             <PlayCircle className={cn("size-5", activeTab === "live" ? "text-primary" : "text-muted-foreground")} />
-            <span>Live ({displayLiveCount})</span>
+            <span>Live ({liveCount})</span>
           </button>
 
           {/* Betslip FAB */}
@@ -79,7 +90,10 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
 
           {/* My Bets Tab */}
           <button
-            onClick={() => setActiveTab("mybets")}
+            onClick={() => {
+              setActiveTab("mybets")
+              router.push("/")
+            }}
             className={cn(
               "flex flex-col items-center justify-center gap-1 h-full text-[10px] font-medium transition-colors",
               activeTab === "mybets" 
@@ -152,7 +166,7 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
                 <Button
                   onClick={() => {
                     setProfileOpen(false)
-                    setDepositOpen(true)
+                    router.push("/deposit")
                   }}
                   className="bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 h-10 text-xs"
                 >
@@ -177,6 +191,7 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
                   onClick={() => {
                     setActiveTab("mybets")
                     setProfileOpen(false)
+                    router.push("/")
                   }}
                   className="w-full justify-start gap-3 h-11 text-sm text-muted-foreground hover:text-foreground font-normal"
                 >
@@ -187,10 +202,7 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
               {/* Log Out button */}
               <Button
                 variant="destructive"
-                onClick={() => {
-                  logout()
-                  setProfileOpen(false)
-                }}
+                onClick={handleLogout}
                 className="w-full h-10 text-xs font-semibold mt-4"
               >
                 <LogOut className="size-4 mr-2" /> Log Out

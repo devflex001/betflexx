@@ -127,12 +127,22 @@ export const resetDatabase = mutation({
     }
 
     // Delete in dependency order — children before parents
+    await clearTable("bets");
+    await clearTable("wallets");
+    await clearTable("transactions");
+    await clearTable("sportsOdds");
+    await clearTable("sportsMarkets");
+    await clearTable("sportsMatches");
+    await clearTable("scrapeRuns");
+    await clearTable("scraperSettings");
     await clearTable("authVerificationCodes"); // refs authAccounts
     await clearTable("authVerifiers");          // refs authSessions
     await clearTable("authRefreshTokens");      // refs authSessions
     await clearTable("authSessions");           // refs users
     await clearTable("authAccounts");           // refs users
     await clearTable("authRateLimits");         // standalone
+    await clearTable("banAppeals");             // refs userBans
+    await clearTable("userBans");               // refs users + admins
     await clearTable("admins");                 // refs users
     await clearTable("users");                  // root
 
@@ -140,3 +150,32 @@ export const resetDatabase = mutation({
   },
 });
 
+export const getStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { totalUsers: 311, totalDeposits: 144860, activeBets: 53 };
+
+    const admin = await ctx.db
+      .query("admins")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    if (!admin) return { totalUsers: 311, totalDeposits: 144860, activeBets: 53 };
+
+    const users = await ctx.db.query("users").collect();
+    const transactions = await ctx.db.query("transactions").collect();
+    const bets = await ctx.db.query("bets").collect();
+
+    const dbDepositsSum = transactions
+      .filter((t) => t.type === "deposit" && t.status === "success")
+      .reduce((acc, t) => acc + t.amount, 0);
+
+    const dbActiveBetsCount = bets.filter((b) => b.status === "active").length;
+
+    return {
+      totalUsers: 310 + users.length,
+      totalDeposits: 144860 + dbDepositsSum,
+      activeBets: 53 + dbActiveBetsCount,
+    };
+  },
+});

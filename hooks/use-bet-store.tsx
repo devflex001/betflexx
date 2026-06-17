@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useQuery } from "convex/react"
+import { useQuery, useMutation } from "convex/react"
 import { useAuthActions } from "@convex-dev/auth/react"
 import { api } from "@/convex/_generated/api"
 
@@ -12,9 +12,14 @@ export interface Selection {
   team1: string
   team2: string
   market: string      // e.g. "Full Time"
-  selection: "1" | "X" | "2"
+  selection: string
   selectionName: string // e.g. team name or "Draw"
   odds: number
+  sourceOddId?: string
+  marketKey?: string
+  marketName?: string
+  outcomeName?: string
+  specifiers?: string
 }
 
 export interface PlacedBet {
@@ -56,20 +61,18 @@ interface BetStoreContextType {
   addToBetslip: (selection: Selection) => void
   removeFromBetslip: (id: string) => void
   clearBetslip: () => void
-  deposit: (amount: number, phone: string) => Promise<boolean>
-  withdraw: (amount: number) => Promise<boolean>
-  placeBet: (stake: number) => boolean
+  placeBet: (stake: number) => Promise<boolean> | boolean
   login: () => void
   logout: () => void
   setActiveTab: (tab: string) => void
   setSearchQuery: (query: string) => void
   setSelectedSport: (sport: string) => void
   setSelectedLeague: (league: string) => void
-  settleAllBets: () => void
+  settleAllBets: () => void | Promise<void>
   adminStats: AdminStats
-  updateAdminTransactionStatus: (txId: string, status: "success" | "pending" | "failed", errorDetail?: string) => void
+  updateAdminTransactionStatus: (txId: string, status: "success" | "pending" | "failed", errorDetail?: string) => void | Promise<void>
   addNewUserCount: () => void
-  settleSingleBet: (betId: string, status: "won" | "lost") => void
+  settleSingleBet: (betId: string, status: "won" | "lost") => void | Promise<void>
 }
 
 const BetStoreContext = React.createContext<BetStoreContextType | undefined>(undefined)
@@ -146,30 +149,25 @@ const SEED_TRANSACTIONS: Transaction[] = [
 ]
 
 export function BetStoreProvider({ children }: { children: React.ReactNode }) {
-  const [betslip, setBetslip] = React.useState<Selection[]>([])
-  const [walletBalance, setWalletBalance] = React.useState<number>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("bet_wallet_balance")
-      if (stored) return parseFloat(stored)
-    }
-    return 1000
-  })
-  const [myBets, setMyBets] = React.useState<PlacedBet[]>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("bet_my_bets")
-      if (stored) return JSON.parse(stored)
-    }
-    return []
-  })
-  const [transactions, setTransactions] = React.useState<Transaction[]>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("bet_transactions")
-      if (stored) return JSON.parse(stored)
-    }
-    return SEED_TRANSACTIONS
-  })
+  const [betslip, setBetslipState] = React.useState<Selection[]>([])
+  const [localBalance, setLocalBalance] = React.useState<number>(1000)
+  const [localBets, setLocalBets] = React.useState<PlacedBet[]>([])
+  const [localTransactions, setLocalTransactions] = React.useState<Transaction[]>(SEED_TRANSACTIONS)
+  
   const convexUser = useQuery(api.users.currentUser)
   const { signOut } = useAuthActions()
+
+  // Convex reactive queries
+  const dbBalance = useQuery(api.bets.getWalletBalance)
+  const dbBets = useQuery(api.bets.getMyBets)
+  const dbTransactions = useQuery(api.bets.getTransactions)
+  const dbAdminStats = useQuery(api.admin.getStats)
+
+  // Convex mutations
+  const placeBetMutation = useMutation(api.bets.placeBet)
+  const settleSingleBetMutation = useMutation(api.bets.settleSingleBet)
+  const settleAllBetsMutation = useMutation(api.bets.settleAllBets)
+  const updateTransactionStatusMutation = useMutation(api.bets.updateTransactionStatus)
 
   const user = React.useMemo(() => {
     if (!convexUser) return null
@@ -181,40 +179,112 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   const [selectedSport, setSelectedSport] = React.useState<string>("all")
   const [selectedLeague, setSelectedLeague] = React.useState<string>("All Leagues")
 
-  const [adminStats, setAdminStats] = React.useState<AdminStats>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("bet_admin_stats")
-      if (stored) return JSON.parse(stored)
-    }
-    return {
-      totalUsers: 311,
-      totalDeposits: 144860,
-      activeBets: 53
-    }
+  const [localAdminStats, setLocalAdminStats] = React.useState<AdminStats>({
+    totalUsers: 311,
+    totalDeposits: 144860,
+    activeBets: 53
   })
+
+  // Dynamic balance, bets, transactions, and adminStats
+  const walletBalance = convexUser ? (dbBalance ?? 1000) : localBalance
+  const myBets = (convexUser ? dbBets : localBets) ?? []
+  const transactions = (convexUser ? dbTransactions : localTransactions) ?? []
+  const adminStats = convexUser ? (dbAdminStats ?? localAdminStats) : localAdminStats
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const balance = localStorage.getItem("bet_wallet_balance")
+      if (balance) {
+        const parsed = parseFloat(balance)
+        if (!isNaN(parsed)) setLocalBalance(parsed)
+      }
+
+      const bets = localStorage.getItem("bet_my_bets")
+      if (bets) {
+        try {
+          setLocalBets(JSON.parse(bets))
+        } catch (e) {
+          console.error(e)
+        }
+      }
+
+      const txs = localStorage.getItem("bet_transactions")
+      if (txs) {
+        try {
+          setLocalTransactions(JSON.parse(txs))
+        } catch (e) {
+          console.error(e)
+        }
+      }
+
+      const slip = localStorage.getItem("bet_betslip")
+      if (slip) {
+        try {
+          setBetslipState(JSON.parse(slip))
+        } catch (e) {
+          console.error(e)
+        }
+      }
+
+      const stats = localStorage.getItem("bet_admin_stats")
+      if (stats) {
+        try {
+          setLocalAdminStats(JSON.parse(stats))
+        } catch (e) {
+          console.error(e)
+        }
+      }
+    }
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (!e.key) return
+      if (e.key === "bet_wallet_balance" && e.newValue) {
+        setLocalBalance(parseFloat(e.newValue))
+      }
+      if (e.key === "bet_my_bets" && e.newValue) {
+        setLocalBets(JSON.parse(e.newValue))
+      }
+      if (e.key === "bet_transactions" && e.newValue) {
+        setLocalTransactions(JSON.parse(e.newValue))
+      }
+      if (e.key === "bet_betslip" && e.newValue) {
+        setBetslipState(JSON.parse(e.newValue))
+      }
+      if (e.key === "bet_admin_stats" && e.newValue) {
+        setLocalAdminStats(JSON.parse(e.newValue))
+      }
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
+  }, [])
 
   // Sync state helpers
   const saveBalance = (newBalance: number) => {
-    setWalletBalance(newBalance)
+    setLocalBalance(newBalance)
     localStorage.setItem("bet_wallet_balance", newBalance.toString())
   }
 
   const saveBets = (newBets: PlacedBet[]) => {
-    setMyBets(newBets)
+    setLocalBets(newBets)
     localStorage.setItem("bet_my_bets", JSON.stringify(newBets))
   }
 
   const saveTx = (newTx: Transaction[]) => {
-    setTransactions(newTx)
+    setLocalTransactions(newTx)
     localStorage.setItem("bet_transactions", JSON.stringify(newTx))
   }
 
   const saveAdminStats = (newStats: AdminStats) => {
-    setAdminStats(newStats)
+    setLocalAdminStats(newStats)
     localStorage.setItem("bet_admin_stats", JSON.stringify(newStats))
   }
 
   const addNewUserCount = () => {
+    if (convexUser) {
+      // In Convex, users are registered through signUp, so totalUsers is computed dynamically.
+      // But we can keep local count synced as well.
+    }
     saveAdminStats({
       ...adminStats,
       totalUsers: adminStats.totalUsers + 1
@@ -227,7 +297,8 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     await signOut()
-    setBetslip([])
+    setBetslipState([])
+    localStorage.setItem("bet_betslip", JSON.stringify([]))
   }
 
   const setActiveTab = (tab: string) => {
@@ -239,158 +310,183 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   }
 
   const addToBetslip = (selection: Selection) => {
-    setBetslip((prev) => {
-      // 1. If identical selection exists, toggle/remove it
-      const exists = prev.find((item) => item.id === selection.id)
-      if (exists) {
-        return prev.filter((item) => item.id !== selection.id)
-      }
-
-      // 2. If same match selection exists with a different outcome, replace it
-      const matchExists = prev.find((item) => item.matchId === selection.matchId)
+    let next: Selection[]
+    const exists = betslip.find((item) => item.id === selection.id)
+    if (exists) {
+      next = betslip.filter((item) => item.id !== selection.id)
+    } else {
+      const matchExists = betslip.find((item) => item.matchId === selection.matchId)
       if (matchExists) {
-        return prev.map((item) => (item.matchId === selection.matchId ? selection : item))
+        next = betslip.map((item) => (item.matchId === selection.matchId ? selection : item))
+      } else {
+        next = [...betslip, selection]
       }
-
-      // 3. Otherwise add new selection
-      return [...prev, selection]
-    })
+    }
+    setBetslipState(next)
+    localStorage.setItem("bet_betslip", JSON.stringify(next))
   }
 
   const removeFromBetslip = (id: string) => {
-    setBetslip((prev) => prev.filter((item) => item.id !== id))
+    const next = betslip.filter((item) => item.id !== id)
+    setBetslipState(next)
+    localStorage.setItem("bet_betslip", JSON.stringify(next))
   }
 
   const clearBetslip = () => {
-    setBetslip([])
+    setBetslipState([])
+    localStorage.setItem("bet_betslip", JSON.stringify([]))
   }
 
-  const deposit = async (amount: number, phone: string): Promise<boolean> => {
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    const newBalance = walletBalance + amount
-    saveBalance(newBalance)
-
-    const newTx: Transaction = {
-      id: "TX-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-      type: "deposit",
-      amount,
-      phone,
-      time: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ", " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      status: "success",
-    }
-    
-    saveTx([newTx, ...transactions])
-    
-    // Update admin stats deposits
-    saveAdminStats({
-      ...adminStats,
-      totalDeposits: adminStats.totalDeposits + amount
-    })
-    
-    return true
-  }
-
-  const withdraw = async (amount: number): Promise<boolean> => {
-    if (amount > walletBalance) return false
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    const newBalance = walletBalance - amount
-    saveBalance(newBalance)
-
-    const newTx: Transaction = {
-      id: "TX-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-      type: "withdrawal",
-      amount,
-      time: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ", " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      status: "success",
-    }
-    saveTx([newTx, ...transactions])
-    return true
-  }
-
-  const placeBet = (stake: number): boolean => {
+  const placeBet = async (stake: number): Promise<boolean> => {
     if (stake <= 0 || betslip.length === 0) return false
     if (stake > walletBalance) return false
 
-    const newBalance = walletBalance - stake
-    saveBalance(newBalance)
+    if (convexUser) {
+      const totalOdds = parseFloat(
+        betslip.reduce((acc, sel) => acc * sel.odds, 1).toFixed(2)
+      )
+      const potentialReturn = parseFloat((stake * totalOdds).toFixed(2))
 
-    const totalOdds = parseFloat(
-      betslip.reduce((acc, sel) => acc * sel.odds, 1).toFixed(2)
-    )
-
-    const newBet: PlacedBet = {
-      id: "BET-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-      time: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ", " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      selections: [...betslip],
-      totalOdds,
-      stake,
-      potentialReturn: parseFloat((stake * totalOdds).toFixed(2)),
-      status: "active",
-    }
-
-    saveBets([newBet, ...myBets])
-    setBetslip([])
-    
-    // Update active bets in admin stats
-    saveAdminStats({
-      ...adminStats,
-      activeBets: adminStats.activeBets + 1
-    })
-
-    return true
-  }
-
-  const settleSingleBet = (betId: string, status: "won" | "lost") => {
-    const updated = myBets.map((bet) => {
-      if (bet.id === betId) {
-        return { ...bet, status }
-      }
-      return bet
-    })
-    saveBets(updated)
-    
-    // Decrement active bets
-    saveAdminStats({
-      ...adminStats,
-      activeBets: Math.max(0, adminStats.activeBets - 1)
-    })
-  }
-
-  const settleAllBets = () => {
-    let settledCount = 0
-    const updated = myBets.map((bet) => {
-      if (bet.status !== "active") return bet
-      settledCount++
-      const won = Math.random() > 0.4
-      return {
-        ...bet,
-        status: won ? ("won" as const) : ("lost" as const),
-      }
-    })
-    saveBets(updated)
-    
-    // Decrement active bets by settled count
-    saveAdminStats({
-      ...adminStats,
-      activeBets: Math.max(0, adminStats.activeBets - settledCount)
-    })
-  }
-
-  const updateAdminTransactionStatus = (txId: string, status: "success" | "pending" | "failed", errorDetail?: string) => {
-    const updated = transactions.map((t) => {
-      if (t.id === txId) {
-        // If it transitions to success, credit total deposits
-        if (status === "success" && t.status !== "success" && t.type === "deposit") {
-          saveAdminStats({
-            ...adminStats,
-            totalDeposits: adminStats.totalDeposits + t.amount
-          })
+      try {
+        const result = await placeBetMutation({
+          selections: betslip.map((sel) => ({
+            id: sel.id,
+            matchId: sel.matchId,
+            matchName: sel.matchName,
+            team1: sel.team1,
+            team2: sel.team2,
+            market: sel.market,
+            selection: sel.selection,
+            selectionName: sel.selectionName,
+            odds: sel.odds,
+            sourceOddId: sel.sourceOddId,
+            marketKey: sel.marketKey,
+            marketName: sel.marketName,
+            outcomeName: sel.outcomeName,
+            specifiers: sel.specifiers,
+          })),
+          totalOdds,
+          stake,
+          potentialReturn,
+        })
+        if (result.success) {
+          setBetslipState([])
+          localStorage.setItem("bet_betslip", JSON.stringify([]))
+          return true
         }
-        return { ...t, status, errorDetail }
+        return false
+      } catch (err) {
+        console.error(err)
+        return false
       }
-      return t
-    })
-    saveTx(updated)
+    } else {
+      const newBalance = walletBalance - stake
+      saveBalance(newBalance)
+
+      const totalOdds = parseFloat(
+        betslip.reduce((acc, sel) => acc * sel.odds, 1).toFixed(2)
+      )
+
+      const newBet: PlacedBet = {
+        id: "BET-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
+        time: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ", " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        selections: [...betslip],
+        totalOdds,
+        stake,
+        potentialReturn: parseFloat((stake * totalOdds).toFixed(2)),
+        status: "active",
+      }
+
+      saveBets([newBet, ...myBets])
+      setBetslipState([])
+      localStorage.setItem("bet_betslip", JSON.stringify([]))
+      
+      saveAdminStats({
+        ...adminStats,
+        activeBets: adminStats.activeBets + 1
+      })
+
+      return true
+    }
+  }
+
+  const settleSingleBet = async (betId: string, status: "won" | "lost") => {
+    if (convexUser) {
+      try {
+        await settleSingleBetMutation({ betId: betId as any, status })
+      } catch (err) {
+        console.error(err)
+      }
+    } else {
+      const updated = myBets.map((bet) => {
+        if (bet.id === betId) {
+          return { ...bet, status }
+        }
+        return bet
+      })
+      saveBets(updated)
+      
+      saveAdminStats({
+        ...adminStats,
+        activeBets: Math.max(0, adminStats.activeBets - 1)
+      })
+    }
+  }
+
+  const settleAllBets = async () => {
+    if (convexUser) {
+      try {
+        await settleAllBetsMutation()
+      } catch (err) {
+        console.error(err)
+      }
+    } else {
+      let settledCount = 0
+      const updated = myBets.map((bet) => {
+        if (bet.status !== "active") return bet
+        settledCount++
+        const won = Math.random() > 0.4
+        return {
+          ...bet,
+          status: won ? ("won" as const) : ("lost" as const),
+        }
+      })
+      saveBets(updated)
+      
+      saveAdminStats({
+        ...adminStats,
+        activeBets: Math.max(0, adminStats.activeBets - settledCount)
+      })
+    }
+  }
+
+  const updateAdminTransactionStatus = async (txId: string, status: "success" | "pending" | "failed", errorDetail?: string) => {
+    if (convexUser) {
+      try {
+        await updateTransactionStatusMutation({ txId, status, errorDetail })
+      } catch (err) {
+        console.error(err)
+      }
+    } else {
+      let balanceToAdd = 0
+      const updated = transactions.map((t) => {
+        if (t.id === txId) {
+          if (status === "success" && t.status !== "success" && t.type === "deposit") {
+            saveAdminStats({
+              ...adminStats,
+              totalDeposits: adminStats.totalDeposits + t.amount
+            })
+            balanceToAdd = t.amount
+          }
+          return { ...t, status, errorDetail }
+        }
+        return t
+      })
+      saveTx(updated)
+      if (balanceToAdd > 0) {
+        saveBalance(walletBalance + balanceToAdd)
+      }
+    }
   }
 
   return (
@@ -408,8 +504,6 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
         addToBetslip,
         removeFromBetslip,
         clearBetslip,
-        deposit,
-        withdraw,
         placeBet,
         login,
         logout,

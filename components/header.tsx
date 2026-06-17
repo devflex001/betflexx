@@ -62,6 +62,11 @@ export function Header() {
     setShowMobileSearch(false)
   }
 
+  const handleLogout = async () => {
+    await logout()
+    router.replace("/")
+  }
+
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur-md">
@@ -146,7 +151,7 @@ export function Header() {
 
                 {/* Deposit action */}
                 <Button
-                  onClick={() => setDepositOpen(true)}
+                  onClick={() => router.push("/deposit")}
                   size="sm"
                   className="bg-primary text-primary-foreground font-semibold px-2.5 sm:px-3 h-8 text-xs hover:opacity-90 flex items-center gap-1"
                 >
@@ -181,7 +186,7 @@ export function Header() {
                       <span className="flex items-center gap-2"><Wallet className="size-3.5" /> Balance:</span>
                       <span className="font-semibold">KES {walletBalance.toLocaleString()}</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setDepositOpen(true)}>
+                    <DropdownMenuItem onClick={() => router.push("/deposit")}>
                       <ArrowUpRight className="mr-2 h-4 w-4 text-emerald-500" />
                       <span>Deposit (M-Pesa)</span>
                     </DropdownMenuItem>
@@ -194,7 +199,7 @@ export function Header() {
                       <span>My Placed Bets</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log Out</span>
                     </DropdownMenuItem>
