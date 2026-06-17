@@ -21,9 +21,6 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
   const [depositOpen, setDepositOpen] = React.useState(false)
   const [withdrawOpen, setWithdrawOpen] = React.useState(false)
 
-  // We display live matches count with an offset to match the screenshot "193" when count is 4
-  const displayLiveCount = 189 + liveCount
-
   const handleProfileClick = () => {
     if (user) {
       setProfileOpen(true)
@@ -67,7 +64,7 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
             )}
           >
             <PlayCircle className={cn("size-5", activeTab === "live" ? "text-primary" : "text-muted-foreground")} />
-            <span>Live ({displayLiveCount})</span>
+            <span>Live ({liveCount})</span>
           </button>
 
           {/* Betslip FAB */}

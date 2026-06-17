@@ -51,6 +51,14 @@ function getRandomOutcome(): boolean {
   return Math.random() > 0.4
 }
 
+function titleCase(value: string) {
+  return value
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
 function MatchSkeletonGrid() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -103,6 +111,10 @@ export default function Page() {
     limit: 80,
   }) as SportsMatchWithOdds[] | undefined
 
+  const allMatches = useQuery(api.sportsData.listMatches, {
+    limit: 300,
+  }) as SportsMatchWithOdds[] | undefined
+
   const leagues = useQuery(api.sportsData.listCompetitions, {
     sport: selectedSport,
   }) as string[] | undefined
@@ -123,6 +135,22 @@ export default function Page() {
   const displayedMatches = matches ?? []
   const featuredMatches = displayedMatches.slice(0, 4)
   const upcomingMatches = activeTab === "featured" ? featuredMatches : displayedMatches
+  const sportOptions = React.useMemo(() => {
+    const counts = new Map<string, number>()
+
+    for (const match of allMatches ?? []) {
+      const key = match.sportSlug || "all"
+      counts.set(key, (counts.get(key) ?? 0) + 1)
+    }
+
+    return [
+      { id: "all", label: "All Sports", count: allMatches?.length ?? 0 },
+      ...Array.from(counts.entries())
+        .filter(([key]) => key !== "all")
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([id, count]) => ({ id, label: titleCase(id), count })),
+    ]
+  }, [allMatches])
 
   const handleSettleBet = (betId: string) => {
     const storedBets = localStorage.getItem("bet_my_bets")
@@ -185,23 +213,30 @@ export default function Page() {
           {(activeTab === "home" || activeTab === "live" || activeTab === "featured") && (
             <div className="flex flex-col gap-3 pb-2 border-b border-border">
               <div className="flex items-center gap-1 overflow-x-auto pb-1.5 scrollbar-none">
-                {[
-                  ["all", "All Sports"],
-                  ["football", "Football"],
-                ].map(([value, label]) => (
-                  <Button
-                    key={value}
-                    variant={selectedSport === value ? "default" : "outline"}
-                    size="sm"
-                    className="rounded-full h-8 text-xs font-semibold shrink-0"
-                    onClick={() => {
-                      setSelectedSport(value)
-                      setSelectedLeague("All Leagues")
-                    }}
-                  >
-                    {label}
-                  </Button>
-                ))}
+                {!allMatches ? (
+                  <>
+                    <Skeleton className="h-8 w-24 rounded-full" />
+                    <Skeleton className="h-8 w-24 rounded-full" />
+                  </>
+                ) : (
+                  sportOptions.map((sport) => (
+                    <Button
+                      key={sport.id}
+                      variant={selectedSport === sport.id ? "default" : "outline"}
+                      size="sm"
+                      className="rounded-full h-8 text-xs font-semibold shrink-0 gap-2"
+                      onClick={() => {
+                        setSelectedSport(sport.id)
+                        setSelectedLeague("All Leagues")
+                      }}
+                    >
+                      <span>{sport.label}</span>
+                      <span className="rounded-full bg-background/20 px-1.5 py-0.5 text-[10px] font-bold">
+                        {sport.count}
+                      </span>
+                    </Button>
+                  ))
+                )}
               </div>
 
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">

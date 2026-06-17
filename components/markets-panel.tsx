@@ -41,6 +41,8 @@ type SportsMarket = {
 }
 
 export type SportsMatchWithOdds = {
+  source?: string
+  sportSlug?: string
   sourceMatchId: string
   homeTeam: string
   awayTeam: string

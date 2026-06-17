@@ -25,6 +25,16 @@ function statusLabel(match: SportsMatchWithOdds) {
   return match.statusDesc || "Upcoming"
 }
 
+function eventName(match: SportsMatchWithOdds) {
+  return `${match.homeTeam} vs ${match.awayTeam}`
+}
+
+function sourceLabel(source?: string) {
+  if (!source) return "Unknown"
+  if (source === "kwikbet") return "KwikBet"
+  return source
+}
+
 export function AdminEventsPanel() {
   const [search, setSearch] = React.useState("")
   const [sport, setSport] = React.useState("football")
@@ -48,7 +58,7 @@ export function AdminEventsPanel() {
       <div className="space-y-1">
         <h1 className="text-lg font-bold tracking-tight">Events</h1>
         <p className="text-xs text-muted-foreground">
-          Scraped KwikBet fixtures, source metadata, main odds, and full market details.
+          Scraped fixtures with source metadata and full market details.
         </p>
       </div>
 
@@ -134,15 +144,16 @@ export function AdminEventsPanel() {
           </div>
         ) : matches.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left text-xs">
+            <table className="w-full min-w-[980px] text-left text-xs">
               <thead className="border-b border-border text-[10px] uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2">Start</th>
                   <th className="px-4 py-2">Event</th>
+                  <th className="px-4 py-2">Home</th>
+                  <th className="px-4 py-2">Away</th>
                   <th className="px-4 py-2">Competition</th>
                   <th className="px-4 py-2">Status</th>
                   <th className="px-4 py-2">Markets</th>
-                  <th className="px-4 py-2">Main Odds</th>
                   <th className="px-4 py-2">Source</th>
                   <th className="px-4 py-2 text-right">Details</th>
                 </tr>
@@ -151,12 +162,11 @@ export function AdminEventsPanel() {
                 {matches.map((match) => (
                   <tr key={match.sourceMatchId} className="hover:bg-muted/30">
                     <td className="px-4 py-3 font-medium">{formatStartTime(match.startTime)}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-foreground">
-                        {match.homeTeam}
-                      </div>
-                      <div className="text-muted-foreground">{match.awayTeam}</div>
+                    <td className="px-4 py-3 font-semibold text-foreground">
+                      {eventName(match)}
                     </td>
+                    <td className="px-4 py-3 font-medium">{match.homeTeam}</td>
+                    <td className="px-4 py-3 font-medium">{match.awayTeam}</td>
                     <td className="px-4 py-3">
                       <div className="font-medium">{match.competitionName}</div>
                       <div className="text-muted-foreground">{match.statusDesc}</div>
@@ -170,21 +180,8 @@ export function AdminEventsPanel() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 font-mono">{match.totalMarkets}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1">
-                        {match.mainOdds.length > 0 ? (
-                          match.mainOdds.map((odd) => (
-                            <Badge key={odd.sourceOddId} variant="outline" className="font-mono text-[10px]">
-                              {odd.outcomeName} {odd.oddValue.toFixed(2)}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-muted-foreground">None</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 font-mono text-muted-foreground">
-                      {match.sourceMatchId}
+                    <td className="px-4 py-3 font-medium">
+                      {sourceLabel(match.source)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Button
