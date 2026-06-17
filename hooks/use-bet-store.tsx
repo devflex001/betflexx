@@ -186,9 +186,9 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   })
 
   // Dynamic balance, bets, transactions, and adminStats
-  const walletBalance = convexUser ? (dbBalance ?? 1000) : localBalance
-  const myBets = (convexUser ? dbBets : localBets) ?? []
-  const transactions = (convexUser ? dbTransactions : localTransactions) ?? []
+  const walletBalance: number = convexUser ? (dbBalance ?? 1000) : localBalance
+  const myBets: PlacedBet[] = (convexUser ? (dbBets as PlacedBet[]) : localBets) ?? []
+  const transactions: Transaction[] = (convexUser ? (dbTransactions as Transaction[]) : localTransactions) ?? []
   const adminStats = convexUser ? (dbAdminStats ?? localAdminStats) : localAdminStats
 
   React.useEffect(() => {

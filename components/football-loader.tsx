@@ -1,6 +1,9 @@
 "use client"
 
+import Image from "next/image"
 import { cn } from "@/lib/utils"
+
+const FOOTBALL_ICON_URL = "https://openmoji.org/data/color/svg/26BD.svg"
 
 interface FootballLoaderProps {
   label?: string
@@ -13,7 +16,11 @@ export function FootballLoader({
   size = "default",
   className,
 }: FootballLoaderProps) {
-  const ballSize = size === "large" ? "h-40 w-40 sm:h-52 sm:w-52" : "h-28 w-28 sm:h-36 sm:w-36"
+  const iconSize = size === "large" ? 208 : 144
+  const iconClass =
+    size === "large"
+      ? "h-40 w-40 sm:h-52 sm:w-52"
+      : "h-28 w-28 sm:h-36 sm:w-36"
 
   return (
     <div
@@ -25,13 +32,15 @@ export function FootballLoader({
       aria-live="polite"
       aria-label={label}
     >
-      <div className="football-loader-scene" style={{ perspective: "900px" }}>
-        <div className={cn("football-loader-ball", ballSize)}>
-          <div className="football-loader-sphere" />
-          <div className="football-loader-shine" aria-hidden="true" />
-        </div>
-        <div className="football-loader-shadow" aria-hidden="true" />
-      </div>
+      <Image
+        src={FOOTBALL_ICON_URL}
+        alt=""
+        width={iconSize}
+        height={iconSize}
+        unoptimized
+        className={cn(iconClass, "animate-spin drop-shadow-lg")}
+        aria-hidden="true"
+      />
 
       {label && (
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
