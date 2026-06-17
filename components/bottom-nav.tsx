@@ -41,7 +41,10 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
         <div className="grid grid-cols-5 h-full items-center text-center">
           {/* Home Tab */}
           <button
-            onClick={() => setActiveTab("home")}
+            onClick={() => {
+              setActiveTab("home")
+              router.push("/")
+            }}
             className={cn(
               "flex flex-col items-center justify-center gap-1 h-full text-[10px] font-medium transition-colors",
               activeTab === "home" 
@@ -55,7 +58,10 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
 
           {/* Live Tab */}
           <button
-            onClick={() => setActiveTab("live")}
+            onClick={() => {
+              setActiveTab("live")
+              router.push("/")
+            }}
             className={cn(
               "flex flex-col items-center justify-center gap-1 h-full text-[10px] font-medium transition-colors",
               activeTab === "live" 
@@ -84,7 +90,10 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
 
           {/* My Bets Tab */}
           <button
-            onClick={() => setActiveTab("mybets")}
+            onClick={() => {
+              setActiveTab("mybets")
+              router.push("/")
+            }}
             className={cn(
               "flex flex-col items-center justify-center gap-1 h-full text-[10px] font-medium transition-colors",
               activeTab === "mybets" 
@@ -182,6 +191,7 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
                   onClick={() => {
                     setActiveTab("mybets")
                     setProfileOpen(false)
+                    router.push("/")
                   }}
                   className="w-full justify-start gap-3 h-11 text-sm text-muted-foreground hover:text-foreground font-normal"
                 >

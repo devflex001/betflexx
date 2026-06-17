@@ -297,17 +297,6 @@ export function MarketsBrowser({
 
   const pageContent = (
     <div className="space-y-3 p-3 sm:p-4">
-      <div className="rounded-lg border border-border bg-card p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold">{match.homeTeam} vs {match.awayTeam}</p>
-            <p className="truncate text-xs text-muted-foreground">{match.competitionName}</p>
-          </div>
-          <span className="shrink-0 rounded-full border border-border px-2 py-1 text-[10px] font-semibold text-muted-foreground">
-            {match.totalMarkets} markets
-          </span>
-        </div>
-      </div>
 
       {markets && filteredMarkets.length === 0 && (
         <div className="rounded-lg border border-dashed border-border py-10 text-center text-xs text-muted-foreground">
