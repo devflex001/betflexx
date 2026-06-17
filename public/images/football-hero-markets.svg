@@ -7,21 +7,19 @@
   <line x1="600" y1="320" x2="600" y2="480" stroke="#3d7a5a" stroke-width="2" opacity="0.5"/>
   <rect x="80" y="320" width="120" height="160" stroke="#3d7a5a" stroke-width="2" fill="none" opacity="0.4"/>
   <rect x="1000" y="320" width="120" height="160" stroke="#3d7a5a" stroke-width="2" fill="none" opacity="0.4"/>
-  <g transform="translate(600 210)">
-    <circle r="72" fill="#f5f5f0"/>
-    <path d="M0-72 L22-22 L72-22 L36 8 L54 58 L0 28 L-54 58 L-36 8 L-72-22 L-22-22 Z" fill="#1a1a1a"/>
-    <path d="M0-72 L22-22 L0 28 Z" fill="#2a2a2a"/>
-    <path d="M22-22 L72-22 L54 58 L0 28 Z" fill="#222"/>
-    <path d="M-22-22 L-72-22 L-54 58 L0 28 Z" fill="#252525"/>
-    <path d="M-22-22 L0-72 L22-22 L0 28 Z" fill="#1f1f1f"/>
-    <ellipse cx="-18" cy="-28" rx="22" ry="14" fill="white" opacity="0.18"/>
+  <g transform="translate(820 200)">
+    <circle r="88" fill="#f5f5f0"/>
+    <path d="M0-88 L27-27 L88-27 L44 10 L66 71 L0 34 L-66 71 L-44 10 L-88-27 L-27-27 Z" fill="#1a1a1a"/>
+    <path d="M0-88 L27-27 L0 34 Z" fill="#2a2a2a"/>
+    <path d="M27-27 L88-27 L66 71 L0 34 Z" fill="#222"/>
+    <path d="M-27-27 L-88-27 L-66 71 L0 34 Z" fill="#252525"/>
+    <path d="M-27-27 L0-88 L27-27 L0 34 Z" fill="#1f1f1f"/>
+    <ellipse cx="-22" cy="-34" rx="26" ry="16" fill="white" opacity="0.2"/>
   </g>
-  <g opacity="0.15">
-    <circle cx="180" cy="120" r="3" fill="#f59e0b"/>
-    <circle cx="420" cy="80" r="2" fill="#f59e0b"/>
-    <circle cx="780" cy="95" r="2.5" fill="#f59e0b"/>
-    <circle cx="1020" cy="130" r="3" fill="#f59e0b"/>
+  <g opacity="0.2">
+    <circle cx="180" cy="100" r="4" fill="#f59e0b"/>
+    <circle cx="420" cy="70" r="3" fill="#f59e0b"/>
+    <circle cx="680" cy="85" r="3.5" fill="#f59e0b"/>
+    <circle cx="980" cy="110" r="4" fill="#f59e0b"/>
   </g>
-  <text x="48" y="56" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="28" font-weight="800" letter-spacing="0.08em">FULL MARKETS</text>
-  <text x="48" y="92" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="16" font-weight="500">Every outcome. Every fixture.</text>
 </svg>
