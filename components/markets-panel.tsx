@@ -8,6 +8,7 @@ import {
   compareFormattedOdds,
   formatOddOutcome,
   shouldShowOddSpecifier,
+  formatMarketName,
 } from "@/lib/odds-format"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -178,28 +179,34 @@ export function MarketsBrowser({
         key={odd.sourceOddId}
         variant="outline"
         className={cn(
-          "h-auto min-h-14 min-w-0 justify-between gap-3 px-3 py-2 text-left hover:border-primary/60",
+          "flex flex-col items-center justify-center gap-1 h-12 py-1 px-1.5 border-border transition-all hover:bg-accent/40 text-center min-w-0 w-full",
           readOnly && "cursor-default hover:bg-background",
-          selected && "border-primary bg-primary text-primary-foreground hover:bg-primary"
+          selected
+            ? "bg-primary text-primary-foreground border-primary hover:bg-primary/95 hover:border-primary"
+            : "bg-muted/5 hover:border-muted-foreground/30 text-foreground"
         )}
         onClick={() => handleOdd(odd)}
       >
-        <span className="min-w-0 flex-1">
-          <span className="block whitespace-normal break-words text-xs font-semibold leading-snug">
-            {outcome.code}
-          </span>
-          {showSpecifier && (
-            <span
-              className={cn(
-                "mt-0.5 block whitespace-normal break-words text-[10px] leading-snug",
-                selected ? "text-primary-foreground/80" : "text-muted-foreground"
-              )}
-            >
-              {odd.specifiers}
-            </span>
-          )}
+        <span className={cn(
+          "min-w-0 w-full truncate text-[9px] uppercase font-bold tracking-wide leading-none",
+          selected ? "text-primary-foreground/90" : "text-muted-foreground"
+        )}>
+          {outcome.code}
         </span>
-        <span className="shrink-0 rounded border border-border px-2 py-1 font-mono text-xs font-bold">
+        {showSpecifier && (
+          <span
+            className={cn(
+              "block w-full truncate text-[8px] font-medium leading-none",
+              selected ? "text-primary-foreground/80" : "text-muted-foreground"
+            )}
+          >
+            {odd.specifiers}
+          </span>
+        )}
+        <span className={cn(
+          "font-mono text-[11px] font-extrabold leading-none",
+          selected ? "text-primary-foreground" : "text-foreground"
+        )}>
           {odd.oddValue.toFixed(2)}
         </span>
       </Button>
@@ -225,10 +232,10 @@ export function MarketsBrowser({
           onClick={() => setSelectedMarketKey(market.marketKey)}
         >
           <span className="min-w-0 flex-1">
-            <span className="block whitespace-normal break-words text-xs font-semibold leading-snug">
-              {market.name}
+            <span className="block whitespace-normal break-words text-xs font-bold uppercase tracking-wider leading-snug">
+              {formatMarketName(market, match)}
             </span>
-            <span className="block whitespace-normal break-words text-[10px] leading-snug text-muted-foreground">
+            <span className="block whitespace-normal break-words text-[10px] uppercase tracking-wide leading-snug text-muted-foreground">
               {market.marketTypes.length > 0 ? market.marketTypes.join(", ") : market.marketType || "Other"}
             </span>
           </span>
@@ -244,8 +251,8 @@ export function MarketsBrowser({
     <div className="space-y-4 p-4">
       {selectedMarket && (
         <div className="space-y-1">
-          <h3 className="text-sm font-bold leading-tight">{selectedMarket.name}</h3>
-          <p className="text-xs text-muted-foreground">
+          <h3 className="text-sm font-extrabold uppercase tracking-wider leading-tight">{formatMarketName(selectedMarket, match)}</h3>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
             {selectedMarket.marketTypes.length > 0
               ? selectedMarket.marketTypes.join(", ")
               : selectedMarket.marketType || "Other"}
@@ -264,7 +271,10 @@ export function MarketsBrowser({
       )}
 
       {odds && odds.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className={cn(
+          "grid gap-2",
+          odds.length === 2 || odds.length === 4 ? "grid-cols-2" : "grid-cols-3"
+        )}>
           {[...odds]
             .sort((a, b) => compareFormattedOdds(a, b, match) || sortOdds(a, b))
             .map(renderOddButton)}
@@ -311,10 +321,12 @@ export function MarketsBrowser({
 
         return (
             <section key={market.marketKey} className="rounded-lg border border-border bg-card">
-              <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+              <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
                 <div className="min-w-0">
-                  <h3 className="truncate text-sm font-bold leading-tight">{market.name}</h3>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <h3 className="truncate text-[11px] font-extrabold uppercase tracking-wider leading-tight text-foreground/90">
+                    {formatMarketName(market, match)}
+                  </h3>
+                  <p className="truncate text-[9px] font-semibold text-muted-foreground uppercase">
                     {market.marketTypes.length > 0
                       ? market.marketTypes.join(", ")
                       : market.marketType || "Other"}
@@ -322,7 +334,10 @@ export function MarketsBrowser({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 p-3">
+              <div className={cn(
+                "grid gap-2 p-3",
+                marketOdds.length === 2 || marketOdds.length === 4 ? "grid-cols-2" : "grid-cols-3"
+              )}>
                 {marketOdds.map(renderOddButton)}
               </div>
           </section>

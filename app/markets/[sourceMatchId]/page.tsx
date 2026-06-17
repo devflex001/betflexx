@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useQuery } from "convex/react"
 import { ArrowLeft } from "lucide-react"
@@ -19,6 +20,14 @@ export default function MatchMarketsPage() {
     api.sportsData.getMatchWithMainOdds,
     sourceMatchId ? { sourceMatchId } : "skip"
   ) as SportsMatchWithOdds | null | undefined
+
+  useEffect(() => {
+    if (match) {
+      document.title = `${match.homeTeam} vs ${match.awayTeam} - Markets | BetixPro`
+    } else {
+      document.title = "Match Markets | BetixPro"
+    }
+  }, [match])
 
   return (
     <main className="min-h-dvh bg-background text-foreground">

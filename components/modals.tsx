@@ -417,7 +417,6 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
 }
 
 export function DepositModal({ open, onOpenChange }: ModalProps) {
-  const { deposit } = useBetStore()
   const [amount, setAmount] = React.useState("")
   const [phone, setPhone] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
@@ -435,18 +434,9 @@ export function DepositModal({ open, onOpenChange }: ModalProps) {
     }
 
     setIsSubmitting(true)
-    const normalizedPhone = normalizeKenyanPhone(phone)
-    const promise = deposit(parsedAmount, normalizedPhone)
-    toast.promise(promise, {
-      loading: "Sending M-Pesa STK Push prompt to your phone...",
-      success: () => {
-        setIsSubmitting(false)
-        onOpenChange(false)
-        setAmount("")
-        return `Successfully deposited KES ${parsedAmount.toLocaleString()}`
-      },
-      error: "M-Pesa deposit failed. Please try again.",
-    })
+    onOpenChange(false)
+    setAmount("")
+    setIsSubmitting(false)
   }
 
   return (
