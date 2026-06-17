@@ -10,6 +10,7 @@ import { useTheme } from "next-themes"
 import { Input } from "@/components/ui/input"
 import { AdminUsersPanel } from "@/components/admin-users-panel"
 import { AdminScraperPanel } from "@/components/admin-scraper-panel"
+import { AdminEventsPanel } from "@/components/admin-events-panel"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -783,8 +784,10 @@ export default function AdminDashboard() {
 
           {activeTab === "scraper" && <AdminScraperPanel />}
 
+          {activeTab === "events" && <AdminEventsPanel />}
+
           {/* ── Placeholder for other tabs ── */}
-          {activeTab !== "dashboard" && activeTab !== "users" && activeTab !== "scraper" && (
+          {activeTab !== "dashboard" && activeTab !== "users" && activeTab !== "scraper" && activeTab !== "events" && (
             <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground gap-3">
               <div className="p-4 bg-muted rounded-full">
                 <Sparkles className="size-8 text-primary" />
@@ -803,3 +806,4 @@ export default function AdminDashboard() {
     </div>
   )
 }
+
