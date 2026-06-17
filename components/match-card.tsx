@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useBetStore } from "@/hooks/use-bet-store"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { compareFormattedOdds, formatOddOutcome } from "@/lib/odds-format"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Share2, ListPlus, Radio } from "lucide-react"
@@ -40,11 +41,12 @@ export function MatchCard({ match }: MatchCardProps) {
 
   const matchTitle = `${match.homeTeam} vs ${match.awayTeam}`
   const scores = scoreParts(match.result)
-  const mainOdds = [...match.mainOdds].sort((a, b) => a.priority - b.priority)
+  const mainOdds = [...match.mainOdds].sort(
+    (a, b) => compareFormattedOdds(a, b, match) || a.priority - b.priority
+  )
 
   const handleSelection = (odd: SportsMatchWithOdds["mainOdds"][number]) => {
-    const selectionName =
-      odd.outcomeAlias || odd.outcomeName || odd.outcomeId || "Selection"
+    const outcome = formatOddOutcome(odd, match)
 
     addToBetslip({
       id: odd.sourceOddId,
@@ -53,8 +55,8 @@ export function MatchCard({ match }: MatchCardProps) {
       team1: match.homeTeam,
       team2: match.awayTeam,
       market: odd.marketName || "Main Market",
-      selection: odd.outcomeName || odd.outcomeId,
-      selectionName,
+      selection: outcome.code,
+      selectionName: outcome.code,
       odds: odd.oddValue,
       sourceOddId: odd.sourceOddId,
       marketKey: odd.marketKey,
@@ -157,6 +159,7 @@ export function MatchCard({ match }: MatchCardProps) {
             {mainOdds.length > 0 ? (
               mainOdds.map((odd) => {
                 const selected = betslip.find((item) => item.id === odd.sourceOddId)
+                const outcome = formatOddOutcome(odd, match)
                 return (
                   <Button
                     key={odd.sourceOddId}
@@ -169,7 +172,7 @@ export function MatchCard({ match }: MatchCardProps) {
                     onClick={() => handleSelection(odd)}
                   >
                     <span className={`text-[9px] ${selected ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                      {odd.outcomeName || odd.outcomeId}
+                      {outcome.code}
                     </span>
                     <span className="text-xs font-bold font-mono">{odd.oddValue.toFixed(2)}</span>
                   </Button>
