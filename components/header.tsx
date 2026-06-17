@@ -151,7 +151,7 @@ export function Header() {
 
                 {/* Deposit action */}
                 <Button
-                  onClick={() => setDepositOpen(true)}
+                  onClick={() => router.push("/deposit")}
                   size="sm"
                   className="bg-primary text-primary-foreground font-semibold px-2.5 sm:px-3 h-8 text-xs hover:opacity-90 flex items-center gap-1"
                 >
@@ -186,9 +186,13 @@ export function Header() {
                       <span className="flex items-center gap-2"><Wallet className="size-3.5" /> Balance:</span>
                       <span className="font-semibold">KES {walletBalance.toLocaleString()}</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setDepositOpen(true)}>
+                    <DropdownMenuItem onClick={() => router.push("/deposit")}>
                       <ArrowUpRight className="mr-2 h-4 w-4 text-emerald-500" />
                       <span>Deposit (M-Pesa)</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/test-payhero")}>
+                      <LayoutDashboard className="mr-2 h-4 w-4 text-indigo-500" />
+                      <span>PayHero API Console</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setWithdrawOpen(true)}>
                       <ArrowDownLeft className="mr-2 h-4 w-4 text-rose-500" />

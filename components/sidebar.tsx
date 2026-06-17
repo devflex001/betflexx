@@ -7,7 +7,8 @@ import { useBetStore } from "@/hooks/use-bet-store"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Home, PlayCircle, History, Trophy, Activity } from "lucide-react"
+import { Home, PlayCircle, History, Trophy, Activity, ArrowUpRight } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface SidebarProps {
   className?: string
@@ -30,6 +31,7 @@ function titleCase(value: string) {
 export function Sidebar({ className }: SidebarProps) {
   const { activeTab, setActiveTab, setSelectedSport, selectedSport, selectedLeague, setSelectedLeague } =
     useBetStore()
+  const router = useRouter()
 
   const allMatches = useQuery(api.sportsData.listMatches, { limit: 300 }) as
     | MatchRecord[]
@@ -118,6 +120,30 @@ export function Sidebar({ className }: SidebarProps) {
               </Button>
             )
           })}
+        </div>
+      </div>
+
+      <div className="px-4">
+        <h2 className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          PayHero Services
+        </h2>
+        <div className="space-y-1">
+          <Button
+            variant="ghost"
+            className="h-9 w-full justify-start gap-2.5 px-3 text-sm font-normal text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+            onClick={() => router.push("/deposit")}
+          >
+            <ArrowUpRight className="size-4 text-emerald-500" />
+            <span>Deposit Funds</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="h-9 w-full justify-start gap-2.5 px-3 text-sm font-normal text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+            onClick={() => router.push("/test-payhero")}
+          >
+            <Activity className="size-4 text-indigo-500" />
+            <span>PayHero Console</span>
+          </Button>
         </div>
       </div>
 

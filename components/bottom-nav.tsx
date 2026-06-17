@@ -157,7 +157,7 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
                 <Button
                   onClick={() => {
                     setProfileOpen(false)
-                    setDepositOpen(true)
+                    router.push("/deposit")
                   }}
                   className="bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 h-10 text-xs"
                 >
