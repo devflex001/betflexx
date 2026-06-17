@@ -52,13 +52,14 @@ interface MarketsPanelProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   match: SportsMatchWithOdds
+  readOnly?: boolean
 }
 
 function marketCategory(market: SportsMarket) {
   return market.marketTypes[0] || market.marketType || "Other"
 }
 
-export function MarketsPanel({ open, onOpenChange, match }: MarketsPanelProps) {
+export function MarketsPanel({ open, onOpenChange, match, readOnly = false }: MarketsPanelProps) {
   const { betslip, addToBetslip } = useBetStore()
   const [search, setSearch] = React.useState("")
   const [activeCategory, setActiveCategory] = React.useState("All")
@@ -68,14 +69,6 @@ export function MarketsPanel({ open, onOpenChange, match }: MarketsPanelProps) {
     api.sportsData.listMarkets,
     open ? { sourceMatchId: match.sourceMatchId } : "skip"
   ) as SportsMarket[] | undefined
-
-  const selectedMarket = markets?.find((market) => market.marketKey === selectedMarketKey)
-  const odds = useQuery(
-    api.sportsData.listOdds,
-    open && selectedMarket
-      ? { sourceMatchId: match.sourceMatchId, marketKey: selectedMarket.marketKey }
-      : "skip"
-  ) as SportsOdd[] | undefined
 
   const categories = React.useMemo(() => {
     const names = (markets ?? []).map(marketCategory)
@@ -93,23 +86,24 @@ export function MarketsPanel({ open, onOpenChange, match }: MarketsPanelProps) {
       .sort((a, b) => a.marketPriority - b.marketPriority || a.name.localeCompare(b.name))
   }, [activeCategory, markets, search])
 
-  React.useEffect(() => {
-    if (!open) return
-    if (!selectedMarketKey && filteredMarkets.length > 0) {
-      setSelectedMarketKey(filteredMarkets[0].marketKey)
-    }
-    if (
-      selectedMarketKey &&
-      filteredMarkets.length > 0 &&
-      !filteredMarkets.some((market) => market.marketKey === selectedMarketKey)
-    ) {
-      setSelectedMarketKey(filteredMarkets[0].marketKey)
-    }
-  }, [filteredMarkets, open, selectedMarketKey])
+  const effectiveMarketKey = filteredMarkets.some(
+    (market) => market.marketKey === selectedMarketKey
+  )
+    ? selectedMarketKey
+    : filteredMarkets[0]?.marketKey ?? null
+  const selectedMarket = markets?.find((market) => market.marketKey === effectiveMarketKey)
+  const odds = useQuery(
+    api.sportsData.listOdds,
+    open && selectedMarket
+      ? { sourceMatchId: match.sourceMatchId, marketKey: selectedMarket.marketKey }
+      : "skip"
+  ) as SportsOdd[] | undefined
 
   const matchName = `${match.homeTeam} vs ${match.awayTeam}`
 
   const handleOdd = (odd: SportsOdd) => {
+    if (readOnly) return
+
     addToBetslip({
       id: odd.sourceOddId,
       matchId: match.sourceMatchId,
@@ -171,7 +165,7 @@ export function MarketsPanel({ open, onOpenChange, match }: MarketsPanelProps) {
               {filteredMarkets.map((market) => (
                 <Button
                   key={market.marketKey}
-                  variant={selectedMarketKey === market.marketKey ? "secondary" : "ghost"}
+                  variant={effectiveMarketKey === market.marketKey ? "secondary" : "ghost"}
                   className="w-full h-auto justify-between gap-2 px-2 py-2 text-left"
                   onClick={() => setSelectedMarketKey(market.marketKey)}
                 >
@@ -222,6 +216,7 @@ export function MarketsPanel({ open, onOpenChange, match }: MarketsPanelProps) {
                               ? "bg-primary text-primary-foreground border-primary hover:bg-primary"
                               : ""
                           }`}
+                          disabled={readOnly}
                           onClick={() => handleOdd(odd)}
                         >
                           <span className="min-w-0 text-left">

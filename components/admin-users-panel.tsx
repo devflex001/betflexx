@@ -106,8 +106,11 @@ function BanModal({ user, open, onClose }: BanModalProps) {
   // Reset on close
   React.useEffect(() => {
     if (!open) {
-      setReason("")
-      setDuration("permanent")
+      const timer = window.setTimeout(() => {
+        setReason("")
+        setDuration("permanent")
+      }, 0)
+      return () => window.clearTimeout(timer)
     }
   }, [open])
 
@@ -240,7 +243,10 @@ function EditModal({ user, open, onClose }: EditModalProps) {
   // Pre-populate when drawer opens
   React.useEffect(() => {
     if (user && open) {
-      setPhone(user.phone ?? "")
+      const timer = window.setTimeout(() => {
+        setPhone(user.phone ?? "")
+      }, 0)
+      return () => window.clearTimeout(timer)
     }
   }, [user, open])
 

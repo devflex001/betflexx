@@ -116,13 +116,7 @@ interface SidebarContentProps {
 }
 
 function SidebarContent({ activeTab, onTabChange, collapsed = false }: SidebarContentProps) {
-  function NavGroup({
-    label,
-    items,
-  }: {
-    label: string
-    items: typeof coreNavItems
-  }) {
+  function renderNavGroup(label: string, items: typeof coreNavItems) {
     return (
       <div className="space-y-1">
         {!collapsed && (
@@ -157,10 +151,10 @@ function SidebarContent({ activeTab, onTabChange, collapsed = false }: SidebarCo
 
   return (
     <div className="flex-1 flex flex-col gap-5 overflow-y-auto px-3 py-2">
-      <NavGroup label="Core" items={coreNavItems} />
-      <NavGroup label="Operations" items={operationsNavItems} />
+      {renderNavGroup("Core", coreNavItems)}
+      {renderNavGroup("Operations", operationsNavItems)}
       <div className="mt-auto">
-        <NavGroup label="Insights" items={insightsNavItems} />
+        {renderNavGroup("Insights", insightsNavItems)}
       </div>
     </div>
   )

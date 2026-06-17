@@ -52,18 +52,22 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
     if (!checkingRole) return
     if (adminStatus === undefined) return // still loading
 
-    setCheckingRole(false)
-    setIsSubmitting(false)
-    onOpenChange(false)
-    setPhone("")
-    setPassword("")
+    const timer = window.setTimeout(() => {
+      setCheckingRole(false)
+      setIsSubmitting(false)
+      onOpenChange(false)
+      setPhone("")
+      setPassword("")
 
-    if (adminStatus.isAdmin) {
-      toast.success("Good to see you again, boss")
-      router.push("/admin")
-    } else {
-      toast.success("Welcome back!")
-    }
+      if (adminStatus.isAdmin) {
+        router.push("/admin")
+        toast.success("Good to see you again, boss")
+      } else {
+        toast.success("Welcome back!")
+      }
+    }, 0)
+
+    return () => window.clearTimeout(timer)
   }, [adminStatus, checkingRole, onOpenChange, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,12 +91,15 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
       await signIn("password", {
         phone: normalizedPhone,
         password,
-        flow: "signIn"
+        flow: "signIn",
       })
       // Trigger role check — the useEffect above handles the routing
       setCheckingRole(true)
     } catch (error) {
-      const errMsg = error instanceof Error ? error.message : "Failed to log in. Please check your credentials."
+      const errMsg =
+        error instanceof Error
+          ? error.message
+          : "Failed to log in. Please check your credentials."
       toast.error(errMsg)
       setIsSubmitting(false)
     }
@@ -107,7 +114,10 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
     >
       <form onSubmit={handleSubmit} className="space-y-4 py-2">
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground block" htmlFor="login-phone">
+          <label
+            className="block text-xs font-semibold text-muted-foreground"
+            htmlFor="login-phone"
+          >
             Phone Number <span className="text-destructive">*</span>
           </label>
           <Input
@@ -115,7 +125,9 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
             type="tel"
             placeholder="e.g. 0712345678"
             value={phone}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setPhone(e.target.value)
+            }
             disabled={isSubmitting}
             required
             className="focus-visible:ring-primary"
@@ -123,15 +135,20 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-muted-foreground block" htmlFor="login-password">
+            <label
+              className="block text-xs font-semibold text-muted-foreground"
+              htmlFor="login-password"
+            >
               Password <span className="text-destructive">*</span>
             </label>
             <Button
               type="button"
               variant="link"
-              className="text-[11px] h-auto p-0 text-muted-foreground hover:text-foreground hover:no-underline"
+              className="h-auto p-0 text-[11px] text-muted-foreground hover:text-foreground hover:no-underline"
               onClick={() => {
-                toast.info("Password reset request simulated. If this number is registered, you will receive an SMS.")
+                toast.info(
+                  "Password reset request simulated. If this number is registered, you will receive an SMS."
+                )
               }}
             >
               Forgot password?
@@ -143,23 +160,33 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               value={password}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setPassword(e.target.value)
+              }
               disabled={isSubmitting}
               required
-              className="focus-visible:ring-primary pr-9"
+              className="pr-9 focus-visible:ring-primary"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               tabIndex={-1}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
         </div>
-        <div className="pt-2 flex flex-col gap-2">
-          <Button type="submit" disabled={isSubmitting || checkingRole} className="w-full bg-primary text-primary-foreground hover:opacity-90 font-semibold">
+        <div className="flex flex-col gap-2 pt-2">
+          <Button
+            type="submit"
+            disabled={isSubmitting || checkingRole}
+            className="w-full bg-primary font-semibold text-primary-foreground hover:opacity-90"
+          >
             {checkingRole ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...
@@ -212,7 +239,7 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
       await signIn("password", {
         phone: normalizedPhone,
         password,
-        flow: "signUp"
+        flow: "signUp",
       })
       toast.success("Account created successfully!")
       onOpenChange(false)
@@ -220,7 +247,10 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
       setPassword("")
       setConfirmPassword("")
     } catch (error) {
-      const errMsg = error instanceof Error ? error.message : "Failed to create account. Phone number might be already registered."
+      const errMsg =
+        error instanceof Error
+          ? error.message
+          : "Failed to create account. Phone number might be already registered."
       toast.error(errMsg)
     } finally {
       setIsSubmitting(false)
@@ -236,7 +266,10 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
     >
       <form onSubmit={handleSubmit} className="space-y-4 py-2">
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground block" htmlFor="reg-phone">
+          <label
+            className="block text-xs font-semibold text-muted-foreground"
+            htmlFor="reg-phone"
+          >
             M-Pesa Phone Number <span className="text-destructive">*</span>
           </label>
           <Input
@@ -244,15 +277,20 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
             type="tel"
             placeholder="e.g. 0712345678"
             value={phone}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setPhone(e.target.value)
+            }
             disabled={isSubmitting}
             required
             className="focus-visible:ring-primary"
           />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-muted-foreground block" htmlFor="reg-password">
+            <label
+              className="block text-xs font-semibold text-muted-foreground"
+              htmlFor="reg-password"
+            >
               Password <span className="text-destructive">*</span>
             </label>
             <div className="relative">
@@ -261,23 +299,32 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 value={password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setPassword(e.target.value)
+                }
                 disabled={isSubmitting}
                 required
-                className="focus-visible:ring-primary pr-9"
+                className="pr-9 focus-visible:ring-primary"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 tabIndex={-1}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-muted-foreground block" htmlFor="reg-confirm-password">
+            <label
+              className="block text-xs font-semibold text-muted-foreground"
+              htmlFor="reg-confirm-password"
+            >
               Confirm Password <span className="text-destructive">*</span>
             </label>
             <div className="relative">
@@ -286,18 +333,24 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="••••••••"
                 value={confirmPassword}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setConfirmPassword(e.target.value)
+                }
                 disabled={isSubmitting}
                 required
-                className="focus-visible:ring-primary pr-9"
+                className="pr-9 focus-visible:ring-primary"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 tabIndex={-1}
               >
-                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
             </div>
           </div>
@@ -307,15 +360,22 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
             id="reg-terms"
             type="checkbox"
             required
-            className="mt-0.5 rounded border-muted bg-muted/40 focus:ring-primary size-3.5 accent-primary cursor-pointer"
+            className="mt-0.5 size-3.5 cursor-pointer rounded border-muted bg-muted/40 accent-primary focus:ring-primary"
           />
-          <label htmlFor="reg-terms" className="text-[11px] text-muted-foreground leading-normal select-none cursor-pointer">
+          <label
+            htmlFor="reg-terms"
+            className="cursor-pointer text-[11px] leading-normal text-muted-foreground select-none"
+          >
             I agree to the{" "}
             <Button
               type="button"
               variant="link"
-              className="text-[11px] p-0 h-auto text-foreground font-semibold inline hover:underline"
-              onClick={() => toast.info("Terms of Service: Play responsibly. Mock platform is for testing purposes only.")}
+              className="inline h-auto p-0 text-[11px] font-semibold text-foreground hover:underline"
+              onClick={() =>
+                toast.info(
+                  "Terms of Service: Play responsibly. Mock platform is for testing purposes only."
+                )
+              }
             >
               Terms of Service
             </Button>{" "}
@@ -323,19 +383,28 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
             <Button
               type="button"
               variant="link"
-              className="text-[11px] p-0 h-auto text-foreground font-semibold inline hover:underline"
-              onClick={() => toast.info("Privacy Policy: Your data is secure and will never be shared.")}
+              className="inline h-auto p-0 text-[11px] font-semibold text-foreground hover:underline"
+              onClick={() =>
+                toast.info(
+                  "Privacy Policy: Your data is secure and will never be shared."
+                )
+              }
             >
               Privacy Policy
             </Button>
             .
           </label>
         </div>
-        <div className="pt-2 flex flex-col gap-2">
-          <Button type="submit" disabled={isSubmitting} className="w-full bg-primary text-primary-foreground hover:opacity-90 font-semibold">
+        <div className="flex flex-col gap-2 pt-2">
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-primary font-semibold text-primary-foreground hover:opacity-90"
+          >
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating
+                Account...
               </>
             ) : (
               "Create Account"
@@ -389,7 +458,10 @@ export function DepositModal({ open, onOpenChange }: ModalProps) {
     >
       <form onSubmit={handleSubmit} className="space-y-4 py-2">
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground block" htmlFor="dep-amount">
+          <label
+            className="block text-xs font-semibold text-muted-foreground"
+            htmlFor="dep-amount"
+          >
             Amount (KES) <span className="text-destructive">*</span>
           </label>
           <Input
@@ -398,14 +470,19 @@ export function DepositModal({ open, onOpenChange }: ModalProps) {
             min="10"
             placeholder="e.g. 500"
             value={amount}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setAmount(e.target.value)
+            }
             disabled={isSubmitting}
             required
             className="focus-visible:ring-primary"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground block" htmlFor="dep-phone">
+          <label
+            className="block text-xs font-semibold text-muted-foreground"
+            htmlFor="dep-phone"
+          >
             M-Pesa Phone Number <span className="text-destructive">*</span>
           </label>
           <Input
@@ -413,14 +490,20 @@ export function DepositModal({ open, onOpenChange }: ModalProps) {
             type="tel"
             placeholder="e.g. 0712345678"
             value={phone}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setPhone(e.target.value)
+            }
             disabled={isSubmitting}
             required
             className="focus-visible:ring-primary"
           />
         </div>
         <div className="pt-4">
-          <Button type="submit" disabled={isSubmitting} className="w-full bg-primary text-primary-foreground hover:opacity-90 font-semibold">
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-primary font-semibold text-primary-foreground hover:opacity-90"
+          >
             {isSubmitting ? "Processing..." : "Deposit Instantly"}
           </Button>
         </div>
@@ -450,7 +533,9 @@ export function WithdrawModal({ open, onOpenChange }: ModalProps) {
     const success = await withdraw(parsedAmount)
     setIsSubmitting(false)
     if (success) {
-      toast.success(`Successfully withdrew KES ${parsedAmount.toLocaleString()} to your registered number!`)
+      toast.success(
+        `Successfully withdrew KES ${parsedAmount.toLocaleString()} to your registered number!`
+      )
       onOpenChange(false)
       setAmount("")
     } else {
@@ -467,7 +552,10 @@ export function WithdrawModal({ open, onOpenChange }: ModalProps) {
     >
       <form onSubmit={handleSubmit} className="space-y-4 py-2">
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground block" htmlFor="with-amount">
+          <label
+            className="block text-xs font-semibold text-muted-foreground"
+            htmlFor="with-amount"
+          >
             Amount (KES) <span className="text-destructive">*</span>
           </label>
           <Input
@@ -476,14 +564,20 @@ export function WithdrawModal({ open, onOpenChange }: ModalProps) {
             min="50"
             placeholder="e.g. 250"
             value={amount}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setAmount(e.target.value)
+            }
             disabled={isSubmitting}
             required
             className="focus-visible:ring-primary"
           />
         </div>
         <div className="pt-4">
-          <Button type="submit" disabled={isSubmitting} className="w-full bg-primary text-primary-foreground hover:opacity-90 font-semibold">
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-primary font-semibold text-primary-foreground hover:opacity-90"
+          >
             {isSubmitting ? "Processing..." : "Withdraw Now"}
           </Button>
         </div>
@@ -498,7 +592,10 @@ interface ShareModalProps extends ModalProps {
 
 export function ShareModal({ open, onOpenChange, matchName }: ShareModalProps) {
   const [copied, setCopied] = React.useState(false)
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "https://betflow.com/user"
+  const shareUrl =
+    typeof window !== "undefined"
+      ? window.location.href
+      : "https://betflow.com/user"
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl + "?ref=share_match")
@@ -519,10 +616,14 @@ export function ShareModal({ open, onOpenChange, matchName }: ShareModalProps) {
           <Input
             value={`${shareUrl}?ref=share_match`}
             readOnly
-            className="flex-1 focus-visible:ring-primary text-xs"
+            className="flex-1 text-xs focus-visible:ring-primary"
           />
           <Button onClick={handleCopy} size="icon" variant="outline">
-            {copied ? <CheckIcon className="h-4 w-4 text-green-500" /> : <CopyIcon className="h-4 w-4" />}
+            {copied ? (
+              <CheckIcon className="h-4 w-4 text-green-500" />
+            ) : (
+              <CopyIcon className="h-4 w-4" />
+            )}
           </Button>
         </div>
         <div className="pt-4">

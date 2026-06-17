@@ -25,20 +25,18 @@ export function AdminScraperPanel() {
   const updateSettings = useMutation(api.scraper.updateSettings)
   const triggerNow = useMutation(api.scraper.triggerNow)
 
-  const [enabled, setEnabled] = React.useState(true)
-  const [cadenceMinutes, setCadenceMinutes] = React.useState("5")
-  const [dateWindowDays, setDateWindowDays] = React.useState("2")
+  const [enabledOverride, setEnabledOverride] = React.useState<boolean | null>(null)
+  const [cadenceMinutesOverride, setCadenceMinutesOverride] = React.useState<string | null>(null)
+  const [dateWindowDaysOverride, setDateWindowDaysOverride] = React.useState<string | null>(null)
   const [saving, setSaving] = React.useState(false)
   const [running, setRunning] = React.useState(false)
 
-  React.useEffect(() => {
-    if (!overview?.settings) return
-    setEnabled(overview.settings.enabled)
-    setCadenceMinutes(String(overview.settings.cadenceMinutes))
-    setDateWindowDays(String(overview.settings.dateWindowDays))
-  }, [overview?.settings])
-
-  const latestRun = overview?.runs[0]
+  const settings = overview?.settings
+  const enabled = enabledOverride ?? settings?.enabled ?? true
+  const cadenceMinutes =
+    cadenceMinutesOverride ?? String(settings?.cadenceMinutes ?? 5)
+  const dateWindowDays =
+    dateWindowDaysOverride ?? String(settings?.dateWindowDays ?? 2)
 
   const handleSave = async () => {
     setSaving(true)
@@ -48,6 +46,9 @@ export function AdminScraperPanel() {
         cadenceMinutes: Number(cadenceMinutes),
         dateWindowDays: Number(dateWindowDays),
       })
+      setEnabledOverride(null)
+      setCadenceMinutesOverride(null)
+      setDateWindowDaysOverride(null)
       toast.success("Scraper settings saved")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save settings")
@@ -108,7 +109,7 @@ export function AdminScraperPanel() {
                 type="button"
                 variant={enabled ? "default" : "outline"}
                 className="w-full h-9 text-xs font-semibold"
-                onClick={() => setEnabled((value) => !value)}
+                onClick={() => setEnabledOverride(!enabled)}
               >
                 {enabled ? "On" : "Off"}
               </Button>
@@ -124,7 +125,7 @@ export function AdminScraperPanel() {
                 min="1"
                 max="120"
                 value={cadenceMinutes}
-                onChange={(event) => setCadenceMinutes(event.target.value)}
+                onChange={(event) => setCadenceMinutesOverride(event.target.value)}
                 className="h-9 text-xs focus-visible:ring-primary"
               />
             </div>
@@ -139,7 +140,7 @@ export function AdminScraperPanel() {
                 min="1"
                 max="14"
                 value={dateWindowDays}
-                onChange={(event) => setDateWindowDays(event.target.value)}
+                onChange={(event) => setDateWindowDaysOverride(event.target.value)}
                 className="h-9 text-xs focus-visible:ring-primary"
               />
             </div>

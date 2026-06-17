@@ -1,7 +1,6 @@
 import type {
   NormalizedMarket,
   NormalizedMatch,
-  NormalizedMatchDetail,
   NormalizedOdd,
   ScraperAdapter,
 } from "./types";
