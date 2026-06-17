@@ -185,13 +185,13 @@ export function MarketsBrowser({
             {selectedMarket.marketTypes.length > 0
               ? selectedMarket.marketTypes.join(", ")
               : selectedMarket.marketType || "Other"}
-            {" "}· {selectedMarket.oddsCount} odds
+            {" "}- {selectedMarket.oddsCount} odds
           </p>
         </div>
       )}
 
       {selectedMarket && !odds && (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,180px),1fr))] gap-2">
           <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
@@ -200,7 +200,7 @@ export function MarketsBrowser({
       )}
 
       {odds && odds.length > 0 && (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,180px),1fr))] gap-2">
           {[...odds].sort(sortOdds).map((odd) => {
             const selected = betslip.some((item) => item.id === odd.sourceOddId)
             const label = odd.outcomeAlias || odd.outcomeName || odd.outcomeId || "Selection"
@@ -313,7 +313,7 @@ export function MarketsPanel({ open, onOpenChange, match, readOnly = false }: Ma
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex h-dvh w-full flex-col overflow-hidden p-0 sm:max-w-4xl lg:max-w-5xl"
+        className="!w-[min(92vw,1120px)] !max-w-none flex h-dvh flex-col overflow-hidden p-0"
       >
         <SheetHeader className="shrink-0 border-b border-border px-4 py-3 text-left">
           <SheetTitle className="truncate text-sm font-bold">{matchName}</SheetTitle>

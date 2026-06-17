@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { useBetStore } from "@/hooks/use-bet-store"
 import { Home, PlayCircle, FileText, User, Receipt, Wallet, ArrowUpRight, ArrowDownLeft, LogOut, History } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -10,6 +11,7 @@ import { LoginModal, RegisterModal, DepositModal, WithdrawModal } from "./modals
 import { Button } from "@/components/ui/button"
 
 export function BottomNav({ liveCount }: { liveCount: number }) {
+  const router = useRouter()
   const { activeTab, setActiveTab, betslip, user, walletBalance, logout } = useBetStore()
   
   const [betslipOpen, setBetslipOpen] = React.useState(false)
@@ -28,6 +30,12 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
     } else {
       setLoginOpen(true)
     }
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    setProfileOpen(false)
+    router.replace("/")
   }
 
   return (
@@ -187,10 +195,7 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
               {/* Log Out button */}
               <Button
                 variant="destructive"
-                onClick={() => {
-                  logout()
-                  setProfileOpen(false)
-                }}
+                onClick={handleLogout}
                 className="w-full h-10 text-xs font-semibold mt-4"
               >
                 <LogOut className="size-4 mr-2" /> Log Out

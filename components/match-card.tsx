@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { useBetStore } from "@/hooks/use-bet-store"
+import { useMediaQuery } from "@/hooks/use-media-query"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Share2, ListPlus, Radio } from "lucide-react"
@@ -30,6 +32,8 @@ function scoreParts(result: string) {
 }
 
 export function MatchCard({ match }: MatchCardProps) {
+  const router = useRouter()
+  const isMobile = useMediaQuery("(max-width: 767px)")
   const { betslip, addToBetslip } = useBetStore()
   const [shareOpen, setShareOpen] = React.useState(false)
   const [marketsOpen, setMarketsOpen] = React.useState(false)
@@ -58,6 +62,15 @@ export function MatchCard({ match }: MatchCardProps) {
       outcomeName: odd.outcomeName,
       specifiers: odd.specifiers,
     })
+  }
+
+  const openMarkets = () => {
+    if (isMobile) {
+      router.push(`/markets/${match.sourceMatchId}`)
+      return
+    }
+
+    setMarketsOpen(true)
   }
 
   return (
@@ -110,7 +123,7 @@ export function MatchCard({ match }: MatchCardProps) {
                     variant="ghost"
                     size="icon"
                     className="size-8 text-muted-foreground hover:text-foreground shrink-0 border border-transparent hover:border-border"
-                    onClick={() => setMarketsOpen(true)}
+                    onClick={openMarkets}
                     aria-label="Open markets"
                   >
                     <ListPlus className="size-3.5" />
@@ -166,7 +179,7 @@ export function MatchCard({ match }: MatchCardProps) {
               <Button
                 variant="outline"
                 className="col-span-3 h-11 text-xs font-semibold"
-                onClick={() => setMarketsOpen(true)}
+                onClick={openMarkets}
               >
                 View available markets
               </Button>

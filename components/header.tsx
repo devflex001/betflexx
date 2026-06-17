@@ -62,6 +62,11 @@ export function Header() {
     setShowMobileSearch(false)
   }
 
+  const handleLogout = async () => {
+    await logout()
+    router.replace("/")
+  }
+
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur-md">
@@ -194,7 +199,7 @@ export function Header() {
                       <span>My Placed Bets</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log Out</span>
                     </DropdownMenuItem>

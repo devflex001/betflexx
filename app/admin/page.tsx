@@ -23,6 +23,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -63,6 +65,8 @@ import {
   Menu,
   Sparkles,
   X,
+  LogOut,
+  User,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -171,7 +175,7 @@ export default function AdminDashboard() {
     isAuthenticated ? {} : "skip"
   )
   const { theme, setTheme } = useTheme()
-  const { transactions, adminStats, updateAdminTransactionStatus } = useBetStore()
+  const { user, transactions, adminStats, updateAdminTransactionStatus, logout } = useBetStore()
 
   const [mounted, setMounted] = React.useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
@@ -244,6 +248,11 @@ export default function AdminDashboard() {
         error: "Export failed.",
       }
     )
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    router.replace("/")
   }
 
   // Handle tab change and close mobile sidebar
@@ -397,18 +406,52 @@ export default function AdminDashboard() {
             </Button>
 
             {/* User Avatar */}
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-sm shrink-0">
-                B
-              </div>
-              {/* Name — hidden on small screens */}
-              <div className="hidden sm:flex flex-col text-left">
-                <span className="text-xs font-semibold leading-tight">bethwelmax</span>
-                <span className="text-[9px] font-medium leading-none text-muted-foreground tracking-wider uppercase">
-                  Admin
-                </span>
-              </div>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="h-9 gap-2 rounded-full border border-border px-2 hover:bg-muted/50"
+                  aria-label="Admin account menu"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    {(user?.username?.[0] ?? "A").toUpperCase()}
+                  </span>
+                  <span className="hidden min-w-0 flex-col text-left sm:flex">
+                    <span className="max-w-28 truncate text-xs font-semibold leading-tight">
+                      {user?.username ?? "Admin"}
+                    </span>
+                    <span className="text-[9px] font-medium uppercase leading-none tracking-wider text-muted-foreground">
+                      Admin
+                    </span>
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="truncate text-sm font-semibold leading-none">
+                      {user?.username ?? "Admin"}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      Administrator
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push("/")} className="text-xs">
+                  <User className="mr-2 size-4" />
+                  User site
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-xs text-destructive focus:text-destructive"
+                >
+                  <LogOut className="mr-2 size-4" />
+                  Log Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
