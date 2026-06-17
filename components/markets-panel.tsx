@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FootballLoader } from "@/components/football-loader"
 
 type SportsOdd = {
   sourceOddId: string
@@ -297,14 +298,17 @@ export function MarketsBrowser({
 
   const pageContent = (
     <div className="space-y-3 p-3 sm:p-4 pb-24">
+      {(!markets || !allOdds) && (
+        <FootballLoader size="large" label="Loading markets…" className="min-h-[50vh]" />
+      )}
 
-      {markets && filteredMarkets.length === 0 && (
+      {markets && allOdds && filteredMarkets.length === 0 && (
         <div className="rounded-lg border border-dashed border-border py-10 text-center text-xs text-muted-foreground">
           No markets match your search.
         </div>
       )}
 
-      {filteredMarkets.map((market) => {
+      {markets && allOdds && filteredMarkets.map((market) => {
         const marketOdds = groupedOdds.get(market.marketKey) ?? []
         if (!marketOdds.length) return null
 

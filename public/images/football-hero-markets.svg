@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" fill="none">
+  <rect width="1200" height="480" fill="#0f1729"/>
+  <ellipse cx="600" cy="520" rx="520" ry="80" fill="#1a2744" opacity="0.9"/>
+  <rect x="0" y="320" width="1200" height="160" fill="#1e3a2f"/>
+  <rect x="0" y="318" width="1200" height="6" fill="#2d5a45"/>
+  <circle cx="600" cy="350" r="90" stroke="#3d7a5a" stroke-width="3" fill="none" opacity="0.6"/>
+  <line x1="600" y1="320" x2="600" y2="480" stroke="#3d7a5a" stroke-width="2" opacity="0.5"/>
+  <rect x="80" y="320" width="120" height="160" stroke="#3d7a5a" stroke-width="2" fill="none" opacity="0.4"/>
+  <rect x="1000" y="320" width="120" height="160" stroke="#3d7a5a" stroke-width="2" fill="none" opacity="0.4"/>
+  <g transform="translate(600 210)">
+    <circle r="72" fill="#f5f5f0"/>
+    <path d="M0-72 L22-22 L72-22 L36 8 L54 58 L0 28 L-54 58 L-36 8 L-72-22 L-22-22 Z" fill="#1a1a1a"/>
+    <path d="M0-72 L22-22 L0 28 Z" fill="#2a2a2a"/>
+    <path d="M22-22 L72-22 L54 58 L0 28 Z" fill="#222"/>
+    <path d="M-22-22 L-72-22 L-54 58 L0 28 Z" fill="#252525"/>
+    <path d="M-22-22 L0-72 L22-22 L0 28 Z" fill="#1f1f1f"/>
+    <ellipse cx="-18" cy="-28" rx="22" ry="14" fill="white" opacity="0.18"/>
+  </g>
+  <g opacity="0.15">
+    <circle cx="180" cy="120" r="3" fill="#f59e0b"/>
+    <circle cx="420" cy="80" r="2" fill="#f59e0b"/>
+    <circle cx="780" cy="95" r="2.5" fill="#f59e0b"/>
+    <circle cx="1020" cy="130" r="3" fill="#f59e0b"/>
+  </g>
+  <text x="48" y="56" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="28" font-weight="800" letter-spacing="0.08em">FULL MARKETS</text>
+  <text x="48" y="92" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="16" font-weight="500">Every outcome. Every fixture.</text>
+</svg>

@@ -6,8 +6,8 @@ import { useQuery } from "convex/react"
 import { ArrowLeft, Share2 } from "lucide-react"
 import { api } from "@/convex/_generated/api"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 import { BottomNav } from "@/components/bottom-nav"
+import { FootballLoader } from "@/components/football-loader"
 import {
   MarketsBrowser,
   type SportsMatchWithOdds,
@@ -116,11 +116,11 @@ export default function MatchMarketsPage() {
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       <main className="flex-1 min-w-0 flex flex-col">
         {!match && match !== null && (
-          <div className="space-y-3 p-4 flex-1">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-28 w-full" />
-            <Skeleton className="h-56 w-full" />
-          </div>
+          <FootballLoader
+            size="large"
+            label="Loading match markets…"
+            className="flex-1 min-h-[60vh]"
+          />
         )}
 
         {match === null && (

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { CopyIcon, CheckIcon, Loader2, Eye, EyeOff } from "lucide-react"
 import { useAuthActions } from "@convex-dev/auth/react"
-import { useConvexAuth, useQuery } from "convex/react"
+import { useConvexAuth, useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 
 interface ModalProps {
@@ -503,9 +503,10 @@ export function DepositModal({ open, onOpenChange }: ModalProps) {
 }
 
 export function WithdrawModal({ open, onOpenChange }: ModalProps) {
-  const { walletBalance } = useBetStore()
+  const { walletBalance, user } = useBetStore()
   const [amount, setAmount] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const createTx = useMutation(api.bets.createTransaction)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -519,13 +520,24 @@ export function WithdrawModal({ open, onOpenChange }: ModalProps) {
       return
     }
 
-    setIsSubmitting(true)
-    setIsSubmitting(false)
-    toast.success(
-      `Successfully withdrew KES ${parsedAmount.toLocaleString()} to your registered number!`
-    )
-    onOpenChange(false)
-    setAmount("")
+    try {
+      setIsSubmitting(true)
+      await createTx({
+        type: "withdrawal",
+        amount: parsedAmount,
+        phone: user?.username || "Self",
+        status: "success"
+      })
+      toast.success(
+        `Successfully withdrew KES ${parsedAmount.toLocaleString()} to your registered number!`
+      )
+      onOpenChange(false)
+      setAmount("")
+    } catch (err) {
+      toast.error("Failed to process withdrawal. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (

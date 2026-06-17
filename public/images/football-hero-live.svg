@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" fill="none">
+  <rect width="1200" height="480" fill="#0c1220"/>
+  <rect x="0" y="0" width="1200" height="480" fill="#152035"/>
+  <g opacity="0.25">
+    <rect x="0" y="60" width="1200" height="1" fill="#334155"/>
+    <rect x="0" y="120" width="1200" height="1" fill="#334155"/>
+    <rect x="0" y="180" width="1200" height="1" fill="#334155"/>
+    <rect x="0" y="240" width="1200" height="1" fill="#334155"/>
+  </g>
+  <ellipse cx="900" cy="140" rx="280" ry="180" fill="#f59e0b" opacity="0.08"/>
+  <rect x="0" y="300" width="1200" height="180" fill="#163024"/>
+  <rect x="0" y="298" width="1200" height="5" fill="#2563eb" opacity="0.5"/>
+  <g transform="translate(320 180)">
+    <circle r="64" fill="#ef4444" opacity="0.15"/>
+    <circle r="8" fill="#ef4444"/>
+    <text x="-22" y="5" fill="#ef4444" font-family="system-ui,sans-serif" font-size="14" font-weight="800">LIVE</text>
+  </g>
+  <g transform="translate(780 200)">
+    <circle r="80" fill="#f5f5f0"/>
+    <path d="M0-80 L24-24 L80-24 L40 10 L60 64 L0 32 L-60 64 L-40 10 L-80-24 L-24-24 Z" fill="#111"/>
+    <ellipse cx="-20" cy="-30" rx="24" ry="16" fill="white" opacity="0.2"/>
+  </g>
+  <text x="48" y="56" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="28" font-weight="800" letter-spacing="0.08em">BETFLOW MARKETS</text>
+  <text x="48" y="92" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="16" font-weight="500">Live fixtures with full market depth</text>
+</svg>

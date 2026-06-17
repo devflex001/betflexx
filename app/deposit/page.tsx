@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { useQuery } from "convex/react"
+import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Loader2, ArrowLeft, ArrowUpRight, Wallet, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
@@ -23,9 +23,12 @@ function isValidKenyanPhone(phone: string): boolean {
 }
 
 export default function DepositPage() {
-  const { walletBalance } = useBetStore()
+  const { walletBalance, transactions } = useBetStore()
   const convexUser = useQuery(api.users.currentUser)
   
+  const createTx = useMutation(api.bets.createTransaction)
+  const updateTx = useMutation(api.bets.updateTransactionStatus)
+
   const [amount, setAmount] = React.useState("")
   const [phone, setPhone] = React.useState("")
   const [provider, setProvider] = React.useState<"m-pesa" | "sasapay">("m-pesa")
@@ -51,27 +54,17 @@ export default function DepositPage() {
   React.useEffect(() => {
     if (depositState !== "pending_stk" || !pendingTxId) return
 
-    const interval = setInterval(() => {
-      const stored = localStorage.getItem("bet_transactions")
-      if (stored) {
-        const list = JSON.parse(stored)
-        const currentTx = list.find((t: any) => t.id === pendingTxId)
-        if (currentTx) {
-          if (currentTx.status === "success") {
-            setDepositState("success")
-            clearInterval(interval)
-            toast.success(`KES ${parseFloat(amount).toLocaleString()} successfully deposited!`)
-          } else if (currentTx.status === "failed") {
-            setDepositState("failed")
-            clearInterval(interval)
-            toast.error("Deposit request failed or was cancelled.")
-          }
-        }
+    const currentTx = transactions.find((t: any) => t.id === pendingTxId)
+    if (currentTx) {
+      if (currentTx.status === "success") {
+        setDepositState("success")
+        toast.success(`KES ${parseFloat(amount).toLocaleString()} successfully deposited!`)
+      } else if (currentTx.status === "failed") {
+        setDepositState("failed")
+        toast.error("Deposit request failed or was cancelled.")
       }
-    }, 1500)
-
-    return () => clearInterval(interval)
-  }, [depositState, pendingTxId, amount])
+    }
+  }, [depositState, pendingTxId, amount, transactions])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -84,12 +77,42 @@ export default function DepositPage() {
       toast.error("Please enter a valid phone number (e.g. 0712345678)")
       return
     }
+    if (!convexUser) {
+      toast.error("Please log in to deposit funds")
+      return
+    }
 
     setIsSubmitting(true)
     setDepositState("sending")
     
-    setIsSubmitting(false)
-    setDepositState("pending_stk")
+    try {
+      const res = await createTx({
+        type: "deposit",
+        amount: parsedAmount,
+        phone: phone.trim(),
+        status: "pending"
+      })
+
+      setPendingTxId(res.txId)
+      setDepositState("pending_stk")
+      setIsSubmitting(false)
+
+      // Simulate STK push confirmation after 5 seconds
+      setTimeout(async () => {
+        try {
+          await updateTx({
+            txId: res.txId,
+            status: "success"
+          })
+        } catch (err) {
+          console.error("Failed to confirm transaction status", err)
+        }
+      }, 5000)
+    } catch (err) {
+      toast.error("Failed to initiate deposit")
+      setIsSubmitting(false)
+      setDepositState("idle")
+    }
   }
 
   const resetDeposit = () => {

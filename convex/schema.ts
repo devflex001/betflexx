@@ -174,6 +174,51 @@ const schema = defineSchema({
       "priority",
     ])
     .index("by_sourceMatchId_and_status", ["sourceMatchId", "status"]),
+
+  wallets: defineTable({
+    userId: v.id("users"),
+    balance: v.number(),
+  }).index("by_userId", ["userId"]),
+
+  bets: defineTable({
+    userId: v.id("users"),
+    selections: v.array(
+      v.object({
+        id: v.string(),
+        matchId: v.string(),
+        matchName: v.string(),
+        team1: v.string(),
+        team2: v.string(),
+        market: v.string(),
+        selection: v.string(),
+        selectionName: v.string(),
+        odds: v.number(),
+        sourceOddId: v.optional(v.string()),
+        marketKey: v.optional(v.string()),
+        marketName: v.optional(v.string()),
+        outcomeName: v.optional(v.string()),
+        specifiers: v.optional(v.string()),
+      })
+    ),
+    totalOdds: v.number(),
+    stake: v.number(),
+    potentialReturn: v.number(),
+    status: v.string(), // "active" | "won" | "lost"
+    placedAt: v.number(),
+  }).index("by_userId", ["userId"]),
+
+  transactions: defineTable({
+    userId: v.id("users"),
+    txId: v.string(),
+    type: v.string(), // "deposit" | "withdrawal"
+    amount: v.number(),
+    phone: v.optional(v.string()),
+    status: v.string(), // "success" | "pending" | "failed"
+    errorDetail: v.optional(v.string()),
+    time: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_txId", ["txId"]),
 });
 
 export default schema;

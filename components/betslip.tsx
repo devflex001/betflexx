@@ -5,7 +5,7 @@ import { useBetStore } from "@/hooks/use-bet-store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Trash2, X, Wallet, AlertCircle, Sparkles } from "lucide-react"
+import { Trash2, X, Wallet, AlertCircle, Sparkles, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -25,6 +25,7 @@ export function Betslip({ onClose }: BetslipProps) {
 
   const [stake, setStake] = React.useState("100")
   const [betType, setBetType] = React.useState<"multi" | "single">("multi")
+  const [isPlacing, setIsPlacing] = React.useState(false)
 
   // Fast preset stake buttons
   const presets = [50, 100, 200, 500, 1000]
@@ -46,7 +47,7 @@ export function Betslip({ onClose }: BetslipProps) {
     }
   }, [betslip, totalOdds, parsedStake, betType])
 
-  const handlePlaceBet = () => {
+  const handlePlaceBet = async () => {
     if (!user) {
       toast.error("Please login to place bets")
       return
@@ -69,24 +70,31 @@ export function Betslip({ onClose }: BetslipProps) {
       return
     }
 
-    // Call store methods
-    if (betType === "multi") {
-      const success = placeBet(parsedStake)
-      if (success) {
-        toast.success(`Bet placed successfully! Accumulator return: KES ${potentialReturn.toLocaleString()}`)
-        if (onClose) onClose()
+    try {
+      setIsPlacing(true)
+      // Call store methods
+      if (betType === "multi") {
+        const success = await placeBet(parsedStake)
+        if (success) {
+          toast.success(`Bet placed successfully! Accumulator return: KES ${potentialReturn.toLocaleString()}`)
+          if (onClose) onClose()
+        } else {
+          toast.error("Failed to place bet. Try again.")
+        }
       } else {
-        toast.error("Failed to place bet. Try again.")
+        // Place as a bundle fallback
+        const success = await placeBet(actualCost)
+        if (success) {
+          toast.success(`Single bets placed successfully! Est. return: KES ${potentialReturn.toLocaleString()}`)
+          if (onClose) onClose()
+        } else {
+          toast.error("Failed to place bets.")
+        }
       }
-    } else {
-      // Place as a bundle fallback
-      const success = placeBet(actualCost)
-      if (success) {
-        toast.success(`Single bets placed successfully! Est. return: KES ${potentialReturn.toLocaleString()}`)
-        if (onClose) onClose()
-      } else {
-        toast.error("Failed to place bets.")
-      }
+    } catch (e) {
+      toast.error("Failed to place bet. Please try again.")
+    } finally {
+      setIsPlacing(false)
     }
   }
 
@@ -257,12 +265,18 @@ export function Betslip({ onClose }: BetslipProps) {
             onClick={handlePlaceBet}
             className="w-full bg-primary text-primary-foreground font-bold hover:opacity-95 text-xs h-10"
             disabled={
-              user ? (betType === "multi" ? parsedStake : parsedStake * betslip.length) > walletBalance : false
+              isPlacing || (user ? (betType === "multi" ? parsedStake : parsedStake * betslip.length) > walletBalance : false)
             }
           >
-            {!user
-              ? "Log In to Place Bet"
-              : `Place Bet (KES ${(betType === "multi" ? parsedStake : parsedStake * betslip.length).toLocaleString()})`}
+            {isPlacing ? (
+              <span className="flex items-center gap-1.5 justify-center">
+                <Loader2 className="size-3.5 animate-spin" /> Placing Bet...
+              </span>
+            ) : !user ? (
+              "Log In to Place Bet"
+            ) : (
+              `Place Bet (KES ${(betType === "multi" ? parsedStake : parsedStake * betslip.length).toLocaleString()})`
+            )}
           </Button>
         </div>
       </div>

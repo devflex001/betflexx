@@ -11,6 +11,7 @@
 import type * as admin from "../admin.js";
 import type * as adminUsers from "../adminUsers.js";
 import type * as auth from "../auth.js";
+import type * as bets from "../bets.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
 import type * as scraper from "../scraper.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   adminUsers: typeof adminUsers;
   auth: typeof auth;
+  bets: typeof bets;
   crons: typeof crons;
   http: typeof http;
   scraper: typeof scraper;
