@@ -149,7 +149,13 @@ const SEED_TRANSACTIONS: Transaction[] = [
 ]
 
 export function BetStoreProvider({ children }: { children: React.ReactNode }) {
-  const [betslip, setBetslip] = React.useState<Selection[]>([])
+  const [betslip, setBetslipState] = React.useState<Selection[]>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("bet_betslip")
+      if (stored) return JSON.parse(stored)
+    }
+    return []
+  })
   const [walletBalance, setWalletBalance] = React.useState<number>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("bet_wallet_balance")
@@ -196,6 +202,28 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
     }
   })
 
+  React.useEffect(() => {
+    const handleStorageChange = () => {
+      const balance = localStorage.getItem("bet_wallet_balance")
+      if (balance) setWalletBalance(parseFloat(balance))
+
+      const bets = localStorage.getItem("bet_my_bets")
+      if (bets) setMyBets(JSON.parse(bets))
+
+      const txs = localStorage.getItem("bet_transactions")
+      if (txs) setTransactions(JSON.parse(txs))
+
+      const slip = localStorage.getItem("bet_betslip")
+      if (slip) setBetslipState(JSON.parse(slip))
+
+      const stats = localStorage.getItem("bet_admin_stats")
+      if (stats) setAdminStats(JSON.parse(stats))
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    return () => window.removeEventListener("storage", handleStorageChange)
+  }, [])
+
   // Sync state helpers
   const saveBalance = (newBalance: number) => {
     setWalletBalance(newBalance)
@@ -230,7 +258,9 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     await signOut()
-    setBetslip([])
+    setBetslipState([])
+    localStorage.setItem("bet_betslip", JSON.stringify([]))
+    window.dispatchEvent(new Event("storage"))
   }
 
   const setActiveTab = (tab: string) => {
@@ -242,30 +272,38 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   }
 
   const addToBetslip = (selection: Selection) => {
-    setBetslip((prev) => {
-      // 1. If identical selection exists, toggle/remove it
+    setBetslipState((prev) => {
+      let next: Selection[]
       const exists = prev.find((item) => item.id === selection.id)
       if (exists) {
-        return prev.filter((item) => item.id !== selection.id)
+        next = prev.filter((item) => item.id !== selection.id)
+      } else {
+        const matchExists = prev.find((item) => item.matchId === selection.matchId)
+        if (matchExists) {
+          next = prev.map((item) => (item.matchId === selection.matchId ? selection : item))
+        } else {
+          next = [...prev, selection]
+        }
       }
-
-      // 2. If same match selection exists with a different outcome, replace it
-      const matchExists = prev.find((item) => item.matchId === selection.matchId)
-      if (matchExists) {
-        return prev.map((item) => (item.matchId === selection.matchId ? selection : item))
-      }
-
-      // 3. Otherwise add new selection
-      return [...prev, selection]
+      localStorage.setItem("bet_betslip", JSON.stringify(next))
+      window.dispatchEvent(new Event("storage"))
+      return next
     })
   }
 
   const removeFromBetslip = (id: string) => {
-    setBetslip((prev) => prev.filter((item) => item.id !== id))
+    setBetslipState((prev) => {
+      const next = prev.filter((item) => item.id !== id)
+      localStorage.setItem("bet_betslip", JSON.stringify(next))
+      window.dispatchEvent(new Event("storage"))
+      return next
+    })
   }
 
   const clearBetslip = () => {
-    setBetslip([])
+    setBetslipState([])
+    localStorage.setItem("bet_betslip", JSON.stringify([]))
+    window.dispatchEvent(new Event("storage"))
   }
 
   const placeBet = (stake: number): boolean => {
@@ -290,7 +328,9 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
     }
 
     saveBets([newBet, ...myBets])
-    setBetslip([])
+    setBetslipState([])
+    localStorage.setItem("bet_betslip", JSON.stringify([]))
+    window.dispatchEvent(new Event("storage"))
     
     // Update active bets in admin stats
     saveAdminStats({

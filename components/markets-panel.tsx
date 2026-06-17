@@ -296,7 +296,7 @@ export function MarketsBrowser({
   )
 
   const pageContent = (
-    <div className="space-y-3 p-3 sm:p-4">
+    <div className="space-y-3 p-3 sm:p-4 pb-24">
 
       {markets && filteredMarkets.length === 0 && (
         <div className="rounded-lg border border-dashed border-border py-10 text-center text-xs text-muted-foreground">
@@ -337,26 +337,28 @@ export function MarketsBrowser({
 
   return (
     <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
-      <div className="shrink-0 space-y-3 border-b border-border p-4">
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search markets"
-          className="h-9 text-xs focus-visible:ring-primary"
-        />
+      {mode !== "page" && (
+        <div className="shrink-0 space-y-3 border-b border-border p-4">
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search markets"
+            className="h-9 text-xs focus-visible:ring-primary"
+          />
 
-        <ScrollArea className="w-full">
-          <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-            <TabsList className="w-max">
-              {categories.map((category) => (
-                <TabsTrigger key={category} value={category} className="px-3 text-xs">
-                  {category}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </ScrollArea>
-      </div>
+          <ScrollArea className="w-full">
+            <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+              <TabsList className="w-max">
+                {categories.map((category) => (
+                  <TabsTrigger key={category} value={category} className="px-3 text-xs">
+                    {category}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </ScrollArea>
+        </div>
+      )}
 
       {mode === "sheet" ? (
         <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)]">

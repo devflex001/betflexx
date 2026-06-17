@@ -114,7 +114,7 @@ export default function MatchMarketsPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
-      <main className="flex-1 min-w-0 overflow-y-auto flex flex-col scrollbar-thin">
+      <main className="flex-1 min-w-0 flex flex-col">
         {!match && match !== null && (
           <div className="space-y-3 p-4 flex-1">
             <Skeleton className="h-10 w-full" />
@@ -189,7 +189,7 @@ export default function MatchMarketsPage() {
               match={match}
               queryEnabled
               mode="page"
-              className="flex-1 pb-6"
+              className="flex-1"
             />
           </>
         )}
