@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Home, PlayCircle, History, Trophy, Activity, ArrowUpRight } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 
 interface SidebarProps {
   className?: string
@@ -32,6 +32,7 @@ export function Sidebar({ className }: SidebarProps) {
   const { activeTab, setActiveTab, setSelectedSport, selectedSport, selectedLeague, setSelectedLeague } =
     useBetStore()
   const router = useRouter()
+  const pathname = usePathname()
 
   const allMatches = useQuery(api.sportsData.listMatches, { limit: 300 }) as
     | MatchRecord[]
@@ -68,6 +69,23 @@ export function Sidebar({ className }: SidebarProps) {
   ]
 
   const handleTabClick = (id: string) => {
+    if (id === "mybets") {
+      router.push("/my-bets")
+      return
+    }
+
+    if (pathname !== "/") {
+      setActiveTab(id)
+      if (id === "home") {
+        setSelectedSport("all")
+        setSelectedLeague("All Leagues")
+      } else if (id === "live") {
+        setSelectedLeague("All Leagues")
+      }
+      router.push("/")
+      return
+    }
+
     setActiveTab(id)
     if (id === "home") {
       setSelectedSport("all")
@@ -95,7 +113,7 @@ export function Sidebar({ className }: SidebarProps) {
         <div className="space-y-1">
           {mainNavItems.map((item) => {
             const Icon = item.icon
-            const isActive = activeTab === item.id
+            const isActive = item.id === "mybets" ? pathname === "/my-bets" : (pathname === "/" && activeTab === item.id)
             return (
               <Button
                 key={item.id}
@@ -167,6 +185,9 @@ export function Sidebar({ className }: SidebarProps) {
                     setSelectedSport(sport.id)
                     setSelectedLeague("All Leagues")
                     setActiveTab("home")
+                    if (pathname !== "/") {
+                      router.push("/")
+                    }
                   }}
                 >
                   <span className="flex items-center gap-2.5">
@@ -209,6 +230,9 @@ export function Sidebar({ className }: SidebarProps) {
                   onClick={() => {
                     setSelectedLeague(competition)
                     setActiveTab("home")
+                    if (pathname !== "/") {
+                      router.push("/")
+                    }
                   }}
                 >
                   <span className="min-w-0 truncate">{competition}</span>
