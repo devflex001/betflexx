@@ -67,7 +67,7 @@ const schema = defineSchema({
     durationMs: v.union(v.number(), v.null()),
     dateFrom: v.string(),
     dateTo: v.string(),
-    selectedSports: v.array(v.string()), // sports fetched in this run
+    selectedSports: v.optional(v.array(v.string())), // sports fetched in this run
     matchesDiscovered: v.number(),
     matchesUpserted: v.number(),
     marketsUpserted: v.number(),

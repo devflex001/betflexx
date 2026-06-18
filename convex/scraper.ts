@@ -453,6 +453,7 @@ export const runScrape = internalAction({
     const settings: {
       dateWindowDays: number;
       selectedSports: string[];
+      matchLimit: number;
     } = await ctx.runQuery(internal.scraper.getSettingsForAction, {});
     const window = dateWindow(settings.dateWindowDays);
     const sportIds = mapSportsToIds(settings.selectedSports);
@@ -488,7 +489,7 @@ export const runScrape = internalAction({
         const pageMatches = await kwikbetAdapter.fetchMatchPages({
           date,
           live: false,
-          limit: DEFAULT_PAGE_LIMIT,
+          limit: settings.matchLimit,
           maxPages: DEFAULT_MAX_PAGES,
           sportIds,
         });
