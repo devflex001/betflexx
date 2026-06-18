@@ -9,7 +9,6 @@ import { Header } from "@/components/header"
 import { Sidebar } from "@/components/sidebar"
 import { MatchCard } from "@/components/match-card"
 import { Betslip } from "@/components/betslip"
-import { MyBetsPanel } from "@/components/my-bets-panel"
 import { BottomNav } from "@/components/bottom-nav"
 import { BanScreen } from "@/components/ban-screen"
 import { Button } from "@/components/ui/button"
@@ -352,7 +351,6 @@ export default function Page() {
             </div>
           )}
 
-          {activeTab === "mybets" && <MyBetsPanel />}
 
           {activeTab === "how-it-works" && (
             <div className="space-y-6">

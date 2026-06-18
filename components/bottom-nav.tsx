@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useBetStore } from "@/hooks/use-bet-store"
 import { Home, PlayCircle, FileText, User, Receipt, Wallet, ArrowUpRight, ArrowDownLeft, LogOut, History } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 
 export function BottomNav({ liveCount }: { liveCount: number }) {
   const router = useRouter()
+  const pathname = usePathname()
   const { activeTab, setActiveTab, betslip, user, walletBalance, logout } = useBetStore()
   
   const [betslipOpen, setBetslipOpen] = React.useState(false)
@@ -47,12 +48,12 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
             }}
             className={cn(
               "flex flex-col items-center justify-center gap-1 h-full text-[10px] font-medium transition-colors",
-              activeTab === "home" 
+              (pathname === "/" && activeTab === "home") 
                 ? "text-primary font-semibold" 
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Home className={cn("size-5", activeTab === "home" ? "text-primary" : "text-muted-foreground")} />
+            <Home className={cn("size-5", (pathname === "/" && activeTab === "home") ? "text-primary" : "text-muted-foreground")} />
             <span>Home</span>
           </button>
 
@@ -64,12 +65,12 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
             }}
             className={cn(
               "flex flex-col items-center justify-center gap-1 h-full text-[10px] font-medium transition-colors",
-              activeTab === "live" 
+              (pathname === "/" && activeTab === "live") 
                 ? "text-primary font-semibold" 
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <PlayCircle className={cn("size-5", activeTab === "live" ? "text-primary" : "text-muted-foreground")} />
+            <PlayCircle className={cn("size-5", (pathname === "/" && activeTab === "live") ? "text-primary" : "text-muted-foreground")} />
             <span>Live ({liveCount})</span>
           </button>
 
@@ -91,17 +92,16 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
           {/* My Bets Tab */}
           <button
             onClick={() => {
-              setActiveTab("mybets")
-              router.push("/")
+              router.push("/my-bets")
             }}
             className={cn(
               "flex flex-col items-center justify-center gap-1 h-full text-[10px] font-medium transition-colors",
-              activeTab === "mybets" 
+              pathname === "/my-bets" 
                 ? "text-primary font-semibold" 
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Receipt className={cn("size-5", activeTab === "mybets" ? "text-primary" : "text-muted-foreground")} />
+            <Receipt className={cn("size-5", pathname === "/my-bets" ? "text-primary" : "text-muted-foreground")} />
             <span>My Bets</span>
           </button>
 
@@ -191,9 +191,8 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
                 <Button
                   variant="ghost"
                   onClick={() => {
-                    setActiveTab("mybets")
                     setProfileOpen(false)
-                    router.push("/")
+                    router.push("/my-bets")
                   }}
                   className="w-full justify-start gap-3 h-11 text-sm text-muted-foreground hover:text-foreground font-normal"
                 >
