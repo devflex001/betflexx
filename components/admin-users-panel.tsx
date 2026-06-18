@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { FootballLoader } from "@/components/football-loader"
+import { PageLoader } from "@/components/page-loader"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { ResponsiveModal } from "@/components/ui/responsive-modal"
@@ -484,7 +484,7 @@ export function AdminUsersPanel() {
       {/* ── Mobile Card List (< sm) ── */}
       <div className="sm:hidden space-y-2">
         {isLoading && (
-          <FootballLoader label="Loading users…" />
+          <PageLoader />
         )}
 
         {!isLoading && users.length === 0 && (
@@ -585,7 +585,7 @@ export function AdminUsersPanel() {
               {isLoading && (
                 <tr>
                   <td colSpan={5} className="py-8">
-                    <FootballLoader label="Loading users…" />
+                    <PageLoader />
                   </td>
                 </tr>
               )}

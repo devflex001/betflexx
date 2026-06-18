@@ -14,7 +14,7 @@ import { BanScreen } from "@/components/ban-screen"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { FootballLoader } from "@/components/football-loader"
+import { SmallLoader } from "@/components/small-loader"
 import { toast } from "sonner"
 import {
   Flame,
@@ -163,7 +163,7 @@ export default function Page() {
 
         <main className="flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto h-full flex flex-col gap-6 scrollbar-thin">
           {(activeTab === "home" || activeTab === "live" || activeTab === "featured") && isLoading ? (
-            <FootballLoader size="large" label="Loading matches…" className="min-h-[40vh]" />
+            <PageLoader />
           ) : (
             <>
           {(activeTab === "home" || activeTab === "live" || activeTab === "featured") && (
