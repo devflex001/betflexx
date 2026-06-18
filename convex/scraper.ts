@@ -28,7 +28,6 @@ const DETAIL_CONCURRENCY = 4;
 const AVAILABLE_SPORTS = [
   { id: 1, label: "Soccer" },
   { id: 2, label: "Basketball" },
-  {id: 3, label: "Baseball"},
   { id: 5, label: "Tennis" },
   { id: 16, label: "American Football" },
   { id: 21, label: "Cricket" },

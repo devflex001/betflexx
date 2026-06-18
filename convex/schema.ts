@@ -51,8 +51,8 @@ const schema = defineSchema({
     enabled: v.boolean(),
     cadenceMinutes: v.number(),
     dateWindowDays: v.number(),
-    selectedSports: v.array(v.string()), // e.g., ["football", "basketball", "tennis"]
-    matchLimit: v.number(), // max matches per date to fetch
+    selectedSports: v.optional(v.array(v.string())),
+    matchLimit: v.optional(v.number()), // optional for backward compatibility
     lastRunAt: v.union(v.number(), v.null()),
     nextRunAt: v.number(),
     updatedAt: v.number(),
