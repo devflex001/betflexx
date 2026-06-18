@@ -27,15 +27,16 @@ export function Betslip({ onClose }: BetslipProps) {
 
   const presets = [50, 100, 200, 500, 1000]
 
-  const totalOdds = React.useMemo(() => {
-    if (betslip.length === 0) return 0
-    return parseFloat(betslip.reduce((acc, item) => acc * item.odds, 1).toFixed(2))
-  }, [betslip])
-
   const parsedStake = parseFloat(stake) || 0
-  const potentialReturn = React.useMemo(() => {
-    return parseFloat((parsedStake * totalOdds).toFixed(2))
-  }, [totalOdds, parsedStake])
+  const totalStake = React.useMemo(() => {
+    return parsedStake * betslip.length
+  }, [parsedStake, betslip.length])
+
+  const totalPotentialReturn = React.useMemo(() => {
+    return parseFloat(
+      betslip.reduce((acc, item) => acc + parsedStake * item.odds, 0).toFixed(2)
+    )
+  }, [betslip, parsedStake])
 
   const handlePlaceBet = async () => {
     if (!user) {
@@ -53,7 +54,7 @@ export function Betslip({ onClose }: BetslipProps) {
       return
     }
 
-    if (parsedStake > walletBalance) {
+    if (totalStake > walletBalance) {
       toast.error("Insufficient wallet balance. Please deposit funds first.")
       return
     }
@@ -63,14 +64,14 @@ export function Betslip({ onClose }: BetslipProps) {
       const success = await placeBet(parsedStake)
       if (success) {
         toast.success(
-          `Bet placed! Potential return: KES ${potentialReturn.toLocaleString()}`
+          `Bets placed! Total potential return: KES ${totalPotentialReturn.toLocaleString()}`
         )
         onClose?.()
       } else {
-        toast.error("Failed to place bet. Try again.")
+        toast.error("Failed to place bets. Try again.")
       }
     } catch {
-      toast.error("Failed to place bet. Please try again.")
+      toast.error("Failed to place bets. Please try again.")
     } finally {
       setIsPlacing(false)
     }
@@ -189,26 +190,34 @@ export function Betslip({ onClose }: BetslipProps) {
 
         <div className="rounded-lg border border-border bg-card p-3 space-y-2 text-xs">
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Total odds</span>
-            <span className="font-bold font-mono text-primary">
-              {totalOdds.toFixed(2)}
+            <span className="text-muted-foreground">Selections</span>
+            <span className="font-bold text-foreground">
+              {betslip.length}
+            </span>
+          </div>
+          {betslip.length > 1 && (
+            <div className="flex justify-between items-center pt-1 border-t border-border">
+              <span className="text-muted-foreground">Stake (per selection)</span>
+              <span className="font-bold font-mono">
+                KES {parsedStake.toLocaleString()}
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between items-center pt-1 border-t border-border">
+            <span className="text-muted-foreground">Total Stake</span>
+            <span className="font-bold font-mono text-foreground">
+              KES {totalStake.toLocaleString()}
             </span>
           </div>
           <div className="flex justify-between items-center pt-1 border-t border-border">
-            <span className="text-muted-foreground">Stake</span>
-            <span className="font-bold font-mono">
-              KES {parsedStake.toLocaleString()}
-            </span>
-          </div>
-          <div className="flex justify-between items-center pt-1 border-t border-border">
-            <span className="font-bold text-sm">Potential return</span>
-            <span className="font-extrabold font-mono text-sm">
-              KES {potentialReturn.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            <span className="font-bold text-sm">Total potential return</span>
+            <span className="font-extrabold font-mono text-sm text-primary">
+              KES {totalPotentialReturn.toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </span>
           </div>
         </div>
 
-        {user && parsedStake > walletBalance && (
+        {user && totalStake > walletBalance && (
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-destructive justify-center bg-destructive/10 p-2 rounded">
             <AlertCircle className="size-3.5 shrink-0" />
             Insufficient balance
@@ -218,7 +227,7 @@ export function Betslip({ onClose }: BetslipProps) {
         <Button
           onClick={handlePlaceBet}
           className="w-full bg-primary text-primary-foreground font-bold hover:opacity-95 text-xs h-10"
-          disabled={isPlacing || (user ? parsedStake > walletBalance : false)}
+          disabled={isPlacing || (user ? totalStake > walletBalance : false)}
         >
           {isPlacing ? (
             <span className="flex items-center gap-1.5 justify-center">
@@ -227,7 +236,7 @@ export function Betslip({ onClose }: BetslipProps) {
           ) : !user ? (
             "Log in to place bet"
           ) : (
-            `Place bet · KES ${parsedStake.toLocaleString()}`
+            `Place bets · KES ${totalStake.toLocaleString()}`
           )}
         </Button>
       </div>
