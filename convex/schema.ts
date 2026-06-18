@@ -1,23 +1,74 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server";
 
 const schema = defineSchema({
-  ...authTables,
+  // BetterAuth tables
+  user: defineTable({
+    phone: v.string(),
+    phoneVerified: v.boolean(),
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_phone", ["phone"]),
+
+  account: defineTable({
+    userId: v.id("user"),
+    accountId: v.string(),
+    providerId: v.string(),
+    providerAccountId: v.string(),
+    refreshToken: v.optional(v.string()),
+    accessToken: v.optional(v.string()),
+    accessTokenExpiresAt: v.optional(v.number()),
+    refreshTokenExpiresAt: v.optional(v.number()),
+    scope: v.optional(v.string()),
+    idToken: v.optional(v.string()),
+    sessionToken: v.optional(v.string()),
+    password: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_providerId_and_providerAccountId", [
+      "providerId",
+      "providerAccountId",
+    ]),
+
+  session: defineTable({
+    userId: v.id("user"),
+    token: v.string(),
+    expiresAt: v.number(),
+    ipAddress: v.optional(v.string()),
+    userAgent: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_token", ["token"]),
+
+  verification: defineTable({
+    identifier: v.string(),
+    token: v.string(),
+    tokenExpiresAt: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_identifier_and_token", ["identifier", "token"]),
+
   admins: defineTable({
-    userId: v.id("users"),
-    email: v.string(),
+    userId: v.id("user"),
+    phone: v.string(),
     addedAt: v.number(),
   })
     .index("by_userId", ["userId"])
-    .index("by_email", ["email"]),
+    .index("by_phone", ["phone"]),
 
   /**
    * Tracks bans for users. One active ban per user at a time.
    * bannedUntil = null means permanent ban.
    */
   userBans: defineTable({
-    userId: v.id("users"),
+    userId: v.id("user"),
     reason: v.string(),
     bannedAt: v.number(),
     bannedByAdminId: v.id("admins"),
@@ -33,7 +84,7 @@ const schema = defineSchema({
    */
   banAppeals: defineTable({
     banId: v.id("userBans"),
-    userId: v.id("users"),
+    userId: v.id("user"),
     message: v.string(),
     submittedAt: v.number(),
     /** pending | approved | rejected */
@@ -180,12 +231,12 @@ const schema = defineSchema({
     .index("by_sourceMatchId_and_status", ["sourceMatchId", "status"]),
 
   wallets: defineTable({
-    userId: v.id("users"),
+    userId: v.id("user"),
     balance: v.number(),
   }).index("by_userId", ["userId"]),
 
   bets: defineTable({
-    userId: v.id("users"),
+    userId: v.id("user"),
     selections: v.array(
       v.object({
         id: v.string(),
@@ -213,7 +264,7 @@ const schema = defineSchema({
   }).index("by_userId", ["userId"]),
 
   transactions: defineTable({
-    userId: v.id("users"),
+    userId: v.id("user"),
     txId: v.string(),
     type: v.string(), // "deposit" | "withdrawal"
     amount: v.number(),
@@ -233,5 +284,3 @@ const schema = defineSchema({
     .index("by_txId", ["txId"])
     .index("by_checkoutRequestID", ["checkoutRequestID"]),
 });
-
-export default schema;
