@@ -157,7 +157,7 @@ export const updateSettings = mutation({
     const cadenceMinutes = Math.max(1, Math.min(120, Math.floor(args.cadenceMinutes)));
     const dateWindowDays = Math.max(1, Math.min(14, Math.floor(args.dateWindowDays)));
     const matchLimit = Math.max(10, Math.min(500, Math.floor(args.matchLimit)));
-    const selectedSports = args.selectedSports.length > 0 ? args.selectedSports : ["football"];
+    const selectedSports = args.selectedSports.length > 0 ? args.selectedSports : ["1"];
     const settings = await getOrCreateSettings(ctx, now);
 
     await ctx.db.patch(settings._id, {
