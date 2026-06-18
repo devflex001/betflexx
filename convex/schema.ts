@@ -78,16 +78,6 @@ const schema = defineSchema({
     .index("by_source_and_startedAt", ["source", "startedAt"])
     .index("by_status", ["status"]),
 
-  scraperLogs: defineTable({
-    runId: v.id("scrapeRuns"),
-    timestamp: v.number(),
-    level: v.string(), // "info", "warn", "error", "success"
-    message: v.string(),
-    metadata: v.optional(v.any()), // flexible metadata
-  })
-    .index("by_runId", ["runId"])
-    .index("by_runId_and_timestamp", ["runId", "timestamp"]),
-
   sportsMatches: defineTable({
     source: v.string(),
     sourceMatchId: v.string(),
