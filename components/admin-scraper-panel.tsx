@@ -144,7 +144,7 @@ export function AdminScraperPanel() {
         <div className="space-y-2">
           <label className="text-xs font-semibold text-muted-foreground">Sport</label>
           <Select value={selectedSport} onValueChange={setSelectedSport} disabled={isCurrentlyRunning}>
-            <SelectTrigger className="h-8 text-xs w-full">
+            <SelectTrigger className="h-8 text-xs w-full rounded-md">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -186,7 +186,7 @@ export function AdminScraperPanel() {
         <div className="space-y-2">
           <label className="text-xs font-semibold text-muted-foreground">Match Limit</label>
           <Select value={matchLimit} onValueChange={setMatchLimit} disabled={isCurrentlyRunning}>
-            <SelectTrigger className="h-8 text-xs w-full">
+            <SelectTrigger className="h-8 text-xs w-full rounded-md">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -265,31 +265,40 @@ export function AdminScraperPanel() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {overview.runs.slice(0, 5).map((run: any) => (
-                  <tr key={run._id} className="hover:bg-muted/30">
-                    <td className="px-4 py-2.5 font-mono">{formatTime(run.startedAt)}</td>
-                    <td className="px-4 py-2.5">
-                      <Badge
-                        variant={
-                          run.status === "success"
-                            ? "default"
-                            : run.status === "running"
-                            ? "secondary"
-                            : "destructive"
-                        }
-                        className="text-[9px] uppercase"
-                      >
-                        {run.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-2.5">{run.selectedSports?.join(", ") || "—"}</td>
-                    <td className="px-4 py-2.5 text-right font-mono">
-                      {run.matchesUpserted}/{run.matchesDiscovered}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono">{run.marketsUpserted}</td>
-                    <td className="px-4 py-2.5 text-right font-mono">{run.oddsUpserted}</td>
-                  </tr>
-                ))}
+                {overview.runs.slice(0, 5).map((run: any) => {
+                  const sportNames = (run.selectedSports || [])
+                    .map((sportId: string | number) => {
+                      const sport = AVAILABLE_SPORTS.find(s => String(s.id) === String(sportId))
+                      return sport?.label || String(sportId)
+                    })
+                    .join(", ")
+                  
+                  return (
+                    <tr key={run._id} className="hover:bg-muted/30">
+                      <td className="px-4 py-2.5 font-mono">{formatTime(run.startedAt)}</td>
+                      <td className="px-4 py-2.5">
+                        <Badge
+                          variant={
+                            run.status === "success"
+                              ? "default"
+                              : run.status === "running"
+                              ? "secondary"
+                              : "destructive"
+                          }
+                          className="text-[9px] uppercase"
+                        >
+                          {run.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-2.5">{sportNames || "—"}</td>
+                      <td className="px-4 py-2.5 text-right font-mono">
+                        {run.matchesUpserted}/{run.matchesDiscovered}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-mono">{run.marketsUpserted}</td>
+                      <td className="px-4 py-2.5 text-right font-mono">{run.oddsUpserted}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
