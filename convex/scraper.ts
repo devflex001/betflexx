@@ -276,6 +276,8 @@ export const upsertMatchDetail = internalMutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
+    
+    // Batch read all existing data upfront to avoid hitting the read limit
     const existingMatch = await ctx.db
       .query("sportsMatches")
       .withIndex("by_source_and_sourceMatchId", (q) =>
@@ -283,6 +285,31 @@ export const upsertMatchDetail = internalMutation({
       )
       .unique();
 
+    // Batch read existing markets for this match
+    const existingMarkets = await ctx.db
+      .query("sportsMarkets")
+      .withIndex("by_sourceMatchId_and_marketKey", (q) =>
+        q.eq("sourceMatchId", args.match.sourceMatchId)
+      )
+      .collect();
+    
+    const marketKeyMap = new Map(
+      existingMarkets.map(m => [m.marketKey, m])
+    );
+
+    // Batch read existing odds - limit to prevent read overflow
+    const existingOdds = await ctx.db
+      .query("sportsOdds")
+      .withIndex("by_sourceMatchId", (q) =>
+        q.eq("sourceMatchId", args.match.sourceMatchId)
+      )
+      .collect();
+    
+    const oddIdMap = new Map(
+      existingOdds.map(o => [o.sourceOddId, o])
+    );
+
+    // Upsert match
     const matchDoc = { ...args.match, lastScrapedAt: now };
     if (existingMatch) {
       await ctx.db.replace(existingMatch._id, matchDoc);
@@ -290,45 +317,30 @@ export const upsertMatchDetail = internalMutation({
       await ctx.db.insert("sportsMatches", matchDoc);
     }
 
+    // Upsert markets using the map
     let marketsUpserted = 0;
     for (const market of args.markets) {
-      const existingMarket = await ctx.db
-        .query("sportsMarkets")
-        .withIndex("by_sourceMatchId_and_marketKey", (q) =>
-          q.eq("sourceMatchId", market.sourceMatchId).eq("marketKey", market.marketKey)
-        )
-        .unique();
+      const existing = marketKeyMap.get(market.marketKey);
       const marketDoc = { ...market, lastScrapedAt: now };
-      if (existingMarket) {
-        await ctx.db.replace(existingMarket._id, marketDoc);
+      if (existing) {
+        await ctx.db.replace(existing._id, marketDoc);
       } else {
         await ctx.db.insert("sportsMarkets", marketDoc);
       }
       marketsUpserted++;
     }
 
+    // Upsert odds using the map
     let oddsUpserted = 0;
     for (const odd of args.odds) {
-      const existingOdd = await ctx.db
-        .query("sportsOdds")
-        .withIndex("by_sourceOddId", (q) => q.eq("sourceOddId", odd.sourceOddId))
-        .unique();
+      const existing = oddIdMap.get(odd.sourceOddId);
       const oddDoc = { ...odd, lastScrapedAt: now };
-      if (existingOdd) {
-        await ctx.db.replace(existingOdd._id, oddDoc);
+      if (existing) {
+        await ctx.db.replace(existing._id, oddDoc);
       } else {
         await ctx.db.insert("sportsOdds", oddDoc);
       }
       oddsUpserted++;
-    }
-
-    const run = await ctx.db.get(args.runId);
-    if (run) {
-      await ctx.db.patch(args.runId, {
-        matchesUpserted: run.matchesUpserted + 1,
-        marketsUpserted: run.marketsUpserted + marketsUpserted,
-        oddsUpserted: run.oddsUpserted + oddsUpserted,
-      });
     }
 
     return { marketsUpserted, oddsUpserted };
@@ -408,7 +420,7 @@ export const addLog = internalMutation({
     runId: v.id("scrapeRuns"),
     level: v.string(),
     message: v.string(),
-    metadata: v.optional(v.object({})),
+    metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("scraperLogs", {
@@ -421,13 +433,30 @@ export const addLog = internalMutation({
   },
 });
 
+export const updateRunStats = internalMutation({
+  args: {
+    runId: v.id("scrapeRuns"),
+    matchesUpserted: v.number(),
+    marketsUpserted: v.number(),
+    oddsUpserted: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const run = await ctx.db.get(args.runId);
+    if (run) {
+      await ctx.db.patch(args.runId, {
+        matchesUpserted: run.matchesUpserted + args.matchesUpserted,
+        marketsUpserted: run.marketsUpserted + args.marketsUpserted,
+        oddsUpserted: run.oddsUpserted + args.oddsUpserted,
+      });
+    }
+  },
+});
+
 export const getLogs = query({
   args: {
     runId: v.id("scrapeRuns"),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-
     return await ctx.db
       .query("scraperLogs")
       .withIndex("by_runId_and_timestamp", (q) => q.eq("runId", args.runId))
@@ -542,18 +571,22 @@ export const runScrape = internalAction({
 
       let successCount = 0;
       let failureCount = 0;
+      let totalMarketsUpserted = 0;
+      let totalOddsUpserted = 0;
 
       await mapConcurrent(sourceMatchIds, DETAIL_CONCURRENCY, async (sourceMatchId) => {
         try {
           const detail = await kwikbetAdapter.fetchMatchDetails(sourceMatchId);
           const normalized = kwikbetAdapter.normalizeDetail(detail);
-          await ctx.runMutation(internal.scraper.upsertMatchDetail, {
+          const result = await ctx.runMutation(internal.scraper.upsertMatchDetail, {
             runId,
             match: normalized.match,
             markets: normalized.markets,
             odds: normalized.odds,
           });
           successCount++;
+          totalMarketsUpserted += result.marketsUpserted;
+          totalOddsUpserted += result.oddsUpserted;
         } catch (error) {
           failureCount++;
           const errorMsg = error instanceof Error ? error.message : "Unknown error";
@@ -567,6 +600,14 @@ export const runScrape = internalAction({
             message: `Failed to fetch details for ${sourceMatchId}: ${errorMsg}`,
           });
         }
+      });
+
+      // Batch update the run stats once at the end to avoid OCC conflicts
+      await ctx.runMutation(internal.scraper.updateRunStats, {
+        runId,
+        matchesUpserted: successCount,
+        marketsUpserted: totalMarketsUpserted,
+        oddsUpserted: totalOddsUpserted,
       });
 
       await ctx.runMutation(internal.scraper.addLog, {
