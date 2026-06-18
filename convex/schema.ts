@@ -51,6 +51,7 @@ const schema = defineSchema({
     enabled: v.boolean(),
     cadenceMinutes: v.number(),
     dateWindowDays: v.number(),
+    selectedSports: v.array(v.string()), // e.g., ["football", "basketball", "tennis"]
     lastRunAt: v.union(v.number(), v.null()),
     nextRunAt: v.number(),
     updatedAt: v.number(),
@@ -65,6 +66,7 @@ const schema = defineSchema({
     durationMs: v.union(v.number(), v.null()),
     dateFrom: v.string(),
     dateTo: v.string(),
+    selectedSports: v.array(v.string()), // sports fetched in this run
     matchesDiscovered: v.number(),
     matchesUpserted: v.number(),
     marketsUpserted: v.number(),
@@ -74,6 +76,16 @@ const schema = defineSchema({
   })
     .index("by_source_and_startedAt", ["source", "startedAt"])
     .index("by_status", ["status"]),
+
+  scraperLogs: defineTable({
+    runId: v.id("scrapeRuns"),
+    timestamp: v.number(),
+    level: v.string(), // "info", "warn", "error", "success"
+    message: v.string(),
+    metadata: v.optional(v.object({})), // flexible metadata
+  })
+    .index("by_runId", ["runId"])
+    .index("by_runId_and_timestamp", ["runId", "timestamp"]),
 
   sportsMatches: defineTable({
     source: v.string(),
