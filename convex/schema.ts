@@ -83,7 +83,7 @@ const schema = defineSchema({
     timestamp: v.number(),
     level: v.string(), // "info", "warn", "error", "success"
     message: v.string(),
-    metadata: v.optional(v.object({})), // flexible metadata
+    metadata: v.optional(v.any()), // flexible metadata
   })
     .index("by_runId", ["runId"])
     .index("by_runId_and_timestamp", ["runId", "timestamp"]),

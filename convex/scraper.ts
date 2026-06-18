@@ -50,8 +50,11 @@ const SPORT_ID_MAP: Record<string, number> = {
 
 function mapSportsToIds(sportIds: (string | number)[]): number[] {
   return sportIds
-    .map((id) => SPORT_ID_MAP[String(id)])
-    .filter((id) => id !== undefined);
+    .map((id) => {
+      const numId = typeof id === 'number' ? id : Number(id);
+      return Number.isFinite(numId) ? numId : undefined;
+    })
+    .filter((id): id is number => id !== undefined);
 }
 
 async function requireAdmin(ctx: QueryCtx | MutationCtx) {

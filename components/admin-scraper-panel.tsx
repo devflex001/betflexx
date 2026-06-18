@@ -6,7 +6,6 @@ import { api } from "@/convex/_generated/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
 import { SmallLoader } from "@/components/small-loader"
 import { toast } from "sonner"
 import { PlayCircle, Save } from "lucide-react"
@@ -225,34 +224,26 @@ export function AdminScraperPanel() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">Last Run</p>
-            <p className="text-sm font-semibold">{formatTime(overview.settings.lastRunAt)}</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="border rounded-md p-3">
+          <p className="text-[10px] text-muted-foreground mb-1">Last Run</p>
+          <p className="text-xs font-medium">{formatTime(overview.settings.lastRunAt)}</p>
+        </div>
 
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">Next Run</p>
-            <p className="text-sm font-semibold">{formatTime(overview.settings.nextRunAt)}</p>
-          </CardContent>
-        </Card>
+        <div className="border rounded-md p-3">
+          <p className="text-[10px] text-muted-foreground mb-1">Next Run</p>
+          <p className="text-xs font-medium">{formatTime(overview.settings.nextRunAt)}</p>
+        </div>
 
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">Sport</p>
-            <p className="text-sm font-semibold">{sportLabel}</p>
-          </CardContent>
-        </Card>
+        <div className="border rounded-md p-3">
+          <p className="text-[10px] text-muted-foreground mb-1">Sport</p>
+          <p className="text-xs font-medium">{sportLabel}</p>
+        </div>
 
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground font-medium mb-1">Fetch Limit</p>
-            <p className="text-sm font-semibold">{matchLimit}</p>
-          </CardContent>
-        </Card>
+        <div className="border rounded-md p-3">
+          <p className="text-[10px] text-muted-foreground mb-1">Fetch Limit</p>
+          <p className="text-xs font-medium">{matchLimit}</p>
+        </div>
       </div>
 
       {/* Recent Runs */}
