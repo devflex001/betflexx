@@ -87,13 +87,18 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
     try {
       setIsSubmitting(true)
       const normalizedPhone = normalizeKenyanPhone(phone)
+      
       const result = await signIn.email({
         email: normalizedPhone,
         password,
+      }, {
+        onError: (ctx) => {
+          toast.error(ctx.error.message || "Failed to log in")
+          setIsSubmitting(false)
+        },
       })
       
-      if (result.error) {
-        toast.error(result.error.message || "Failed to log in")
+      if (!result || result.error) {
         setIsSubmitting(false)
         return
       }
@@ -240,14 +245,19 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
     try {
       setIsSubmitting(true)
       const normalizedPhone = normalizeKenyanPhone(phone)
+      
       const result = await signUp.email({
         email: normalizedPhone,
         password,
         name: normalizedPhone,
+      }, {
+        onError: (ctx) => {
+          toast.error(ctx.error.message || "Failed to create account")
+          setIsSubmitting(false)
+        },
       })
       
-      if (result.error) {
-        toast.error(result.error.message || "Failed to create account")
+      if (!result || result.error) {
         setIsSubmitting(false)
         return
       }

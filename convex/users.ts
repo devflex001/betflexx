@@ -1,5 +1,4 @@
 import { query } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
 
 export const currentUser = query({
   args: {},
@@ -9,15 +8,12 @@ export const currentUser = query({
       if (!identity) {
         return null;
       }
-
-      // The subject is the user ID from Better Auth
-      const userId = identity.subject as Id<"user">;
       
-      // Get the user from the database
-      const user = await ctx.db.get(userId);
-      return user || null;
+      // Return the current user info from the identity
+      // Better Auth stores this through ctx.auth
+      return identity;
     } catch (error) {
-      // If not authenticated, return null
+      // If not authenticated or error, return null
       return null;
     }
   },

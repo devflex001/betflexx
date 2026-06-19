@@ -6,7 +6,7 @@ import { Id } from "./_generated/dataModel";
 async function getAuthUserId(ctx: any) {
   try {
     const identity = await ctx.auth.getUserIdentity();
-    return identity ? (identity.subject as Id<"user">) : null;
+    return identity ? (identity.subject as string) : null;
   } catch {
     return null;
   }
