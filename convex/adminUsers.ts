@@ -40,7 +40,7 @@ export const listUsers = query({
 
     const admin = await ctx.db
       .query("admins")
-      .withIndex("by_userId", (q) => q.eq("userId", userId as Id<"users">))
+      .withIndex("by_userId", (q) => q.eq("userId", userId as Id<"user">))
       .unique();
     if (!admin) throw new Error("Not authorized");
 
@@ -89,7 +89,7 @@ export const getMyBanStatus = query({
     const activeBan = await ctx.db
       .query("userBans")
       .withIndex("by_userId_and_isActive", (q) =>
-        q.eq("userId", userId as Id<"users">).eq("isActive", true)
+        q.eq("userId", userId as Id<"user">).eq("isActive", true)
       )
       .unique();
 
@@ -128,7 +128,7 @@ export const listAppeals = query({
 
     const admin = await ctx.db
       .query("admins")
-      .withIndex("by_userId", (q) => q.eq("userId", userId as Id<"users">))
+      .withIndex("by_userId", (q) => q.eq("userId", userId as Id<"user">))
       .unique();
     if (!admin) throw new Error("Not authorized");
 
@@ -162,7 +162,7 @@ export const listAppeals = query({
  */
 export const banUser = mutation({
   args: {
-    targetUserId: v.id("users"),
+    targetUserId: v.id("user"),
     reason: v.string(),
     /** Duration in hours. null = permanent. */
     durationHours: v.union(v.number(), v.null()),
@@ -205,7 +205,7 @@ export const banUser = mutation({
  */
 export const unbanUser = mutation({
   args: {
-    targetUserId: v.id("users"),
+    targetUserId: v.id("user"),
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);

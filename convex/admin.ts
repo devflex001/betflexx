@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 async function getAuthUserId(ctx: any) {
   return await ctx.auth.getUserIdentity().then((identity: any) => identity?.subject);
@@ -46,11 +47,16 @@ export const seedAdmin = mutation({
       throw new Error("User not found");
     }
 
-    await ctx.db.insert("admins", {
-      userId: userId as Id<"user">,
-      email: user.email,
-      addedAt: Date.now(),
-    });
+    // Type guard to ensure user is from the "user" table
+    if (user._id.toString().startsWith("user|")) {
+      await ctx.db.insert("admins", {
+        userId: userId as Id<"user">,
+        email: user.email,
+        addedAt: Date.now(),
+      });
+    } else {
+      throw new Error("Invalid user ID");
+    }
 
     return { success: true };
   },

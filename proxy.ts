@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 
 const adminRoutes = ["/admin"];
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Check if this is an admin route
@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
 
     return NextResponse.next();
   } catch (error) {
-    console.error("Auth middleware error:", error);
+    console.error("Auth proxy error:", error);
     return NextResponse.redirect(new URL("/", request.url));
   }
 }
