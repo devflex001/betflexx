@@ -32,11 +32,11 @@ import {
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Betslip } from "./betslip"
 import { useRoleRouter } from "@/hooks/use-role-router"
+import { useAuthClient } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
 
 export function Header() {
   const { 
-    user, 
     walletBalance, 
     logout, 
     searchQuery, 
@@ -45,7 +45,7 @@ export function Header() {
     betslip
   } = useBetStore()
 
-  // Role-based routing: admins are redirected to /admin on auth
+  const { user, isAuthenticated, signOut } = useAuthClient()
   const { isAdmin } = useRoleRouter()
   const router = useRouter()
 
@@ -63,8 +63,7 @@ export function Header() {
   }
 
   const handleLogout = () => {
-    logout()
-    router.replace("/auth")
+    signOut()
   }
 
   return (
@@ -143,7 +142,7 @@ export function Header() {
               </Sheet>
             </div>
 
-            {user ? (
+            {isAuthenticated ? (
               <div className="flex items-center gap-1.5 sm:gap-2">
                 {/* Wallet Balance Display */}
                 <div className="hidden sm:flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-md text-xs font-semibold border border-border">
@@ -171,7 +170,7 @@ export function Header() {
                   <DropdownMenuContent align="end" className="w-56 mt-1">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-semibold leading-none">{user.username}</p>
+                        <p className="text-sm font-semibold leading-none">{user?.phone || "User"}</p>
                         <p className="text-xs leading-none text-muted-foreground">
                           {isAdmin ? "Administrator" : "Registered User"}
                         </p>

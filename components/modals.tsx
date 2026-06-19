@@ -65,13 +65,13 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
         return
       }
 
-      // Success! Close modal and reload page to pick up new auth state
+      // Success! Close modal
       toast.success("Welcome back!")
       onOpenChange(false)
       setPhone("")
       setPassword("")
       
-      // Give React time to close the modal, then reload
+      // Reload to pick up auth and check admin status
       setTimeout(() => {
         window.location.reload()
       }, 100)
