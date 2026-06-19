@@ -1,11 +1,9 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
-import { components } from "./_generated/api";
 
 async function getAuthUserId(ctx: any) {
-  const user = await components.betterAuth.getCurrentUser(ctx);
-  return user?._id ?? null;
+  return await ctx.auth.getUserIdentity().then((identity: any) => identity?.subject);
 }
 
 /**

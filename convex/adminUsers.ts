@@ -3,13 +3,11 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { MutationCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
-import { components } from "./_generated/api";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function getAuthUserId(ctx: any) {
-  const user = await components.betterAuth.getCurrentUser(ctx);
-  return user?._id ?? null;
+  return await ctx.auth.getUserIdentity().then((identity: any) => identity?.subject);
 }
 
 /** Throws if the caller is not a logged-in admin. Returns the admin doc. */
@@ -19,7 +17,7 @@ async function requireAdmin(ctx: MutationCtx) {
 
   const admin = await ctx.db
     .query("admins")
-    .withIndex("by_userId", (q) => q.eq("userId", userId as Id<"users">))
+    .withIndex("by_userId", (q) => q.eq("userId", userId as Id<"user">))
     .unique();
 
   if (!admin) throw new Error("Not authorized: admin access required");
@@ -47,7 +45,7 @@ export const listUsers = query({
     if (!admin) throw new Error("Not authorized");
 
     const result = await ctx.db
-      .query("users")
+      .query("user")
       .order("desc")
       .paginate(args.paginationOpts);
 
@@ -69,7 +67,6 @@ export const listUsers = query({
     const filtered = search
       ? page.filter(
           (u) =>
-            u.phone?.toLowerCase().includes(search) ||
             u.email?.toLowerCase().includes(search) ||
             u._id.toLowerCase().includes(search)
         )
@@ -232,16 +229,16 @@ export const unbanUser = mutation({
  */
 export const editUser = mutation({
   args: {
-    targetUserId: v.id("users"),
-    phone: v.string(),
+    targetUserId: v.id("user"),
+    email: v.string(),
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    const phone = args.phone.trim();
-    if (!phone) throw new Error("Phone number is required");
+    const email = args.email.trim();
+    if (!email) throw new Error("Email/Phone is required");
 
-    await ctx.db.patch(args.targetUserId, { phone });
+    await ctx.db.patch(args.targetUserId, { email });
     return { success: true };
   },
 });
@@ -276,7 +273,7 @@ export const submitAppeal = mutation({
 
     await ctx.db.insert("banAppeals", {
       banId: args.banId,
-      userId: userId as Id<"users">,
+      userId: userId as Id<"user">,
       message: args.message,
       submittedAt: Date.now(),
       status: "pending",

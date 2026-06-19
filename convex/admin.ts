@@ -1,10 +1,8 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
-import { components } from "./_generated/api";
 
 async function getAuthUserId(ctx: any) {
-  const user = await components.betterAuth.getCurrentUser(ctx);
-  return user?._id ?? null;
+  return await ctx.auth.getUserIdentity().then((identity: any) => identity?.subject);
 }
 
 export const getAdminStatus = query({
@@ -43,14 +41,14 @@ export const seedAdmin = mutation({
       throw new Error("Invalid seed secret");
     }
 
-    const user = await ctx.db.get(userId);
+    const user = await ctx.db.get(userId as Id<"user">);
     if (!user) {
       throw new Error("User not found");
     }
 
     await ctx.db.insert("admins", {
-      userId: user._id,
-      email: user.email ?? "",
+      userId: userId as Id<"user">,
+      email: user.email,
       addedAt: Date.now(),
     });
 

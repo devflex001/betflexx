@@ -10,7 +10,6 @@ import {
   type QueryCtx,
 } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
-import { components } from "./_generated/api";
 import {
   normalizedMarketValidator,
   normalizedMatchValidator,
@@ -58,8 +57,7 @@ function mapSportsToIds(sportIds: (string | number)[]): number[] {
 }
 
 async function getAuthUserId(ctx: any) {
-  const user = await components.betterAuth.getCurrentUser(ctx);
-  return user?._id ?? null;
+  return await ctx.auth.getUserIdentity().then((identity: any) => identity?.subject);
 }
 
 async function requireAdmin(ctx: QueryCtx | MutationCtx) {
@@ -68,7 +66,7 @@ async function requireAdmin(ctx: QueryCtx | MutationCtx) {
 
   const admin = await ctx.db
     .query("admins")
-    .withIndex("by_userId", (q) => q.eq("userId", userId as Id<"users">))
+    .withIndex("by_userId", (q) => q.eq("userId", userId as Id<"user">))
     .unique();
 
   if (!admin) throw new Error("Not authorized: admin access required");
