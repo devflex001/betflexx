@@ -33,8 +33,8 @@ export default function AuthPage() {
         return;
       }
       
-      toast.success("Logged in!");
-      router.push("/");
+      // Reload page - this forces AuthClientProvider to re-initialize with sessionStorage
+      window.location.href = "/";
     } catch (error) {
       toast.error("Login failed");
       setIsLoading(false);

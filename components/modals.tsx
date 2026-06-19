@@ -38,35 +38,7 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
   const [password, setPassword] = React.useState("")
   const [showPassword, setShowPassword] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [checkingRole, setCheckingRole] = React.useState(false)
-  const { signIn, isAuthenticated } = useAuthClient()
-  const adminStatus = useQuery(
-    api.admin.getAdminStatus,
-    checkingRole && isAuthenticated ? {} : "skip"
-  )
-
-  // When adminStatus resolves after login, route accordingly
-  React.useEffect(() => {
-    if (!checkingRole) return
-    if (adminStatus === undefined) return // still loading
-
-    const timer = window.setTimeout(() => {
-      setCheckingRole(false)
-      setIsSubmitting(false)
-      onOpenChange(false)
-      setPhone("")
-      setPassword("")
-
-      if (adminStatus.isAdmin) {
-        router.push("/admin")
-        toast.success("Good to see you again, boss")
-      } else {
-        toast.success("Welcome back!")
-      }
-    }, 0)
-
-    return () => window.clearTimeout(timer)
-  }, [adminStatus, checkingRole, onOpenChange, router])
+  const { signIn } = useAuthClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -93,8 +65,16 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
         return
       }
 
-      // Trigger role check — the useEffect above handles the routing
-      setCheckingRole(true)
+      // Success! Close modal and reload page to pick up new auth state
+      toast.success("Welcome back!")
+      onOpenChange(false)
+      setPhone("")
+      setPassword("")
+      
+      // Give React time to close the modal, then reload
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
     } catch (error) {
       const errMsg =
         error instanceof Error
@@ -184,14 +164,10 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
         <div className="flex flex-col gap-2 pt-2">
           <Button
             type="submit"
-            disabled={isSubmitting || checkingRole}
+            disabled={isSubmitting}
             className="w-full bg-primary font-semibold text-primary-foreground hover:opacity-90"
           >
-            {checkingRole ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...
-              </>
-            ) : isSubmitting ? (
+            {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...
               </>
@@ -248,6 +224,11 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
       setPhone("")
       setPassword("")
       setConfirmPassword("")
+      
+      // Reload to pick up new auth state
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
     } catch (error) {
       const errMsg =
         error instanceof Error
