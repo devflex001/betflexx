@@ -21,7 +21,7 @@ export const getAdminStatus = query({
       if (!user) return { isAdmin: false };
 
       // Normalize admin phone for comparison
-      const normalizedAdminPhone = adminPhone.startsWith("+")
+      const normalizedAdminPhone = (adminPhone || "254712345678").startsWith("+")
         ? adminPhone
         : `+${adminPhone}`;
 
