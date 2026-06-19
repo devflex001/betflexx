@@ -1,42 +1,28 @@
 /**
- * One-time admin seeding script
- * Run once with: npx ts-node scripts/seed-admin.ts
- * Then just login with ADMIN_EMAIL and ADMIN_PASSWORD from .env.local
+ * Admin seeding script (TypeScript version).
+ * For the ESM .mjs version, use: pnpm seed:admin
+ *
+ * This script registers the admin user via the custom auth API.
  */
 
-import { auth } from "../lib/auth";
-
 async function seedAdmin() {
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminPhone = process.env.ADMIN_EMAIL || "254712345678";
+  const adminPassword = process.env.ADMIN_PASSWORD || "Admin@12345";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-  if (!adminEmail || !adminPassword) {
-    console.error(
-      "❌ Missing ADMIN_EMAIL or ADMIN_PASSWORD in .env.local"
-    );
-    process.exit(1);
-  }
-
-  console.log(`🌱 Seeding admin account: ${adminEmail}`);
+  console.log(`🌱 Seeding admin account: ${adminPhone}`);
 
   try {
-    // Try to create admin user
-    const response = await fetch("http://localhost:3000/api/auth/sign-up/email", {
+    const response = await fetch(`${appUrl}/api/auth/register`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: adminEmail,
-        password: adminPassword,
-        name: "Admin",
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: adminPhone, password: adminPassword }),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      if (error.message?.includes("already exists")) {
-        console.log("✅ Admin account already exists");
+      if (response.status === 409) {
+        console.log("✅ Admin account already exists — skipping registration.");
       } else {
         throw new Error(error.message || "Failed to create admin");
       }
@@ -45,7 +31,7 @@ async function seedAdmin() {
     }
 
     console.log("\n📝 Admin Login Credentials:");
-    console.log(`   Email: ${adminEmail}`);
+    console.log(`   Phone:    ${adminPhone}`);
     console.log(`   Password: ${adminPassword}`);
     console.log("\n✨ You can now login immediately!");
   } catch (error) {

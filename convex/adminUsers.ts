@@ -55,16 +55,30 @@ export const listUsers = query({
       .order("desc")
       .paginate(args.paginationOpts);
 
-    const page = result.page.map((u) => ({
-      id: u._id,
-      phone: u.phone,
-      email: u.phone, // compat
-      createdAt: u.createdAt,
-    }));
+    const page = await Promise.all(
+      result.page.map(async (u) => {
+        const activeBan = await ctx.db
+          .query("userBans")
+          .withIndex("by_userId_and_isActive", (q) =>
+            q.eq("userId", u._id as unknown as string).eq("isActive", true)
+          )
+          .unique();
+
+        return {
+          _id: u._id,
+          _creationTime: u._creationTime,
+          phone: u.phone,
+          email: u.phone, // compat
+          createdAt: u.createdAt,
+          activeBan: activeBan ?? null,
+        };
+      })
+    );
 
     return { ...result, page };
   },
 });
+
 
 /**
  * Get the active ban (if any) for the currently logged-in user.
