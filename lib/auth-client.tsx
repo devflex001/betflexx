@@ -55,7 +55,9 @@ export function AuthClientProvider({
 
   async function fetchMe() {
     try {
-      const res = await fetch("/api/auth/me");
+      const res = await fetch("/api/auth/me", {
+        credentials: "include", // Include httpOnly cookies
+      });
       if (res.ok) {
         const data = await res.json();
         setState({
@@ -77,18 +79,25 @@ export function AuthClientProvider({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone, password }),
+      credentials: "include", // Ensure cookies are sent/received
     });
     if (!res.ok) {
       const data = await res.json();
       return { error: data.message || "Login failed" };
     }
     const data = await res.json();
+    
+    // Update state with new token and user
     setState({
       user: data.user,
       token: data.token,
       isLoading: false,
       isAuthenticated: true,
     });
+    
+    // Small delay to ensure state is committed before any navigation/refresh
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    
     return {};
   }
 
@@ -107,7 +116,10 @@ export function AuthClientProvider({
   }
 
   async function signOut() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { 
+      method: "POST",
+      credentials: "include", // Include httpOnly cookies
+    });
     setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
   }
 
@@ -119,7 +131,9 @@ export function AuthClientProvider({
     if (state.token) return state.token;
     // Try to re-fetch from cookie session
     try {
-      const res = await fetch("/api/auth/me");
+      const res = await fetch("/api/auth/me", {
+        credentials: "include", // Include httpOnly cookies
+      });
       if (res.ok) {
         const data = await res.json();
         setState((prev) => ({
@@ -185,7 +199,10 @@ export function useConvexAuth() {
  * signOut — standalone function for backwards compat.
  */
 export async function signOut() {
-  await fetch("/api/auth/logout", { method: "POST" });
+  await fetch("/api/auth/logout", { 
+    method: "POST",
+    credentials: "include", // Include httpOnly cookies
+  });
   // Reload to reset state
   if (typeof window !== "undefined") {
     window.location.href = "/";
