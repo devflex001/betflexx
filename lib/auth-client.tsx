@@ -1,12 +1,5 @@
 "use client";
 
-/**
- * Custom auth client for phone + password authentication.
- *
- * Replaces the old better-auth/react client. All functions call
- * our Next.js API routes and manage session state client-side.
- */
-
 import * as React from "react";
 
 export interface AuthUser {
@@ -18,23 +11,18 @@ interface AuthState {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  // The JWT string — used by ConvexProviderWithAuth to send auth headers
   token: string | null;
 }
-
-// ── Context ───────────────────────────────────────────────────────────────────
 
 const AuthContext = React.createContext<
   | (AuthState & {
       signIn: (phone: string, password: string) => Promise<{ error?: string }>;
       signUp: (phone: string, password: string) => Promise<{ error?: string }>;
-      signOut: () => Promise<void>;
+      signOut: () => void;
       fetchToken: () => Promise<string | null>;
     })
   | undefined
 >(undefined);
-
-// ── Provider ──────────────────────────────────────────────────────────────────
 
 export function AuthClientProvider({
   children,
@@ -48,56 +36,55 @@ export function AuthClientProvider({
     token: null,
   });
 
-  // On mount, check if there's an existing session
+  // On mount, restore from sessionStorage
   React.useEffect(() => {
-    fetchMe();
-  }, []);
-
-  async function fetchMe() {
+    if (typeof window === "undefined") return;
+    
     try {
-      const res = await fetch("/api/auth/me", {
-        credentials: "include", // Include httpOnly cookies
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const stored = sessionStorage.getItem("auth_state");
+      if (stored) {
+        const parsed = JSON.parse(stored);
         setState({
-          user: data.user,
-          token: data.token,
+          user: parsed.user,
+          token: parsed.token,
           isLoading: false,
           isAuthenticated: true,
         });
       } else {
-        setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+        setState((prev) => ({ ...prev, isLoading: false }));
       }
     } catch {
-      setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+      setState((prev) => ({ ...prev, isLoading: false }));
     }
-  }
+  }, []);
 
   async function signIn(phone: string, password: string) {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone, password }),
-      credentials: "include", // Ensure cookies are sent/received
+      credentials: "include",
     });
+
     if (!res.ok) {
       const data = await res.json();
       return { error: data.message || "Login failed" };
     }
+
     const data = await res.json();
-    
-    // Update state with new token and user
-    setState({
+    const newState = {
       user: data.user,
       token: data.token,
       isLoading: false,
       isAuthenticated: true,
-    });
-    
-    // Small delay to ensure state is committed before any navigation/refresh
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    
+    };
+
+    // Store in sessionStorage
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("auth_state", JSON.stringify(newState));
+    }
+
+    setState(newState);
     return {};
   }
 
@@ -106,60 +93,36 @@ export function AuthClientProvider({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone, password }),
+      credentials: "include",
     });
+
     if (!res.ok) {
       const data = await res.json();
       return { error: data.message || "Registration failed" };
     }
-    // Auto sign-in after registration
+
     return signIn(phone, password);
   }
 
-  async function signOut() {
-    await fetch("/api/auth/logout", { 
-      method: "POST",
-      credentials: "include", // Include httpOnly cookies
-    });
+  function signOut() {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("auth_state");
+    }
+    fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
     setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
   }
 
-  /**
-   * Returns the current JWT token. Used by ConvexProviderWithAuth.
-   * If there's no token (session expired), re-fetches /api/auth/me.
-   */
   async function fetchToken() {
     if (state.token) return state.token;
-    // Try to re-fetch from cookie session
-    try {
-      const res = await fetch("/api/auth/me", {
-        credentials: "include", // Include httpOnly cookies
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setState((prev) => ({
-          ...prev,
-          token: data.token,
-          user: data.user,
-          isAuthenticated: true,
-        }));
-        return data.token as string;
-      }
-    } catch {
-      // ignore
-    }
     return null;
   }
 
   return (
-    <AuthContext.Provider
-      value={{ ...state, signIn, signUp, signOut, fetchToken }}
-    >
+    <AuthContext.Provider value={{ ...state, signIn, signUp, signOut, fetchToken }}>
       {children}
     </AuthContext.Provider>
   );
 }
-
-// ── Hooks ─────────────────────────────────────────────────────────────────────
 
 export function useAuthClient() {
   const ctx = React.useContext(AuthContext);
@@ -167,10 +130,6 @@ export function useAuthClient() {
   return ctx;
 }
 
-/**
- * useSession — drop-in replacement for better-auth's useSession.
- * Returns { data: session | null, isPending: boolean }
- */
 export function useSession() {
   const { user, isLoading, isAuthenticated } = useAuthClient();
   return {
@@ -179,32 +138,19 @@ export function useSession() {
   };
 }
 
-/**
- * useAuth — hook for ConvexProviderWithAuth.
- * Returns { isLoading, isAuthenticated, fetchAccessToken }
- */
 export function useConvexAuth() {
-  const { isLoading, isAuthenticated, fetchToken } = useAuthClient();
+  const { isLoading, isAuthenticated, token } = useAuthClient();
   return {
     isLoading,
     isAuthenticated,
-    fetchAccessToken: async ({ forceRefreshToken }: { forceRefreshToken: boolean }) => {
-      void forceRefreshToken;
-      return fetchToken();
-    },
+    fetchAccessToken: async () => token,
   };
 }
 
-/**
- * signOut — standalone function for backwards compat.
- */
-export async function signOut() {
-  await fetch("/api/auth/logout", { 
-    method: "POST",
-    credentials: "include", // Include httpOnly cookies
-  });
-  // Reload to reset state
+export function signOut() {
   if (typeof window !== "undefined") {
-    window.location.href = "/";
+    sessionStorage.removeItem("auth_state");
+    fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+    window.location.href = "/auth";
   }
 }

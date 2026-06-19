@@ -29,21 +29,14 @@ export default function AuthPage() {
       const result = await signIn(phone, password);
       if (result.error) {
         toast.error(result.error);
+        setIsLoading(false);
         return;
       }
       
-      toast.success("Signed in successfully");
-      
-      // Give React time to update context state before navigation
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      
+      toast.success("Logged in!");
       router.push("/");
-      // Refresh to re-run server components with new auth state
-      router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Sign in failed";
-      toast.error(message);
-    } finally {
+      toast.error("Login failed");
       setIsLoading(false);
     }
   };

@@ -62,9 +62,9 @@ export function Header() {
     setShowMobileSearch(false)
   }
 
-  const handleLogout = async () => {
-    await logout()
-    router.replace("/")
+  const handleLogout = () => {
+    logout()
+    router.replace("/auth")
   }
 
   return (
