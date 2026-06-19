@@ -9,7 +9,7 @@ import { Id } from "./_generated/dataModel";
 async function getAuthUserId(ctx: any) {
   try {
     const identity = await ctx.auth.getUserIdentity();
-    return identity ? (identity.subject as Id<"user">) : null;
+    return identity ? (identity.subject as string) : null;
   } catch {
     return null;
   }
@@ -22,7 +22,7 @@ async function requireAdmin(ctx: MutationCtx) {
 
   const admin = await ctx.db
     .query("admins")
-    .withIndex("by_userId", (q) => q.eq("userId", userId as Id<"user">))
+    .withIndex("by_userId", (q) => q.eq("userId", userId))
     .unique();
 
   if (!admin) throw new Error("Not authorized: admin access required");
@@ -45,12 +45,12 @@ export const listUsers = query({
 
     const admin = await ctx.db
       .query("admins")
-      .withIndex("by_userId", (q) => q.eq("userId", userId as Id<"user">))
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
       .unique();
     if (!admin) throw new Error("Not authorized");
 
     const result = await ctx.db
-      .query("user")
+      .query("auth.user")
       .order("desc")
       .paginate(args.paginationOpts);
 
@@ -60,7 +60,7 @@ export const listUsers = query({
         const activeBan = await ctx.db
           .query("userBans")
           .withIndex("by_userId_and_isActive", (q) =>
-            q.eq("userId", user._id).eq("isActive", true)
+            q.eq("userId", user._id as string).eq("isActive", true)
           )
           .unique();
         return { ...user, activeBan: activeBan ?? null };
@@ -94,7 +94,7 @@ export const getMyBanStatus = query({
     const activeBan = await ctx.db
       .query("userBans")
       .withIndex("by_userId_and_isActive", (q) =>
-        q.eq("userId", userId as Id<"user">).eq("isActive", true)
+        q.eq("userId", userId).eq("isActive", true)
       )
       .unique();
 
@@ -133,7 +133,7 @@ export const listAppeals = query({
 
     const admin = await ctx.db
       .query("admins")
-      .withIndex("by_userId", (q) => q.eq("userId", userId as Id<"user">))
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
       .unique();
     if (!admin) throw new Error("Not authorized");
 
@@ -150,7 +150,10 @@ export const listAppeals = query({
     // Attach user info
     const page = await Promise.all(
       result.page.map(async (appeal) => {
-        const user = await ctx.db.get(appeal.userId);
+        const user = await ctx.db
+          .query("auth.user")
+          .withIndex("by_email", (q) => q.eq("email", appeal.userId))
+          .first();
         const ban = await ctx.db.get(appeal.banId);
         return { ...appeal, user, ban };
       })
@@ -167,7 +170,7 @@ export const listAppeals = query({
  */
 export const banUser = mutation({
   args: {
-    targetUserId: v.id("user"),
+    targetUserId: v.string(),
     reason: v.string(),
     /** Duration in hours. null = permanent. */
     durationHours: v.union(v.number(), v.null()),
@@ -210,7 +213,7 @@ export const banUser = mutation({
  */
 export const unbanUser = mutation({
   args: {
-    targetUserId: v.id("user"),
+    targetUserId: v.string(),
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
@@ -234,7 +237,7 @@ export const unbanUser = mutation({
  */
 export const editUser = mutation({
   args: {
-    targetUserId: v.id("user"),
+    targetUserId: v.string(),
     email: v.string(),
   },
   handler: async (ctx, args) => {
@@ -243,7 +246,15 @@ export const editUser = mutation({
     const email = args.email.trim();
     if (!email) throw new Error("Email/Phone is required");
 
-    await ctx.db.patch(args.targetUserId, { email });
+    // Find the user by their ID and update
+    const user = await ctx.db
+      .query("auth.user")
+      .withIndex("by_email", (q) => q.eq("email", args.targetUserId))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    await ctx.db.patch(user._id, { email });
     return { success: true };
   },
 });
@@ -278,7 +289,7 @@ export const submitAppeal = mutation({
 
     await ctx.db.insert("banAppeals", {
       banId: args.banId,
-      userId: userId as Id<"user">,
+      userId: userId,
       message: args.message,
       submittedAt: Date.now(),
       status: "pending",
