@@ -54,7 +54,7 @@ export function MatchCard({ match }: MatchCardProps) {
     (a, b) => compareFormattedOdds(a, b, match as SportsMatchWithOdds) || a.priority - b.priority
   ) : []
 
-  const handleSelection = (odd: typeof mainOdds extends (infer U)[] ? U : never) => {
+  const handleSelection = (odd: any) => {
     if (!odd) return
     const outcome = formatOddOutcome(odd, match as SportsMatchWithOdds)
 

@@ -224,13 +224,25 @@ export const getMatchWithMainOdds = query({
 
     if (!match) return null;
 
-    const mainOdds = await ctx.db
-      .query("sportsOdds")
-      .withIndex("by_sourceMatchId_and_marketKey_and_priority", (q) =>
-        q.eq("sourceMatchId", args.sourceMatchId)
+    const mainMarket = await ctx.db
+      .query("sportsMarkets")
+      .withIndex("by_sourceMatchId_and_marketKey", (q) =>
+        q
+          .eq("sourceMatchId", args.sourceMatchId)
+          .eq("marketKey", `${args.sourceMatchId}:1:1x2:main`)
       )
-      .filter((q) => q.eq(q.field("marketKey"), `${args.sourceMatchId}:1:1x2:main`))
-      .take(3);
+      .unique();
+
+    const mainOdds = mainMarket
+      ? await ctx.db
+        .query("sportsOdds")
+        .withIndex("by_sourceMatchId_and_marketKey_and_priority", (q) =>
+          q
+            .eq("sourceMatchId", args.sourceMatchId)
+            .eq("marketKey", mainMarket.marketKey)
+        )
+        .take(3)
+      : [];
 
     return { ...match, mainOdds };
   },
