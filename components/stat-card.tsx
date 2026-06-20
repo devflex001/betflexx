@@ -22,7 +22,7 @@ export function StatCard({ label, value, subtitle, badge, icon }: StatCardProps)
         {icon && <div className="text-muted-foreground flex-shrink-0">{icon}</div>}
       </div>
       <div className="flex items-baseline gap-1 flex-wrap min-w-0">
-        <span className="text-base sm:text-xl font-bold font-mono leading-none truncate">
+        <span className="text-sm sm:text-xl font-bold font-mono leading-none truncate text-foreground">
           {value}
         </span>
         {badge && (

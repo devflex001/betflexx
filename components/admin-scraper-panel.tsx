@@ -93,14 +93,14 @@ export function AdminScraperPanel() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-bold tracking-tight">API Scrape</h1>
           <p className="text-xs text-muted-foreground">Manage KwikBet fixture ingestion</p>
         </div>
         <Button
           size="sm"
-          className="h-8 text-xs font-semibold gap-1.5 w-full sm:w-auto"
+          className="h-8 text-xs font-semibold gap-1.5"
           onClick={() => setConfigOpen(true)}
           disabled={running || isCurrentlyRunning}
         >
@@ -119,19 +119,6 @@ export function AdminScraperPanel() {
         <StatCard
           label="Last Run"
           value={formatTime(overview.settings.lastRunAt)}
-          badge={
-            currentRun
-              ? {
-                label: currentRun.status,
-                variant:
-                  currentRun.status === "success"
-                    ? "default"
-                    : currentRun.status === "running"
-                      ? "secondary"
-                      : "destructive",
-              }
-              : undefined
-          }
         />
       </div>
 

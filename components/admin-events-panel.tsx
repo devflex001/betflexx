@@ -221,64 +221,114 @@ export function AdminEventsPanel() {
             <SmallLoader />
           </div>
         ) : matches.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-border text-muted-foreground text-[9px] font-semibold">
-                <tr>
-                  <th className="px-3 py-2 text-left">Start</th>
-                  <th className="px-3 py-2 text-left">Sport</th>
-                  <th className="px-3 py-2 text-left">Event</th>
-                  <th className="px-3 py-2 text-left">Competition</th>
-                  <th className="px-3 py-2 text-left">Status</th>
-                  <th className="px-3 py-2 text-right">Markets</th>
-                  <th className="px-3 py-2 text-right">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {matches.map((match) => (
-                  <tr key={match.sourceMatchId} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-3 py-2 font-mono text-muted-foreground text-[10px]">
-                      {formatStartTime(match.startTime)}
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground text-[10px]">
-                      {formatSportName(match.sportSlug)}
-                    </td>
-                    <td className="px-3 py-2 font-semibold text-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={eventName(match)}>
-                      {truncateEventName(eventName(match), eventMaxLength)}
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground text-[10px]">
-                      {match.competitionName}
-                    </td>
-                    <td className="px-3 py-2">
-                      <Badge
-                        className={
-                          match.isLive
-                            ? "bg-rose-500/15 text-rose-600 hover:bg-rose-500/15 rounded-sm text-[9px] font-bold border border-rose-500/20"
-                            : "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15 rounded-sm text-[9px] font-bold border border-yellow-500/20"
-                        }
-                      >
-                        {match.isLive ? "Live" : "Upcoming"}
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono text-muted-foreground text-[10px]">
-                      {match.totalMarkets}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs gap-1 px-2"
-                        onClick={() => setSelectedMatch(match)}
-                      >
-                        <ListPlus className="size-3" />
-                        View
-                      </Button>
-                    </td>
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-border text-muted-foreground text-[9px] font-semibold">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Start</th>
+                    <th className="px-3 py-2 text-left">Sport</th>
+                    <th className="px-3 py-2 text-left">Event</th>
+                    <th className="px-3 py-2 text-left">Competition</th>
+                    <th className="px-3 py-2 text-left">Status</th>
+                    <th className="px-3 py-2 text-right">Markets</th>
+                    <th className="px-3 py-2 text-right">Details</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {matches.map((match) => (
+                    <tr key={match.sourceMatchId} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-3 py-2 font-mono text-muted-foreground text-[10px]">
+                        {formatStartTime(match.startTime)}
+                      </td>
+                      <td className="px-3 py-2 text-muted-foreground text-[10px]">
+                        {formatSportName(match.sportSlug)}
+                      </td>
+                      <td className="px-3 py-2 font-semibold text-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={eventName(match)}>
+                        {truncateEventName(eventName(match), eventMaxLength)}
+                      </td>
+                      <td className="px-3 py-2 text-muted-foreground text-[10px]">
+                        {match.competitionName}
+                      </td>
+                      <td className="px-3 py-2">
+                        <Badge
+                          className={
+                            match.isLive
+                              ? "bg-rose-500/15 text-rose-600 hover:bg-rose-500/15 rounded-sm text-[9px] font-semibold border border-rose-500/20"
+                              : "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15 rounded-sm text-[9px] font-semibold border border-yellow-500/20"
+                          }
+                        >
+                          {match.isLive ? "Live" : "Upcoming"}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2 text-right font-mono text-muted-foreground text-[10px]">
+                        {match.totalMarkets}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 px-2"
+                          onClick={() => setSelectedMatch(match)}
+                        >
+                          <ListPlus className="size-3" />
+                          View
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-2 p-3">
+              {matches.map((match) => (
+                <div key={match.sourceMatchId} className="border border-border rounded-lg p-3 bg-card space-y-2">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm text-foreground mb-1 line-clamp-1">
+                        {eventName(match)}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mb-1">
+                        {match.competitionName}
+                      </div>
+                      <div className="font-mono text-[10px] text-muted-foreground">
+                        {formatStartTime(match.startTime)}
+                      </div>
+                    </div>
+                    <Badge
+                      className={
+                        match.isLive
+                          ? "bg-rose-500/15 text-rose-600 hover:bg-rose-500/15 rounded-sm text-[9px] font-semibold border border-rose-500/20"
+                          : "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15 rounded-sm text-[9px] font-semibold border border-yellow-500/20"
+                      }
+                    >
+                      {match.isLive ? "Live" : "Upcoming"}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                      <span>{formatSportName(match.sportSlug)}</span>
+                      <span>•</span>
+                      <span className="font-mono">{match.totalMarkets} markets</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1 px-2"
+                      onClick={() => setSelectedMatch(match)}
+                    >
+                      <ListPlus className="size-3" />
+                      View
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           <div className="p-8 text-center text-xs text-muted-foreground">
             No events are stored yet. Run the scraper from the Scraper tab.
