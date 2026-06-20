@@ -41,9 +41,7 @@ export function Header() {
     betslip
   } = useBetStore()
 
-  const { user, isAuthenticated, signOut } = useAuthClient()
-  const router = useRouter()
-  const isAdmin = user?.role === "admin"
+  const isAdmin = false
 
   const [loginOpen, setLoginOpen] = React.useState(false)
   const [registerOpen, setRegisterOpen] = React.useState(false)

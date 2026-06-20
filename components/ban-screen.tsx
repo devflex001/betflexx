@@ -37,10 +37,9 @@ interface BanScreenProps {
 }
 
 export function BanScreen({ embedded = false }: BanScreenProps) {
-  const { data: session, isPending } = useSession()
   const banStatus = useQuery(
     api.adminUsers.getMyBanStatus,
-    session ? {} : "skip"
+    {}
   )
   const submitAppeal = useMutation(api.adminUsers.submitAppeal)
 

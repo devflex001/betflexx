@@ -155,9 +155,6 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   const [localBalance, setLocalBalance] = React.useState<number>(1000)
   const [localBets, setLocalBets] = React.useState<PlacedBet[]>([])
   const [localTransactions, setLocalTransactions] = React.useState<Transaction[]>(SEED_TRANSACTIONS)
-  
-  const { user: authUser, isAuthenticated } = useAuthClient()
-  const { signOut } = useAuthClient()
 
   // Convex reactive queries - use undefined to skip
   const dbBalance = useQuery(api.bets.getWalletBalance)

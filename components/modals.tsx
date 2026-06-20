@@ -37,7 +37,6 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
   const [password, setPassword] = React.useState("")
   const [showPassword, setShowPassword] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const { signIn } = useAuthClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -193,7 +192,6 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
   const [confirmPassword, setConfirmPassword] = React.useState("")
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const { signUp } = useAuthClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

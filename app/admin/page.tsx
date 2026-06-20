@@ -168,8 +168,6 @@ function SidebarContent({ activeTab, onTabChange, collapsed = false }: SidebarCo
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const { data: session, isPending } = useSession()
-  const { user: authUser } = useAuthClient()
   
   const adminStatus = useQuery(
     api.admin.getAdminStatus,

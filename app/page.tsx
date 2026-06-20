@@ -70,12 +70,9 @@ export default function Page() {
     setSelectedLeague,
   } = useBetStore()
 
-  const { data: session } = useSession()
-  useRoleRedirect() // Enable role-based redirects
-  
   const banStatus = useQuery(
     api.adminUsers.getMyBanStatus,
-    session ? {} : "skip"
+    {}
   )
 
   const matchStatus =
