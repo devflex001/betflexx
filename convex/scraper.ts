@@ -65,20 +65,7 @@ async function getAuthUserId(ctx: any) {
   }
 }
 
-async function requireAdmin(ctx: QueryCtx | MutationCtx) {
-  const userId = await getAuthUserId(ctx);
-  if (!userId) throw new Error("Not authenticated");
-
-  const parsedId = ctx.db.normalizeId("users", userId);
-  if (!parsedId) throw new Error("Invalid user ID");
-  const user = await ctx.db.get(parsedId);
-
-  if (!user || user.role !== "admin") {
-    throw new Error("Not authorized: admin access required");
-  }
-  
-  return user;
-}
+// Admin check removed - no authentication system
 
 function todayIsoDate(offsetDays: number) {
   const date = new Date();
@@ -124,7 +111,7 @@ async function getOrCreateSettings(ctx: MutationCtx, now: number) {
 export const getAdminOverview = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx);
+    // Admin check removed
 
     const settings = await ctx.db
       .query("scraperSettings")
