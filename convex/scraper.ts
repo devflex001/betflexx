@@ -146,12 +146,12 @@ export const getAdminOverview = query({
 
 export const getLiveLogs = query({
   args: {
-    runId: v.string(),
+    runId: v.id("scrapeRuns"),
   },
   handler: async (ctx, args) => {
-    // Return logs from in-memory store
+    // Return logs from in-memory store using the ID as a string
     return {
-      logs: activeLogs.get(args.runId) || [],
+      logs: activeLogs.get(args.runId.toString()) || [],
     };
   },
 });
