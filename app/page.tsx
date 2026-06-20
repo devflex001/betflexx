@@ -144,7 +144,7 @@ export default function Page() {
     }, 900)
   }
 
-  if (session && banStatus) {
+  if (banStatus) {
     return <BanScreen />
   }
 

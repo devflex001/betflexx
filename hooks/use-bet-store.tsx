@@ -340,74 +340,44 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
     const totalRequired = stake * betslip.length
     if (totalRequired > walletBalance) return false
 
-    if (session && convexUser) {
-      try {
-        for (const sel of betslip) {
-          const totalOdds = sel.odds
-          const potentialReturn = parseFloat((stake * totalOdds).toFixed(2))
-          const result = await placeBetMutation({
-            selections: [
-              {
-                id: sel.id,
-                matchId: sel.matchId,
-                matchName: sel.matchName,
-                team1: sel.team1,
-                team2: sel.team2,
-                market: sel.market,
-                selection: sel.selection,
-                selectionName: sel.selectionName,
-                odds: sel.odds,
-                sourceOddId: sel.sourceOddId,
-                marketKey: sel.marketKey,
-                marketName: sel.marketName,
-                outcomeName: sel.outcomeName,
-                specifiers: sel.specifiers,
-                matchStartTime: sel.matchStartTime,
-              },
-            ],
-            totalOdds,
-            stake,
-            potentialReturn,
-          })
-          if (!result.success) {
-            return false
-          }
-        }
-        setBetslipState([])
-        localStorage.setItem("bet_betslip", JSON.stringify([]))
-        return true
-      } catch (err) {
-        console.error(err)
-        return false
-      }
-    } else {
-      const newBalance = walletBalance - totalRequired
-      saveBalance(newBalance)
-
-      const newBets: PlacedBet[] = betslip.map((sel) => {
+    try {
+      for (const sel of betslip) {
         const totalOdds = sel.odds
-        return {
-          id: "BET-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-          time: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ", " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          placedAt: Date.now(),
-          selections: [sel],
+        const potentialReturn = parseFloat((stake * totalOdds).toFixed(2))
+        const result = await placeBetMutation({
+          selections: [
+            {
+              id: sel.id,
+              matchId: sel.matchId,
+              matchName: sel.matchName,
+              team1: sel.team1,
+              team2: sel.team2,
+              market: sel.market,
+              selection: sel.selection,
+              selectionName: sel.selectionName,
+              odds: sel.odds,
+              sourceOddId: sel.sourceOddId,
+              marketKey: sel.marketKey,
+              marketName: sel.marketName,
+              outcomeName: sel.outcomeName,
+              specifiers: sel.specifiers,
+              matchStartTime: sel.matchStartTime,
+            },
+          ],
           totalOdds,
           stake,
-          potentialReturn: parseFloat((stake * totalOdds).toFixed(2)),
-          status: "active",
+          potentialReturn,
+        })
+        if (!result.success) {
+          return false
         }
-      })
-
-      saveBets([...newBets, ...myBets])
+      }
       setBetslipState([])
       localStorage.setItem("bet_betslip", JSON.stringify([]))
-      
-      saveAdminStats({
-        ...adminStats,
-        activeBets: adminStats.activeBets + betslip.length
-      })
-
       return true
+    } catch (err) {
+      console.error(err)
+      return false
     }
   }
 
