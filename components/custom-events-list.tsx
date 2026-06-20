@@ -6,25 +6,21 @@ import { api } from "@/convex/_generated/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { SmallLoader } from "@/components/small-loader"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { Search, Trash2, Eye, Edit2, Share2, Clock, Users } from "lucide-react"
+import { Search, Trash2, ListPlus } from "lucide-react"
 
 interface CustomEventsListProps {
   onSelectEvent?: (eventId: string) => void
-  onEditEvent?: (eventId: string) => void
   status?: "draft" | "published"
 }
 
 export function CustomEventsList({
   onSelectEvent,
-  onEditEvent,
   status,
 }: CustomEventsListProps) {
   const [search, setSearch] = React.useState("")
-  const [selectedId, setSelectedId] = React.useState<string | null>(null)
 
   const events = useQuery(api.customEvents.listCustomEvents, {
     status,
@@ -44,16 +40,6 @@ export function CustomEventsList({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to delete")
     }
-  }
-
-  const handleEdit = (eventId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    onEditEvent?.(eventId)
-  }
-
-  const handleSelect = (eventId: string) => {
-    setSelectedId(eventId)
-    onSelectEvent?.(eventId)
   }
 
   if (!events) {
@@ -82,96 +68,139 @@ export function CustomEventsList({
         />
       </div>
 
-      {/* Events List */}
-      {events.length === 0 ? (
-        <div className="p-8 text-center text-muted-foreground">
-          <p className="text-sm">No events found</p>
-          <p className="text-xs mt-1">Create your first custom event to get started</p>
-        </div>
-      ) : (
-        <ScrollArea className="h-[calc(100vh-300px)] border border-border rounded-lg">
-          <div className="space-y-1 p-2">
+      {/* Desktop Table */}
+      {events.length > 0 ? (
+        <>
+          <div className="hidden md:block overflow-x-auto -mx-1">
+            <table className="w-full text-left text-xs border-collapse min-w-[520px]">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground text-[10px] font-semibold">
+                  <th className="py-2 px-3 text-left">Start Time</th>
+                  <th className="py-2 px-3 text-left">Matchup</th>
+                  <th className="py-2 px-3 text-left">Competition</th>
+                  <th className="py-2 px-3 text-left">Status</th>
+                  <th className="py-2 px-3 text-right">Markets</th>
+                  <th className="py-2 px-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {events.map((event) => (
+                  <tr key={event._id} className="hover:bg-muted/30 transition-colors">
+                    <td className="py-2.5 px-3 font-mono text-muted-foreground text-[10px]">
+                      {formatTime(event.startTime)}
+                    </td>
+                    <td className="py-2.5 px-3 font-semibold text-foreground">
+                      <div className="truncate">{event.homeTeam} vs {event.awayTeam}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">{event.title}</div>
+                    </td>
+                    <td className="py-2.5 px-3 text-muted-foreground text-[10px]">
+                      {event.competition}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <Badge
+                        className={cn(
+                          "text-[9px] font-semibold",
+                          event.status === "draft"
+                            ? "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15 rounded-sm border border-yellow-500/20"
+                            : "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15 rounded-sm border border-emerald-500/20"
+                        )}
+                      >
+                        {event.status}
+                      </Badge>
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-mono font-medium text-[10px]">
+                      {event.totalMarkets}
+                    </td>
+                    <td className="py-2.5 px-3 text-right flex items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs gap-1 px-2"
+                        onClick={() => onSelectEvent?.(event._id)}
+                      >
+                        <ListPlus className="size-3" />
+                        View
+                      </Button>
+                      {event.status === "draft" && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => handleDelete(event._id, e)}
+                        >
+                          <Trash2 className="size-3" />
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-2 p-3">
             {events.map((event) => (
-              <div
-                key={event._id}
-                onClick={() => handleSelect(event._id)}
-                className={cn(
-                  "p-3 rounded-lg border border-transparent cursor-pointer transition-all hover:bg-muted/50 group",
-                  selectedId === event._id && "border-primary bg-muted/70"
-                )}
-              >
-                <div className="flex items-start justify-between gap-2 mb-2">
+              <div key={event._id} className="border border-border rounded-lg p-3 bg-card space-y-2">
+                <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate">
+                    <div className="font-semibold text-sm text-foreground mb-1">
                       {event.homeTeam} vs {event.awayTeam}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {event.title}
+                    <div className="text-[10px] text-muted-foreground mb-1">
+                      {event.title} • {event.competition}
+                    </div>
+                    <div className="font-mono text-[10px] text-muted-foreground">
+                      {formatTime(event.startTime)}
                     </div>
                   </div>
                   <Badge
                     className={cn(
-                      "text-[10px] font-semibold",
+                      "text-[9px] font-semibold",
                       event.status === "draft"
-                        ? "bg-yellow-500/15 text-yellow-600 border border-yellow-500/30 hover:bg-yellow-500/15"
-                        : "bg-green-500/15 text-green-600 border border-green-500/30 hover:bg-green-500/15"
+                        ? "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15 rounded-sm border border-yellow-500/20"
+                        : "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15 rounded-sm border border-emerald-500/20"
                     )}
                   >
                     {event.status}
                   </Badge>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-[10px] text-muted-foreground mb-3">
-                  <div className="flex items-center gap-1">
-                    <Clock className="size-3" />
-                    {formatTime(event.startTime)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="size-3" />
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <div className="font-mono text-[10px] text-muted-foreground">
                     {event.totalMarkets} markets
                   </div>
-                  <div className="text-right">
-                    {event.sport}
-                  </div>
-                </div>
-
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 px-2 text-[11px]"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleSelect(event._id)
-                    }}
-                  >
-                    <Eye className="size-3" />
-                  </Button>
-                  {event.status === "draft" && (
-                    <>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1 px-2"
+                      onClick={() => onSelectEvent?.(event._id)}
+                    >
+                      <ListPlus className="size-3" />
+                      View
+                    </Button>
+                    {event.status === "draft" && (
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-7 px-2 text-[11px]"
-                        onClick={(e) => handleEdit(event._id, e)}
-                      >
-                        <Edit2 className="size-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 px-2 text-[11px] text-destructive hover:text-destructive"
+                        className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={(e) => handleDelete(event._id, e)}
                       >
                         <Trash2 className="size-3" />
                       </Button>
-                    </>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </ScrollArea>
+        </>
+      ) : (
+        <div className="p-8 text-center text-muted-foreground">
+          <p className="text-sm">No events found</p>
+          <p className="text-xs mt-1">Create your first custom event to get started</p>
+        </div>
       )}
     </div>
   )
