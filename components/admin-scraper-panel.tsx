@@ -5,7 +5,7 @@ import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { SmallLoader } from "@/components/small-loader"
 import { toast } from "sonner"
 import { PlayCircle } from "lucide-react"
@@ -91,7 +91,7 @@ export function AdminScraperPanel() {
   const successRate = totalRuns > 0 ? Math.round((successfulRuns / totalRuns) * 100) : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1">
@@ -110,7 +110,7 @@ export function AdminScraperPanel() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <StatCard
           label="Success Rate"
           value={`${successRate}%`}
@@ -138,99 +138,90 @@ export function AdminScraperPanel() {
 
       {/* Live Logs (when running) */}
       {isCurrentlyRunning && (
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">Live Logs</CardTitle>
-              <span className="flex items-center gap-1.5">
-                <span className="inline-flex h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-xs text-muted-foreground">Running</span>
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-black/5 dark:bg-black/20 font-mono text-[11px] h-32 overflow-y-auto space-y-1 rounded-md p-3">
-              <div className="text-muted-foreground">[INFO] Starting run for Soccer...</div>
-              <div className="text-muted-foreground">[INFO] Fetching matches...</div>
-              <div className="text-muted-foreground">[INFO] Discovered 247 matches</div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-3 border border-border rounded-xl bg-card p-4 text-card-foreground space-y-3 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-foreground">Live Logs</span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-flex h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-xs text-muted-foreground">Running</span>
+            </span>
+          </div>
+          <div className="bg-black/5 dark:bg-black/20 font-mono text-[11px] h-32 overflow-y-auto space-y-1 rounded-md p-3">
+            <div className="text-muted-foreground">[INFO] Starting run for Soccer...</div>
+            <div className="text-muted-foreground">[INFO] Fetching matches...</div>
+            <div className="text-muted-foreground">[INFO] Discovered 247 matches</div>
+          </div>
+        </div>
       )}
 
       {/* Runs Table */}
       {overview.runs.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Run History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead className="border-b bg-muted/30 text-muted-foreground text-[10px] uppercase">
-                  <tr>
-                    <th className="px-3 py-2.5 text-left font-semibold">Time</th>
-                    <th className="px-3 py-2.5 text-left font-semibold">Status</th>
-                    <th className="px-3 py-2.5 text-left font-semibold">Sport</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">Duration</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">Discovered</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">Saved</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">Markets</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">Odds</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {overview.runs.slice(0, 10).map((run: any) => {
-                    const sportNames = (run.selectedSports || [])
-                      .map((sportId: string | number) => {
-                        const sport = AVAILABLE_SPORTS.find(s => String(s.id) === String(sportId))
-                        return sport?.label || String(sportId)
-                      })
-                      .join(", ")
+        <div className="space-y-3 border border-border rounded-xl bg-card p-4 text-card-foreground shadow-sm">
+          <span className="text-sm font-bold text-foreground">Run History</span>
+          <div className="overflow-x-auto -mx-1">
+            <table className="w-full text-left text-xs border-collapse min-w-[520px]">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground text-[10px] uppercase font-bold tracking-wider">
+                  <th className="py-2.5 px-3">Time</th>
+                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3">Sport</th>
+                  <th className="py-2.5 px-3 text-right">Duration</th>
+                  <th className="py-2.5 px-3 text-right">Discovered</th>
+                  <th className="py-2.5 px-3 text-right">Saved</th>
+                  <th className="py-2.5 px-3 text-right">Markets</th>
+                  <th className="py-2.5 px-3 text-right">Odds</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {overview.runs.slice(0, 10).map((run: any) => {
+                  const sportNames = (run.selectedSports || [])
+                    .map((sportId: string | number) => {
+                      const sport = AVAILABLE_SPORTS.find(s => String(s.id) === String(sportId))
+                      return sport?.label || String(sportId)
+                    })
+                    .join(", ")
 
-                    return (
-                      <tr key={run._id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-3 py-2.5 font-mono text-muted-foreground">
-                          {formatTime(run.startedAt)}
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <Badge
-                            variant={
-                              run.status === "success"
-                                ? "default"
-                                : run.status === "running"
-                                  ? "secondary"
-                                  : "destructive"
-                            }
-                            className="text-[9px] uppercase"
-                          >
-                            {run.status}
-                          </Badge>
-                        </td>
-                        <td className="px-3 py-2.5 text-muted-foreground">{sportNames || "—"}</td>
-                        <td className="px-3 py-2.5 text-right font-mono text-muted-foreground">
-                          {formatDuration(run.durationMs)}
-                        </td>
-                        <td className="px-3 py-2.5 text-right font-mono font-medium">
-                          {run.matchesDiscovered}
-                        </td>
-                        <td className="px-3 py-2.5 text-right font-mono font-medium">
-                          {run.matchesUpserted}
-                        </td>
-                        <td className="px-3 py-2.5 text-right font-mono font-medium">
-                          {run.marketsUpserted}
-                        </td>
-                        <td className="px-3 py-2.5 text-right font-mono font-medium">
-                          {run.oddsUpserted}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                  return (
+                    <tr key={run._id} className="hover:bg-muted/30 transition-colors">
+                      <td className="py-3 px-3 font-mono text-muted-foreground">
+                        {formatTime(run.startedAt)}
+                      </td>
+                      <td className="py-3 px-3">
+                        <Badge
+                          className={
+                            run.status === "success"
+                              ? "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15 rounded-sm text-[10px] font-bold border border-emerald-500/20"
+                              : run.status === "running"
+                                ? "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15 rounded-sm text-[10px] font-bold border border-yellow-500/20"
+                                : "bg-rose-500/15 text-rose-600 hover:bg-rose-500/15 rounded-sm text-[10px] font-bold border border-rose-500/20"
+                          }
+                        >
+                          {run.status}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-3 text-muted-foreground">{sportNames || "—"}</td>
+                      <td className="py-3 px-3 text-right font-mono text-muted-foreground">
+                        {formatDuration(run.durationMs)}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-medium">
+                        {run.matchesDiscovered}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-medium">
+                        {run.matchesUpserted}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-medium">
+                        {run.marketsUpserted}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-medium">
+                        {run.oddsUpserted}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* Config Dialog/Drawer */}
