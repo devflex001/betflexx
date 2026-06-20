@@ -10,7 +10,6 @@ import { Sidebar } from "@/components/sidebar"
 import { MatchCard } from "@/components/match-card"
 import { Betslip } from "@/components/betslip"
 import { BottomNav } from "@/components/bottom-nav"
-import { BanScreen } from "@/components/ban-screen"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -69,11 +68,6 @@ export default function Page() {
     selectedLeague,
     setSelectedLeague,
   } = useBetStore()
-
-  const banStatus = useQuery(
-    api.adminUsers.getMyBanStatus,
-    {}
-  )
 
   const matchStatus =
     activeTab === "live" ? "live" : activeTab === "home" || activeTab === "featured" ? "upcoming" : undefined
@@ -142,10 +136,6 @@ export default function Page() {
       setContactEmail("")
       setContactMsg("")
     }, 900)
-  }
-
-  if (banStatus) {
-    return <BanScreen />
   }
 
   const liveCount = displayedMatches.filter((match) => match.isLive).length
@@ -252,9 +242,8 @@ export default function Page() {
                       <span
                         key={slide.id}
                         onClick={() => setSlideIndex(index)}
-                        className={`h-1.5 rounded-full cursor-pointer transition-all ${
-                          index === slideIndex ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/30"
-                        }`}
+                        className={`h-1.5 rounded-full cursor-pointer transition-all ${index === slideIndex ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/30"
+                          }`}
                       />
                     ))}
                   </div>
@@ -262,30 +251,30 @@ export default function Page() {
               )}
 
               <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                      <PlayCircle className="size-4 text-muted-foreground" />
-                      <span>Upcoming Matches & Fixtures</span>
-                    </h3>
-                    <Badge variant="outline" className="font-semibold text-[10px] text-muted-foreground bg-muted/20 border-border">
-                      Fixtures {upcomingMatches.length}
-                    </Badge>
-                  </div>
-
-                  {!matches ? (
-                    <SmallLoader />
-                  ) : upcomingMatches.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {upcomingMatches.map((match) => (
-                        <MatchCard key={match.sourceMatchId} match={match} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center p-8 border border-dashed border-border rounded-lg text-muted-foreground text-xs py-12">
-                      No synced fixtures found. Ask an admin to run the scraper.
-                    </div>
-                  )}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                    <PlayCircle className="size-4 text-muted-foreground" />
+                    <span>Upcoming Matches & Fixtures</span>
+                  </h3>
+                  <Badge variant="outline" className="font-semibold text-[10px] text-muted-foreground bg-muted/20 border-border">
+                    Fixtures {upcomingMatches.length}
+                  </Badge>
                 </div>
+
+                {!matches ? (
+                  <SmallLoader />
+                ) : upcomingMatches.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {upcomingMatches.map((match) => (
+                      <MatchCard key={match.sourceMatchId} match={match} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center p-8 border border-dashed border-border rounded-lg text-muted-foreground text-xs py-12">
+                    No synced fixtures found. Ask an admin to run the scraper.
+                  </div>
+                )}
+              </div>
             </>
           )}
 
