@@ -16,6 +16,7 @@ import {
   Sheet,
   SheetContent,
   SheetHeader,
+  SheetTitle,
 } from "@/components/ui/sheet"
 import { CustomEventDetail } from "@/components/custom-event-detail"
 import { SmallLoader } from "@/components/small-loader"
@@ -23,6 +24,13 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { Search, Trash2, ListPlus, ChevronDown } from "lucide-react"
 import { Id } from "@/convex/_generated/dataModel"
+import { useMediaQuery } from "@/hooks/use-media-query"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer"
 
 interface CustomEventsListProps {
   onSelectEvent?: (eventId: string) => void
@@ -54,7 +62,8 @@ export function CustomEventsList({
     status || "all"
   )
   const [detailOpen, setDetailOpen] = React.useState(false)
-  const [selectedEventId, setSelectedEventId] = React.useState<Id<"customEvents"> | null>(null)
+  const [selectedEvent, setSelectedEvent] = React.useState<any>(null)
+  const isMobile = useMediaQuery("(max-width: 768px)")
 
   const events = useQuery(api.customEvents.listCustomEvents, {
     status: filterStatus === "all" ? undefined : filterStatus,
@@ -244,7 +253,7 @@ export function CustomEventsList({
                           variant="outline"
                           className="h-7 text-xs gap-1 px-2"
                           onClick={() => {
-                            setSelectedEventId(event._id as Id<"customEvents">)
+                            setSelectedEvent(event)
                             setDetailOpen(true)
                           }}
                         >
@@ -306,7 +315,7 @@ export function CustomEventsList({
                         variant="outline"
                         className="h-7 text-xs gap-1 px-2"
                         onClick={() => {
-                          setSelectedEventId(event._id as Id<"customEvents">)
+                          setSelectedEvent(event)
                           setDetailOpen(true)
                         }}
                       >
@@ -338,23 +347,48 @@ export function CustomEventsList({
       </div>
 
       {/* Event Detail Modal */}
-      <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
-        <SheetContent side="right" className="w-full sm:w-96 flex flex-col gap-0 p-0 border-l border-border">
-          <SheetHeader className="px-6 pt-6 pb-3 border-b border-border bg-muted/20">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold">Event Details</h2>
+      {isMobile ? (
+        <Drawer open={detailOpen} onOpenChange={setDetailOpen}>
+          <DrawerContent className="h-[90vh] flex flex-col overflow-hidden p-0 bg-card">
+            <DrawerHeader className="shrink-0 border-b border-border px-4 py-3 text-left">
+              <DrawerTitle className="truncate text-sm font-semibold">
+                {selectedEvent ? `${selectedEvent.homeTeam} vs ${selectedEvent.awayTeam}` : "Event Details"}
+              </DrawerTitle>
+              <p className="truncate text-xs text-muted-foreground">{selectedEvent?.competition}</p>
+            </DrawerHeader>
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {selectedEvent && (
+                <CustomEventDetail
+                  eventId={selectedEvent._id}
+                  onBack={() => setDetailOpen(false)}
+                />
+              )}
             </div>
-          </SheetHeader>
-          <div className="flex-1 overflow-y-auto">
-            {selectedEventId && (
-              <CustomEventDetail
-                eventId={selectedEventId}
-                onBack={() => setDetailOpen(false)}
-              />
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
+          <SheetContent
+            side="right"
+            className="!w-[min(50vw,720px)] !max-w-none flex h-dvh flex-col overflow-hidden p-0 bg-card"
+          >
+            <SheetHeader className="shrink-0 border-b border-border px-4 py-3 text-left">
+              <SheetTitle className="truncate text-sm font-semibold">
+                {selectedEvent ? `${selectedEvent.homeTeam} vs ${selectedEvent.awayTeam}` : "Event Details"}
+              </SheetTitle>
+              <p className="truncate text-xs text-muted-foreground">{selectedEvent?.competition}</p>
+            </SheetHeader>
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {selectedEvent && (
+                <CustomEventDetail
+                  eventId={selectedEvent._id}
+                  onBack={() => setDetailOpen(false)}
+                />
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   )
 }
