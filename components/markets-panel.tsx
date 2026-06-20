@@ -15,8 +15,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SmallLoader } from "@/components/small-loader"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 type SportsOdd = {
   sourceOddId: string
