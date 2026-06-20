@@ -25,23 +25,10 @@ type WithdrawalState = "idle" | "loading" | "confirming" | "success" | "failed"
 
 export function WithdrawalSheet() {
   const wallet = useQuery(api.mpesa.getWallet)
-  const currentUser = useQuery(api.users.currentUser)
 
   const [amount, setAmount] = React.useState("")
   const [phone, setPhone] = React.useState("")
   const [state, setState] = React.useState<WithdrawalState>("idle")
-
-  React.useEffect(() => {
-    if (currentUser?.phone) {
-      let rawPhone = currentUser.phone
-      if (rawPhone.startsWith("+254")) {
-        rawPhone = "0" + rawPhone.slice(4)
-      } else if (rawPhone.startsWith("254")) {
-        rawPhone = "0" + rawPhone.slice(3)
-      }
-      setPhone(rawPhone)
-    }
-  }, [currentUser])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -70,11 +57,6 @@ export function WithdrawalSheet() {
 
     if (!isValidKenyanPhone(phone)) {
       toast.error("Enter valid phone (e.g. 0712345678)")
-      return
-    }
-
-    if (!currentUser) {
-      toast.error("Please log in")
       return
     }
 

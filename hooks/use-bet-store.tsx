@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { useQuery, useMutation } from "convex/react"
-import { signOut, useSession } from "@/lib/auth-client"
 import { api } from "@/convex/_generated/api"
 
 export interface Selection {
@@ -156,15 +155,11 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   const [localBalance, setLocalBalance] = React.useState<number>(1000)
   const [localBets, setLocalBets] = React.useState<PlacedBet[]>([])
   const [localTransactions, setLocalTransactions] = React.useState<Transaction[]>(SEED_TRANSACTIONS)
-  
-  const { data: session } = useSession()
-  
+
   // Convex reactive queries - use undefined to skip
-  const convexUser = useQuery(api.users.currentUser)
   const dbBalance = useQuery(api.bets.getWalletBalance)
   const dbBets = useQuery(api.bets.getMyBets)
   const dbTransactions = useQuery(api.bets.getTransactions)
-  const dbAdminStats = useQuery(api.admin.getStats)
 
   // Convex mutations
   const placeBetMutation = useMutation(api.bets.placeBet)
@@ -174,9 +169,8 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   const updateTransactionStatusMutation = useMutation(api.bets.updateTransactionStatus)
 
   const user = React.useMemo(() => {
-    if (!convexUser) return null
-    return { username: convexUser.email || convexUser.name || "User" }
-  }, [convexUser])
+    return { username: "User" }
+  }, [])
 
   const [activeTab, setActiveTabState] = React.useState<string>("home")
   const [searchQuery, setSearchQuery] = React.useState<string>("")
@@ -189,11 +183,11 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
     activeBets: 53
   })
 
-  // Dynamic balance, bets, transactions, and adminStats - check if queries returned data
-  const walletBalance: number = convexUser ? (dbBalance ?? 1000) : localBalance
-  const myBets: PlacedBet[] = convexUser ? (dbBets as PlacedBet[] | undefined) ?? [] : localBets
-  const transactions: Transaction[] = convexUser ? (dbTransactions as Transaction[] | undefined) ?? [] : localTransactions
-  const adminStats = convexUser ? (dbAdminStats ?? localAdminStats) : localAdminStats
+  // Dynamic balance, bets, transactions, and adminStats
+  const walletBalance: number = dbBalance ?? 1000
+  const myBets: PlacedBet[] = (dbBets as PlacedBet[] | undefined) ?? []
+  const transactions: Transaction[] = (dbTransactions as Transaction[] | undefined) ?? []
+  const adminStats = localAdminStats
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -285,10 +279,7 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   }
 
   const addNewUserCount = () => {
-    if (convexUser) {
-      // In Convex, users are registered through signUp, so totalUsers is computed dynamically.
-      // But we can keep local count synced as well.
-    }
+    // No user registration needed - single shared wallet system
     saveAdminStats({
       ...adminStats,
       totalUsers: adminStats.totalUsers + 1
@@ -300,7 +291,6 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
-    await signOut()
     setBetslipState([])
     localStorage.setItem("bet_betslip", JSON.stringify([]))
   }
@@ -346,165 +336,126 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
     const totalRequired = stake * betslip.length
     if (totalRequired > walletBalance) return false
 
-    if (session && convexUser) {
-      try {
-        for (const sel of betslip) {
-          const totalOdds = sel.odds
-          const potentialReturn = parseFloat((stake * totalOdds).toFixed(2))
-          const result = await placeBetMutation({
-            selections: [
-              {
-                id: sel.id,
-                matchId: sel.matchId,
-                matchName: sel.matchName,
-                team1: sel.team1,
-                team2: sel.team2,
-                market: sel.market,
-                selection: sel.selection,
-                selectionName: sel.selectionName,
-                odds: sel.odds,
-                sourceOddId: sel.sourceOddId,
-                marketKey: sel.marketKey,
-                marketName: sel.marketName,
-                outcomeName: sel.outcomeName,
-                specifiers: sel.specifiers,
-                matchStartTime: sel.matchStartTime,
-              },
-            ],
-            totalOdds,
-            stake,
-            potentialReturn,
-          })
-          if (!result.success) {
-            return false
-          }
-        }
-        setBetslipState([])
-        localStorage.setItem("bet_betslip", JSON.stringify([]))
-        return true
-      } catch (err) {
-        console.error(err)
-        return false
-      }
-    } else {
-      const newBalance = walletBalance - totalRequired
-      saveBalance(newBalance)
-
-      const newBets: PlacedBet[] = betslip.map((sel) => {
+    try {
+      for (const sel of betslip) {
         const totalOdds = sel.odds
-        return {
-          id: "BET-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-          time: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ", " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          placedAt: Date.now(),
-          selections: [sel],
+        const potentialReturn = parseFloat((stake * totalOdds).toFixed(2))
+        const result = await placeBetMutation({
+          selections: [
+            {
+              id: sel.id,
+              matchId: sel.matchId,
+              matchName: sel.matchName,
+              team1: sel.team1,
+              team2: sel.team2,
+              market: sel.market,
+              selection: sel.selection,
+              selectionName: sel.selectionName,
+              odds: sel.odds,
+              sourceOddId: sel.sourceOddId,
+              marketKey: sel.marketKey,
+              marketName: sel.marketName,
+              outcomeName: sel.outcomeName,
+              specifiers: sel.specifiers,
+              matchStartTime: sel.matchStartTime,
+            },
+          ],
           totalOdds,
           stake,
-          potentialReturn: parseFloat((stake * totalOdds).toFixed(2)),
-          status: "active",
+          potentialReturn,
+        })
+        if (!result.success) {
+          return false
         }
-      })
-
-      saveBets([...newBets, ...myBets])
+      }
       setBetslipState([])
       localStorage.setItem("bet_betslip", JSON.stringify([]))
-      
-      saveAdminStats({
-        ...adminStats,
-        activeBets: adminStats.activeBets + betslip.length
-      })
-
       return true
+    } catch (err) {
+      console.error(err)
+      return false
     }
   }
 
   const settleSingleBet = async (betId: string, status: "won" | "lost") => {
-    if (convexUser) {
-      try {
-        await settleSingleBetMutation({ betId: betId as any, status })
-      } catch (err) {
-        console.error(err)
-      }
-    } else {
-      const updated = myBets.map((bet) => {
-        if (bet.id === betId) {
-          return { ...bet, status }
-        }
-        return bet
-      })
-      saveBets(updated)
-      
-      saveAdminStats({
-        ...adminStats,
-        activeBets: Math.max(0, adminStats.activeBets - 1)
-      })
+    try {
+      await settleSingleBetMutation({ betId: betId as any, status })
+    } catch (err) {
+      console.error(err)
     }
+    
+    const updated = myBets.map((bet) => {
+      if (bet.id === betId) {
+        return { ...bet, status }
+      }
+      return bet
+    })
+    saveBets(updated)
+    
+    saveAdminStats({
+      ...adminStats,
+      activeBets: Math.max(0, adminStats.activeBets - 1)
+    })
   }
 
   const settleAllBets = async () => {
-    if (convexUser) {
-      try {
-        await settleAllBetsMutation()
-      } catch (err) {
-        console.error(err)
-      }
-    } else {
-      let settledCount = 0
-      const updated = myBets.map((bet) => {
-        if (bet.status !== "active") return bet
-        settledCount++
-        const won = Math.random() > 0.4
-        return {
-          ...bet,
-          status: won ? ("won" as const) : ("lost" as const),
-        }
-      })
-      saveBets(updated)
-      
-      saveAdminStats({
-        ...adminStats,
-        activeBets: Math.max(0, adminStats.activeBets - settledCount)
-      })
+    try {
+      await settleAllBetsMutation()
+    } catch (err) {
+      console.error(err)
     }
+
+    let settledCount = 0
+    const updated = myBets.map((bet) => {
+      if (bet.status !== "active") return bet
+      settledCount++
+      const won = Math.random() > 0.4
+      return {
+        ...bet,
+        status: won ? ("won" as const) : ("lost" as const),
+      }
+    })
+    saveBets(updated)
+    
+    saveAdminStats({
+      ...adminStats,
+      activeBets: Math.max(0, adminStats.activeBets - settledCount)
+    })
   }
 
   const updateAdminTransactionStatus = async (txId: string, status: "success" | "pending" | "failed", errorDetail?: string) => {
-    if (convexUser) {
-      try {
-        await updateTransactionStatusMutation({ txId, status, errorDetail })
-      } catch (err) {
-        console.error(err)
-      }
-    } else {
-      let balanceToAdd = 0
-      const updated = transactions.map((t) => {
-        if (t.id === txId) {
-          if (status === "success" && t.status !== "success" && t.type === "deposit") {
-            saveAdminStats({
-              ...adminStats,
-              totalDeposits: adminStats.totalDeposits + t.amount
-            })
-            balanceToAdd = t.amount
-          }
-          return { ...t, status, errorDetail }
+    try {
+      await updateTransactionStatusMutation({ txId, status, errorDetail })
+    } catch (err) {
+      console.error(err)
+    }
+
+    let balanceToAdd = 0
+    const updated = transactions.map((t) => {
+      if (t.id === txId) {
+        if (status === "success" && t.status !== "success" && t.type === "deposit") {
+          saveAdminStats({
+            ...adminStats,
+            totalDeposits: adminStats.totalDeposits + t.amount
+          })
+          balanceToAdd = t.amount
         }
-        return t
-      })
-      saveTx(updated)
-      if (balanceToAdd > 0) {
-        saveBalance(walletBalance + balanceToAdd)
+        return { ...t, status, errorDetail }
       }
+      return t
+    })
+    saveTx(updated)
+    if (balanceToAdd > 0) {
+      saveBalance(walletBalance + balanceToAdd)
     }
   }
 
   const cancelBet = async (betId: string): Promise<boolean> => {
-    if (convexUser) {
-      try {
-        await cancelBetMutation({ betId: betId as any })
-        return true
-      } catch (err) {
-        console.error(err)
-        return false
-      }
+    try {
+      await cancelBetMutation({ betId: betId as any })
+      return true
+    } catch (err) {
+      console.error(err)
     }
 
     const bet = myBets.find((b) => b.id === betId)

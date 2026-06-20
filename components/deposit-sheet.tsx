@@ -37,7 +37,6 @@ interface TransactionResult {
 
 export function DepositSheet() {
   const wallet = useQuery(api.mpesa.getWallet)
-  const currentUser = useQuery(api.users.currentUser)
   const createTransaction = useMutation(api.mpesa.createTransaction)
 
   const [amount, setAmount] = React.useState("")
@@ -57,16 +56,8 @@ export function DepositSheet() {
   )
 
   React.useEffect(() => {
-    if (currentUser?.phone) {
-      let rawPhone = currentUser.phone
-      if (rawPhone.startsWith("+254")) {
-        rawPhone = "0" + rawPhone.slice(4)
-      } else if (rawPhone.startsWith("254")) {
-        rawPhone = "0" + rawPhone.slice(3)
-      }
-      setPhone(rawPhone)
-    }
-  }, [currentUser])
+    // Set default phone if needed
+  }, [])
 
   // Listen to database updates from M-Pesa callback
   React.useEffect(() => {
@@ -151,13 +142,8 @@ export function DepositSheet() {
       return
     }
 
-    if (!isValidKenyanPhone(phone)) {
+  if (!isValidKenyanPhone(phone)) {
       setErrorMessage("Enter valid phone (e.g. 0712345678)")
-      return
-    }
-
-    if (!currentUser) {
-      setErrorMessage("Please log in to deposit")
       return
     }
 
@@ -171,7 +157,7 @@ export function DepositSheet() {
         body: JSON.stringify({
           phone: phone.trim(),
           amount: parsedAmount,
-          accountReference: `USER-${currentUser._id}`,
+          accountReference: `DEPOSIT`,
           transactionDesc: `Betting deposit - KES ${parsedAmount}`,
         }),
       })

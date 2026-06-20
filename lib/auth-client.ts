@@ -1,13 +1,23 @@
-import { createAuthClient } from "better-auth/react";
+/**
+ * Stub auth client - no authentication functionality
+ * System runs without user authentication
+ */
 
-export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-  plugins: [],
-});
+export function useAuthClient() {
+  return {
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+    signIn: async () => {},
+    signUp: async () => {},
+    signOut: async () => {},
+  };
+}
 
-export const {
-  signIn,
-  signUp,
-  signOut,
-  useSession,
-} = authClient;
+export function useSession() {
+  return {
+    data: null,
+    isPending: false,
+    status: "unauthenticated",
+  };
+}

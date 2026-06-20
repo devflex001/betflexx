@@ -3,7 +3,6 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useQuery } from "convex/react"
-import { useSession } from "@/lib/auth-client"
 import { api } from "@/convex/_generated/api"
 import { useBetStore } from "@/hooks/use-bet-store"
 import { useTheme } from "next-themes"
@@ -169,11 +168,6 @@ function SidebarContent({ activeTab, onTabChange, collapsed = false }: SidebarCo
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const { data: session, isPending } = useSession()
-  const adminStatus = useQuery(
-    api.admin.getAdminStatus,
-    session ? {} : "skip"
-  )
   const { theme, setTheme } = useTheme()
   const { user, transactions, adminStats, updateAdminTransactionStatus, logout } = useBetStore()
 
@@ -185,12 +179,10 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = React.useState("dashboard")
   const [currentTime, setCurrentTime] = React.useState("")
 
-  // Redirect guard
+  // Redirect guard - admin page is accessible
   React.useEffect(() => {
-    if (isPending) return
-    if (!session) { router.replace("/"); return }
-    if (adminStatus !== undefined && !adminStatus.isAdmin) router.replace("/")
-  }, [isPending, session, adminStatus, router])
+    // No auth check needed - system has no authentication
+  }, [])
 
   React.useEffect(() => {
     let a = true
@@ -251,7 +243,6 @@ export default function AdminDashboard() {
   }
 
   const handleLogout = async () => {
-    await logout()
     router.replace("/")
   }
 
@@ -261,21 +252,18 @@ export default function AdminDashboard() {
     setMobileSidebarOpen(false)
   }
 
-  const isPageLoading =
-    isPending || !session || adminStatus === undefined
+  const isPageLoading = false
 
   if (isPageLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
-          <p className="text-sm font-medium">Verifying access...</p>
+          <p className="text-sm font-medium">Loading...</p>
         </div>
       </div>
     )
   }
-
-  if (!adminStatus?.isAdmin) return null
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">

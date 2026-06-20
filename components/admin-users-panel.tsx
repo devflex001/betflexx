@@ -54,6 +54,7 @@ type UserWithBan = {
   _id: Id<"users">
   _creationTime: number
   phone?: string
+  id?: string
   activeBan: ActiveBan | null
 }
 
@@ -262,7 +263,7 @@ function EditModal({ user, open, onClose }: EditModalProps) {
       setLoading(true)
       await editUser({
         targetUserId: user._id,
-        phone: phone.trim(),
+        email: phone.trim(),
       })
       toast.success("Phone number updated")
       onClose()
@@ -494,7 +495,7 @@ export function AdminUsersPanel() {
         )}
 
         {users.map((user, idx) => {
-          const u = user as UserWithBan
+          const u = { ...user, _id: (user as any)._id ?? (user as any).id, _creationTime: (user as any)._creationTime ?? (user as any).createdAt ?? 0, activeBan: (user as any).activeBan ?? null } as UserWithBan
           return (
             <div
               key={u._id}
@@ -602,7 +603,7 @@ export function AdminUsersPanel() {
               )}
 
               {users.map((user, idx) => {
-                const u = user as UserWithBan
+                const u = { ...user, _id: (user as any)._id ?? (user as any).id, _creationTime: (user as any)._creationTime ?? (user as any).createdAt ?? 0, activeBan: (user as any).activeBan ?? null } as UserWithBan
                 return (
                   <tr key={u._id} className="hover:bg-muted/30 transition-colors">
                     <td className="py-3 px-4 text-muted-foreground font-medium">
@@ -726,7 +727,7 @@ export function AdminUsersPanel() {
       </div>
 
       {/* Contextual hint when banned users exist */}
-      {!isLoading && users.some((u) => (u as UserWithBan).activeBan) && (
+      {!isLoading && users.some((u) => !!(u as any).activeBan) && (
         <div className="flex items-start gap-2 p-3 rounded-lg border border-rose-500/20 bg-rose-500/5 text-xs text-rose-600">
           <AlertTriangle className="size-4 shrink-0 mt-0.5" />
           <span>

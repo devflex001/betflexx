@@ -3,7 +3,6 @@
 import * as React from "react"
 import Image from "next/image"
 import { useQuery } from "convex/react"
-import { useSession } from "@/lib/auth-client"
 import { api } from "@/convex/_generated/api"
 import { useBetStore } from "@/hooks/use-bet-store"
 import { Header } from "@/components/header"
@@ -71,10 +70,9 @@ export default function Page() {
     setSelectedLeague,
   } = useBetStore()
 
-  const { data: session } = useSession()
   const banStatus = useQuery(
     api.adminUsers.getMyBanStatus,
-    session ? {} : "skip"
+    {}
   )
 
   const matchStatus =
@@ -146,7 +144,7 @@ export default function Page() {
     }, 900)
   }
 
-  if (session && banStatus) {
+  if (banStatus) {
     return <BanScreen />
   }
 

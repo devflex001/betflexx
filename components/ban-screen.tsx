@@ -3,7 +3,6 @@
 import * as React from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { useSession } from "@/lib/auth-client"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -38,10 +37,9 @@ interface BanScreenProps {
 }
 
 export function BanScreen({ embedded = false }: BanScreenProps) {
-  const { data: session, isPending } = useSession()
   const banStatus = useQuery(
     api.adminUsers.getMyBanStatus,
-    session ? {} : "skip"
+    {}
   )
   const submitAppeal = useMutation(api.adminUsers.submitAppeal)
 
@@ -49,7 +47,7 @@ export function BanScreen({ embedded = false }: BanScreenProps) {
   const [submitting, setSubmitting] = React.useState(false)
   const [appealSubmitted, setAppealSubmitted] = React.useState(false)
 
-  if (isPending || banStatus === undefined) {
+  if (banStatus === undefined) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="size-6 animate-spin text-muted-foreground" />

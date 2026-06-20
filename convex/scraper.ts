@@ -57,26 +57,10 @@ function mapSportsToIds(sportIds: (string | number)[]): number[] {
 }
 
 async function getAuthUserId(ctx: any) {
-  try {
-    const identity = await ctx.auth.getUserIdentity();
-    return identity ? (identity.subject as string) : null;
-  } catch {
-    return null;
-  }
+  return null; // Auth disabled
 }
 
-async function requireAdmin(ctx: QueryCtx | MutationCtx) {
-  const userId = await getAuthUserId(ctx);
-  if (!userId) throw new Error("Not authenticated");
-
-  const admin = await ctx.db
-    .query("admins")
-    .withIndex("by_userId", (q) => q.eq("userId", userId))
-    .unique();
-
-  if (!admin) throw new Error("Not authorized: admin access required");
-  return admin;
-}
+// Admin check removed - no authentication system
 
 function todayIsoDate(offsetDays: number) {
   const date = new Date();
@@ -122,8 +106,6 @@ async function getOrCreateSettings(ctx: MutationCtx, now: number) {
 export const getAdminOverview = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx);
-
     const settings = await ctx.db
       .query("scraperSettings")
       .withIndex("by_source", (q) => q.eq("source", KWIKBET_SOURCE))
@@ -159,8 +141,6 @@ export const updateSettings = mutation({
     matchLimit: v.number(),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-
     const now = Date.now();
     const cadenceMinutes = Math.max(1, Math.min(120, Math.floor(args.cadenceMinutes)));
     const dateWindowDays = Math.max(1, Math.min(14, Math.floor(args.dateWindowDays)));
@@ -185,7 +165,6 @@ export const updateSettings = mutation({
 export const triggerNow = mutation({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx);
     const now = Date.now();
     await getOrCreateSettings(ctx, now);
     await ctx.scheduler.runAfter(0, internal.scraper.runScrape, {

@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { CopyIcon, CheckIcon, Loader2, Eye, EyeOff } from "lucide-react"
-import { signIn, signUp, useSession } from "@/lib/auth-client"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 
@@ -38,36 +37,6 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
   const [password, setPassword] = React.useState("")
   const [showPassword, setShowPassword] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
-  // After signIn resolves, poll admin status to decide where to route
-  const [checkingRole, setCheckingRole] = React.useState(false)
-  const { data: session } = useSession()
-  const adminStatus = useQuery(
-    api.admin.getAdminStatus,
-    checkingRole && session ? {} : "skip"
-  )
-
-  // When adminStatus resolves after login, route accordingly
-  React.useEffect(() => {
-    if (!checkingRole) return
-    if (adminStatus === undefined) return // still loading
-
-    const timer = window.setTimeout(() => {
-      setCheckingRole(false)
-      setIsSubmitting(false)
-      onOpenChange(false)
-      setPhone("")
-      setPassword("")
-
-      if (adminStatus.isAdmin) {
-        router.push("/admin")
-        toast.success("Good to see you again, boss")
-      } else {
-        toast.success("Welcome back!")
-      }
-    }, 0)
-
-    return () => window.clearTimeout(timer)
-  }, [adminStatus, checkingRole, onOpenChange, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -86,25 +55,30 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
 
     try {
       setIsSubmitting(true)
-      const normalizedPhone = normalizeKenyanPhone(phone)
-      
-      const result = await signIn.email({
-        email: normalizedPhone,
-        password,
-      }, {
-        onError: (ctx) => {
-          toast.error(ctx.error.message || "Failed to log in")
-          setIsSubmitting(false)
-        },
-      })
-      
-      if (!result || result.error) {
+      const result = await signIn(phone, password)
+
+      if (result.error) {
+        toast.error(result.error)
         setIsSubmitting(false)
         return
       }
+
+      // Success! Close modal
+      toast.success("Welcome back!")
+      onOpenChange(false)
+      setPhone("")
+      setPassword("")
       
-      // Trigger role check — the useEffect above handles the routing
-      setCheckingRole(true)
+      // Check if admin - if so, redirect to admin
+      const authState = typeof window !== "undefined" ? sessionStorage.getItem("auth_state") : null
+      const isAdmin = authState ? JSON.parse(authState).user?.role === "admin" : false
+
+      // Redirect based on role
+      if (isAdmin) {
+        router.push("/admin")
+      } else {
+        router.push("/")
+      }
     } catch (error) {
       const errMsg =
         error instanceof Error
@@ -194,14 +168,10 @@ export function LoginModal({ open, onOpenChange }: ModalProps) {
         <div className="flex flex-col gap-2 pt-2">
           <Button
             type="submit"
-            disabled={isSubmitting || checkingRole}
+            disabled={isSubmitting}
             className="w-full bg-primary font-semibold text-primary-foreground hover:opacity-90"
           >
-            {checkingRole ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...
-              </>
-            ) : isSubmitting ? (
+            {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...
               </>
@@ -244,29 +214,24 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
 
     try {
       setIsSubmitting(true)
-      const normalizedPhone = normalizeKenyanPhone(phone)
-      
-      const result = await signUp.email({
-        email: normalizedPhone,
-        password,
-        name: normalizedPhone,
-      }, {
-        onError: (ctx) => {
-          toast.error(ctx.error.message || "Failed to create account")
-          setIsSubmitting(false)
-        },
-      })
-      
-      if (!result || result.error) {
+      const result = await signUp(phone, password)
+
+      if (result.error) {
+        toast.error(result.error)
         setIsSubmitting(false)
         return
       }
-      
-      toast.success("Account created successfully!")
+
+      toast.success("Account created successfully! Welcome to BetFlow.")
       onOpenChange(false)
       setPhone("")
       setPassword("")
       setConfirmPassword("")
+      
+      // Reload to pick up new auth state
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
     } catch (error) {
       const errMsg =
         error instanceof Error
@@ -554,7 +519,7 @@ export function WithdrawModal({ open, onOpenChange }: ModalProps) {
       )
       onOpenChange(false)
       setAmount("")
-    } catch (err) {
+    } catch {
       toast.error("Failed to process withdrawal. Please try again.")
     } finally {
       setIsSubmitting(false)
