@@ -395,6 +395,31 @@ export const updateRunStats = internalMutation({
   },
 });
 
+export const getLiveLogs = query({
+  args: {
+    runId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // This is a simple in-memory store - logs are not persisted to DB
+    // They're only available while the action is running
+    return {
+      logs: activeLogs.get(args.runId) || [],
+    };
+  },
+});
+
+// In-memory log storage for active runs - streams logs to clients in real-time
+const activeLogs = new Map<string, string[]>();
+
+// Helper to log messages (both adds to memory and console for debugging)
+function logMessage(runId: string, message: string) {
+  if (!activeLogs.has(runId)) {
+    activeLogs.set(runId, []);
+  }
+  activeLogs.get(runId)!.push(message);
+  console.log(`[${runId}] ${message}`);
+}
+
 async function mapConcurrent<T, R>(
   items: T[],
   concurrency: number,
@@ -426,12 +451,6 @@ export const runScrape = internalAction({
     matchLimit: v.number(),
   },
   handler: async (ctx, args) => {
-    const logs: string[] = [];
-
-    const addLog = (message: string) => {
-      logs.push(message);
-    };
-
     const window = dateWindow(args.dateWindowDays);
     const sportIds = mapSportsToIds(args.selectedSports);
     const runId: Id<"scrapeRuns"> = await ctx.runMutation(internal.scraper.startRun, {
@@ -441,6 +460,7 @@ export const runScrape = internalAction({
       selectedSports: args.selectedSports.map(String),
     });
 
+    const runIdStr = runId.toString();
     const sportNames = args.selectedSports
       .map(s => {
         const id = Number(s);
@@ -449,12 +469,12 @@ export const runScrape = internalAction({
       })
       .join(", ");
 
-    addLog(`[INFO] Starting run ${runId} for: ${sportNames}`);
+    logMessage(runIdStr, `[INFO] Starting run for: ${sportNames}`);
 
     try {
       const discovered = new Map<string, unknown>();
 
-      addLog(`[INFO] Fetching matches from ${window.dateFrom} to ${window.dateTo}`);
+      logMessage(runIdStr, `[INFO] Fetching matches from ${window.dateFrom} to ${window.dateTo}`);
 
       for (const date of window.dates) {
         const pageMatches = await kwikbetAdapter.fetchMatchPages({
@@ -465,7 +485,7 @@ export const runScrape = internalAction({
           sportIds,
         });
 
-        addLog(`[INFO] ${date}: found ${pageMatches.length} matches`);
+        logMessage(runIdStr, `[INFO] ${date}: found ${pageMatches.length} matches`);
 
         for (const match of pageMatches) {
           const normalized = kwikbetAdapter.normalizeMatch(match);
@@ -479,7 +499,7 @@ export const runScrape = internalAction({
         matchesDiscovered: sourceMatchIds.length,
       });
 
-      addLog(`[SUCCESS] Discovered ${sourceMatchIds.length} total matches. Fetching details...`);
+      logMessage(runIdStr, `[SUCCESS] Discovered ${sourceMatchIds.length} total matches. Fetching details...`);
 
       let successCount = 0;
       let failureCount = 0;
@@ -501,10 +521,13 @@ export const runScrape = internalAction({
           successCount++;
           totalMarketsUpserted += result.marketsUpserted;
           totalOddsUpserted += result.oddsUpserted;
+
+          // Log each match completion
+          logMessage(runIdStr, `[SUCCESS] Processed ${sourceMatchId}`);
         } catch (error) {
           failureCount++;
           const errorMsg = error instanceof Error ? error.message : "Unknown error";
-          addLog(`[ERROR] Failed ${sourceMatchId}: ${errorMsg}`);
+          logMessage(runIdStr, `[ERROR] Failed ${sourceMatchId}: ${errorMsg}`);
           await ctx.runMutation(internal.scraper.noteMatchFailure, {
             runId,
           });
@@ -519,22 +542,27 @@ export const runScrape = internalAction({
         oddsUpserted: totalOddsUpserted,
       });
 
-      addLog(`[SUCCESS] Done: ${successCount} succeeded, ${failureCount} failed`);
+      logMessage(runIdStr, `[SUCCESS] Done: ${successCount} succeeded, ${failureCount} failed`);
 
       await ctx.runMutation(internal.scraper.finishRun, {
         runId,
         status: "success",
       });
 
-      return { runId, logs };
+      return { runId };
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown scrape error";
-      addLog(`[ERROR] Run failed: ${errorMsg}`);
+      logMessage(runIdStr, `[ERROR] Run failed: ${errorMsg}`);
       await ctx.runMutation(internal.scraper.finishRun, {
         runId,
         status: "failed",
       });
-      return { runId, logs };
+      throw error;
+    } finally {
+      // Clean up logs after 5 minutes to free memory
+      setTimeout(() => {
+        activeLogs.delete(runIdStr);
+      }, 5 * 60 * 1000);
     }
   },
 });

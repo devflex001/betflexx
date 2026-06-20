@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { PlayCircle } from "lucide-react"
 import { ScraperConfigDrawer, type ScraperConfig } from "@/components/scraper-config-drawer"
 import { StatCard } from "@/components/stat-card"
+import { ScraperLiveLogs } from "@/components/scraper-live-logs"
 
 // 8 Most popular sports from KwikBet
 const AVAILABLE_SPORTS = [
@@ -47,6 +48,7 @@ export function AdminScraperPanel() {
   const triggerNow = useMutation(api.scraper.triggerNow)
 
   const [configOpen, setConfigOpen] = React.useState(false)
+  const [logsOpen, setLogsOpen] = React.useState(false)
   const [selectedSport, setSelectedSport] = React.useState<string>("1")
   const [dateWindowDays, setDateWindowDays] = React.useState<string>("2")
   const [matchLimit, setMatchLimit] = React.useState<string>("10")
@@ -63,6 +65,13 @@ export function AdminScraperPanel() {
       setMatchLimit(String(settings.matchLimit ?? 50))
     }
   }, [settings])
+
+  // Auto-open logs when scrape starts
+  React.useEffect(() => {
+    if (isCurrentlyRunning) {
+      setLogsOpen(true)
+    }
+  }, [isCurrentlyRunning])
 
   const handleConfigStart = async (config: ScraperConfig) => {
     setRunning(true)
@@ -122,22 +131,24 @@ export function AdminScraperPanel() {
         />
       </div>
 
-      {/* Live Logs (when running) */}
+      {/* Live Logs Indicator (when running) */}
       {isCurrentlyRunning && (
-        <div className="flex flex-col gap-3 border border-border rounded-lg bg-card p-3 sm:p-4 space-y-3 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold">Live Logs</span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-flex h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-xs text-muted-foreground">Running</span>
-            </span>
+        <button
+          onClick={() => setLogsOpen(true)}
+          className="w-full flex items-center gap-3 border border-border rounded-lg bg-card p-3 sm:p-4 hover:bg-accent transition-colors cursor-pointer"
+        >
+          <div className="flex-1 text-left">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-semibold">Live Logs</span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-flex h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-xs text-muted-foreground">Running</span>
+              </span>
+            </div>
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground">Click to view real-time logs</p>
           </div>
-          <div className="bg-black/5 dark:bg-black/20 font-mono text-[10px] sm:text-[11px] h-32 overflow-y-auto space-y-1 rounded-md p-2 sm:p-3">
-            <div className="text-muted-foreground">[INFO] Starting run for Soccer...</div>
-            <div className="text-muted-foreground">[INFO] Fetching matches...</div>
-            <div className="text-muted-foreground">[INFO] Discovered 247 matches</div>
-          </div>
-        </div>
+          <div className="text-xs text-muted-foreground">→</div>
+        </button>
       )}
 
       {/* Runs Table */}
@@ -278,6 +289,13 @@ export function AdminScraperPanel() {
           dateWindowDays,
           matchLimit,
         }}
+      />
+
+      {/* Live Logs Modal/Drawer */}
+      <ScraperLiveLogs
+        open={logsOpen}
+        onOpenChange={setLogsOpen}
+        runId={currentRun?._id || null}
       />
     </div>
   )
