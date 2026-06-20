@@ -52,7 +52,7 @@ export function CustomEventDetail({
   const markets = useQuery(api.customEvents.listCustomMarkets, { eventId }) as
     | CustomMarketRow[]
     | undefined
-  
+
   const publishEvent = useMutation(api.customEvents.publishCustomEvent)
   const deleteEvent = useMutation(api.customEvents.deleteCustomEvent)
 
@@ -118,7 +118,7 @@ export function CustomEventDetail({
   }
 
   return (
-    <div className="flex flex-col h-full space-y-4">
+    <div className="flex flex-col h-full space-y-4 p-4">
       {/* Header */}
       <div className="space-y-3 border-b border-border pb-4">
         <div className="flex items-center justify-between">

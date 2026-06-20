@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import type { SportsMatchWithOdds } from "@/components/markets-panel"
 import { CustomEventCard } from "@/components/custom-event-card"
+import { PublishedCustomEventsSection } from "@/components/published-custom-events-section"
 
 const SLIDES = [
   {
@@ -306,33 +307,8 @@ export default function Page() {
                 </div>
               )}
 
-              {/* Custom Events Section */}
-              {customEvents && customEvents.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 text-white text-[10px] font-bold">★</span>
-                      <span>Your Custom Events</span>
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {customEvents.map((event) => (
-                      <CustomEventCard
-                        key={event._id}
-                        eventId={event._id}
-                        title={event.title}
-                        homeTeam={event.homeTeam}
-                        awayTeam={event.awayTeam}
-                        startTime={event.startTime}
-                        competition={event.competition}
-                        status={event.status}
-                        totalMarkets={event.totalMarkets}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Published Custom Events Section */}
+              <PublishedCustomEventsSection />
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">

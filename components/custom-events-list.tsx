@@ -12,10 +12,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+} from "@/components/ui/sheet"
+import { CustomEventDetail } from "@/components/custom-event-detail"
 import { SmallLoader } from "@/components/small-loader"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { Search, Trash2, ListPlus, ChevronDown } from "lucide-react"
+import { Id } from "@/convex/_generated/dataModel"
 
 interface CustomEventsListProps {
   onSelectEvent?: (eventId: string) => void
@@ -46,6 +53,8 @@ export function CustomEventsList({
   const [filterStatus, setFilterStatus] = React.useState<"draft" | "published" | "all">(
     status || "all"
   )
+  const [detailOpen, setDetailOpen] = React.useState(false)
+  const [selectedEventId, setSelectedEventId] = React.useState<Id<"customEvents"> | null>(null)
 
   const events = useQuery(api.customEvents.listCustomEvents, {
     status: filterStatus === "all" ? undefined : filterStatus,
@@ -234,7 +243,10 @@ export function CustomEventsList({
                           size="sm"
                           variant="outline"
                           className="h-7 text-xs gap-1 px-2"
-                          onClick={() => onSelectEvent?.(event._id)}
+                          onClick={() => {
+                            setSelectedEventId(event._id as Id<"customEvents">)
+                            setDetailOpen(true)
+                          }}
                         >
                           <ListPlus className="size-3" />
                           View
@@ -293,7 +305,10 @@ export function CustomEventsList({
                         size="sm"
                         variant="outline"
                         className="h-7 text-xs gap-1 px-2"
-                        onClick={() => onSelectEvent?.(event._id)}
+                        onClick={() => {
+                          setSelectedEventId(event._id as Id<"customEvents">)
+                          setDetailOpen(true)
+                        }}
                       >
                         <ListPlus className="size-3" />
                         View
@@ -321,6 +336,25 @@ export function CustomEventsList({
           </div>
         )}
       </div>
+
+      {/* Event Detail Modal */}
+      <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
+        <SheetContent side="right" className="w-full sm:w-96 flex flex-col gap-0 p-0 border-l border-border">
+          <SheetHeader className="px-6 pt-6 pb-3 border-b border-border bg-muted/20">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold">Event Details</h2>
+            </div>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            {selectedEventId && (
+              <CustomEventDetail
+                eventId={selectedEventId}
+                onBack={() => setDetailOpen(false)}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
