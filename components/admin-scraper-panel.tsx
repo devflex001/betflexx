@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { SmallLoader } from "@/components/small-loader"
 import { toast } from "sonner"
-import { PlayCircle, Save } from "lucide-react"
+import { PlayCircle, Save, AlertCircle } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -48,7 +48,6 @@ export function AdminScraperPanel() {
   const triggerNow = useMutation(api.scraper.triggerNow)
 
   const [selectedSport, setSelectedSport] = React.useState<string>("1")
-  const [cadenceMinutes, setCadenceMinutes] = React.useState<string>("5")
   const [dateWindowDays, setDateWindowDays] = React.useState<string>("2")
   const [matchLimit, setMatchLimit] = React.useState<string>("50")
   const [saving, setSaving] = React.useState(false)
@@ -61,7 +60,6 @@ export function AdminScraperPanel() {
   React.useEffect(() => {
     if (settings) {
       setSelectedSport(String(settings.selectedSports?.[0] ?? 1))
-      setCadenceMinutes(String(settings.cadenceMinutes ?? 5))
       setDateWindowDays(String(settings.dateWindowDays ?? 2))
       setMatchLimit(String(settings.matchLimit ?? 50))
     }
@@ -72,7 +70,7 @@ export function AdminScraperPanel() {
     try {
       await updateSettings({
         enabled: true,
-        cadenceMinutes: Number(cadenceMinutes),
+        cadenceMinutes: 5,
         dateWindowDays: Number(dateWindowDays),
         selectedSports: [selectedSport],
         matchLimit: Number(matchLimit),
@@ -89,7 +87,7 @@ export function AdminScraperPanel() {
     setRunning(true)
     try {
       await triggerNow({})
-      toast.success("Scraper started")
+      toast.success("Scraper started — fetching latest fixtures")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to start")
     } finally {
@@ -109,15 +107,23 @@ export function AdminScraperPanel() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold tracking-tight">Sports Scraper</h1>
-          <p className="text-xs text-muted-foreground">Manage KwikBet fixture ingestion</p>
+          <p className="text-xs text-muted-foreground">On-demand fixture ingestion from KwikBet</p>
         </div>
         <Badge variant={isCurrentlyRunning ? "secondary" : "outline"} className="text-[10px] uppercase">
           {isCurrentlyRunning ? "● Running" : "● Idle"}
         </Badge>
       </div>
 
+      {/* Info Banner */}
+      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md p-3 flex gap-2">
+        <AlertCircle className="size-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-blue-800 dark:text-blue-200">
+          Click <span className="font-semibold">Run Now</span> to trigger a scrape. The scraper will fetch the latest fixtures based on your settings.
+        </p>
+      </div>
+
       {/* Controls */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div className="space-y-2">
           <label className="text-xs font-semibold text-muted-foreground">Sport</label>
           <Select value={selectedSport} onValueChange={setSelectedSport} disabled={isCurrentlyRunning}>
@@ -135,20 +141,7 @@ export function AdminScraperPanel() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground">Cadence (min)</label>
-          <Input
-            type="number"
-            min="1"
-            max="120"
-            value={cadenceMinutes}
-            onChange={(e) => setCadenceMinutes(e.target.value)}
-            disabled={isCurrentlyRunning}
-            className="h-8 text-xs w-full"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground">Window (days)</label>
+          <label className="text-xs font-semibold text-muted-foreground">Date Range (days)</label>
           <Input
             type="number"
             min="1"
@@ -182,21 +175,21 @@ export function AdminScraperPanel() {
         <Button
           size="sm"
           className="h-8 text-xs font-semibold gap-1.5"
-          onClick={handleSave}
-          disabled={saving || isCurrentlyRunning}
+          onClick={handleRunNow}
+          disabled={running || isCurrentlyRunning}
         >
-          <Save className="size-3.5" />
-          Save
+          <PlayCircle className="size-3.5" />
+          {isCurrentlyRunning ? "Running..." : "Run Now"}
         </Button>
         <Button
           size="sm"
           variant="outline"
           className="h-8 text-xs font-semibold gap-1.5"
-          onClick={handleRunNow}
-          disabled={running || isCurrentlyRunning}
+          onClick={handleSave}
+          disabled={saving || isCurrentlyRunning}
         >
-          <PlayCircle className="size-3.5" />
-          Run
+          <Save className="size-3.5" />
+          Save Settings
         </Button>
       </div>
 
@@ -208,18 +201,18 @@ export function AdminScraperPanel() {
         </div>
 
         <div className="border rounded-md p-3">
-          <p className="text-[10px] text-muted-foreground mb-1">Next Run</p>
-          <p className="text-xs font-medium">{formatTime(overview.settings.nextRunAt)}</p>
-        </div>
-
-        <div className="border rounded-md p-3">
           <p className="text-[10px] text-muted-foreground mb-1">Sport</p>
           <p className="text-xs font-medium">{sportLabel}</p>
         </div>
 
         <div className="border rounded-md p-3">
-          <p className="text-[10px] text-muted-foreground mb-1">Fetch Limit</p>
-          <p className="text-xs font-medium">{matchLimit}</p>
+          <p className="text-[10px] text-muted-foreground mb-1">Date Range</p>
+          <p className="text-xs font-medium">{dateWindowDays} day(s)</p>
+        </div>
+
+        <div className="border rounded-md p-3">
+          <p className="text-[10px] text-muted-foreground mb-1">Mode</p>
+          <p className="text-xs font-medium">On-Demand</p>
         </div>
       </div>
 
@@ -246,6 +239,7 @@ export function AdminScraperPanel() {
               <thead className="border-b bg-muted/30 text-muted-foreground text-[10px] uppercase">
                 <tr>
                   <th className="px-4 py-2 text-left font-semibold">Time</th>
+                  <th className="px-4 py-2 text-left font-semibold">Triggered</th>
                   <th className="px-4 py-2 text-left font-semibold">Status</th>
                   <th className="px-4 py-2 text-left font-semibold">Sport</th>
                   <th className="px-4 py-2 text-right font-semibold">Matches</th>
@@ -265,6 +259,11 @@ export function AdminScraperPanel() {
                   return (
                     <tr key={run._id} className="hover:bg-muted/30">
                       <td className="px-4 py-2.5 font-mono">{formatTime(run.startedAt)}</td>
+                      <td className="px-4 py-2.5 text-xs capitalize">
+                        <Badge variant="outline" className="text-[9px]">
+                          {run.triggeredBy}
+                        </Badge>
+                      </td>
                       <td className="px-4 py-2.5">
                         <Badge
                           variant={
@@ -282,7 +281,7 @@ export function AdminScraperPanel() {
                       <td className="px-4 py-2.5">{sportNames || "—"}</td>
                       <td className="px-4 py-2.5 text-right font-mono">
                         {run.matchesUpserted}/{run.matchesDiscovered}
-      </td>
+                      </td>
                       <td className="px-4 py-2.5 text-right font-mono">{run.marketsUpserted}</td>
                       <td className="px-4 py-2.5 text-right font-mono">{run.oddsUpserted}</td>
                     </tr>

@@ -154,7 +154,6 @@ export const updateSettings = mutation({
       dateWindowDays,
       selectedSports,
       matchLimit,
-      nextRunAt: args.enabled ? now + cadenceMinutes * 60_000 : settings.nextRunAt,
       updatedAt: now,
     });
 
@@ -196,33 +195,8 @@ export const getSettingsForAction = internalQuery({
 export const checkAndSchedule = internalMutation({
   args: {},
   handler: async (ctx) => {
-    const now = Date.now();
-    const settings = await getOrCreateSettings(ctx, now);
-    if (!settings.enabled || settings.nextRunAt > now) {
-      return { scheduled: false };
-    }
-
-    const running = await ctx.db
-      .query("scrapeRuns")
-      .withIndex("by_status", (q) => q.eq("status", "running"))
-      .take(1);
-
-    if (running.length > 0) {
-      await ctx.db.patch(settings._id, {
-        nextRunAt: now + Math.max(1, settings.cadenceMinutes) * 60_000,
-        updatedAt: now,
-      });
-      return { scheduled: false };
-    }
-
-    await ctx.db.patch(settings._id, {
-      nextRunAt: now + Math.max(1, settings.cadenceMinutes) * 60_000,
-      updatedAt: now,
-    });
-    await ctx.scheduler.runAfter(0, internal.scraper.runScrape, {
-      triggeredBy: "cron",
-    });
-    return { scheduled: true };
+    // Deprecated: Cron job removed - scraper runs on-demand via button click
+    return { scheduled: false };
   },
 });
 
