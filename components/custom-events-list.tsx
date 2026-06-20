@@ -19,7 +19,7 @@ import { Search, Trash2, ListPlus, ChevronDown } from "lucide-react"
 
 interface CustomEventsListProps {
   onSelectEvent?: (eventId: string) => void
-  status?: "draft" | "published"
+  status?: "draft" | "published" | "all"
 }
 
 type SortOption = "newest" | "oldest" | "matchup-asc" | "matchup-desc"

@@ -48,7 +48,7 @@ export function AdminCustomEventsPanel() {
         <>
           {/* Events List */}
           <CustomEventsList
-            status="draft"
+            status="all"
             onSelectEvent={handleSelectEvent}
           />
         </>
