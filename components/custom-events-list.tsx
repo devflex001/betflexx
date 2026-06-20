@@ -22,7 +22,7 @@ import { CustomEventDetail } from "@/components/custom-event-detail"
 import { SmallLoader } from "@/components/small-loader"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { Search, Trash2, ListPlus, ChevronDown } from "lucide-react"
+import { Search, Trash2, ListPlus, ChevronDown, MoreVertical, Edit2, CheckCircle, XCircle } from "lucide-react"
 import { Id } from "@/convex/_generated/dataModel"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import {
@@ -31,6 +31,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
+import { CustomEventEditor } from "@/components/custom-event-editor"
 
 interface CustomEventsListProps {
   onSelectEvent?: (eventId: string) => void
@@ -63,6 +64,8 @@ export function CustomEventsList({
   )
   const [detailOpen, setDetailOpen] = React.useState(false)
   const [selectedEvent, setSelectedEvent] = React.useState<any>(null)
+  const [editorOpen, setEditorOpen] = React.useState(false)
+  const [editingEvent, setEditingEvent] = React.useState<any>(null)
   const isMobile = useMediaQuery("(max-width: 768px)")
 
   const events = useQuery(api.customEvents.listCustomEvents, {
@@ -72,6 +75,7 @@ export function CustomEventsList({
   })
 
   const deleteEvent = useMutation(api.customEvents.deleteCustomEvent)
+  const publishEvent = useMutation(api.customEvents.publishCustomEvent)
 
   const handleDelete = async (eventId: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -83,6 +87,22 @@ export function CustomEventsList({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to delete")
     }
+  }
+
+  const handlePublish = async (eventId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      await publishEvent({ eventId: eventId as any })
+      toast.success("Event published")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to publish")
+    }
+  }
+
+  const handleEdit = (event: any, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingEvent(event)
+    setEditorOpen(true)
   }
 
   const sortedEvents = React.useMemo(() => {
@@ -260,16 +280,55 @@ export function CustomEventsList({
                           <ListPlus className="size-3" />
                           View
                         </Button>
-                        {event.status === "draft" && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={(e) => handleDelete(event._id, e)}
-                          >
-                            <Trash2 className="size-3" />
-                          </Button>
-                        )}
+
+                        {/* Actions Menu */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-1"
+                            >
+                              <MoreVertical className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40">
+                            {event.status === "draft" && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={(e) => handleEdit(event, e as any)}
+                                  className="gap-2 text-xs cursor-pointer"
+                                >
+                                  <Edit2 className="size-3" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => handlePublish(event._id, e as any)}
+                                  className="gap-2 text-xs cursor-pointer"
+                                >
+                                  <CheckCircle className="size-3" />
+                                  Publish
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {event.status === "published" && (
+                              <DropdownMenuItem
+                                disabled
+                                className="gap-2 text-xs text-muted-foreground"
+                              >
+                                <XCircle className="size-3" />
+                                Published (read-only)
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={(e) => handleDelete(event._id, e as any)}
+                              className="gap-2 text-xs cursor-pointer text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="size-3" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}
@@ -309,7 +368,7 @@ export function CustomEventsList({
                     <div className="font-mono text-[10px] text-muted-foreground">
                       {event.totalMarkets} markets
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <Button
                         size="sm"
                         variant="outline"
@@ -322,16 +381,55 @@ export function CustomEventsList({
                         <ListPlus className="size-3" />
                         View
                       </Button>
-                      {event.status === "draft" && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={(e) => handleDelete(event._id, e)}
-                        >
-                          <Trash2 className="size-3" />
-                        </Button>
-                      )}
+
+                      {/* Actions Menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-1"
+                          >
+                            <MoreVertical className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          {event.status === "draft" && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={(e) => handleEdit(event, e as any)}
+                                className="gap-2 text-xs cursor-pointer"
+                              >
+                                <Edit2 className="size-3" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => handlePublish(event._id, e as any)}
+                                className="gap-2 text-xs cursor-pointer"
+                              >
+                                <CheckCircle className="size-3" />
+                                Publish
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {event.status === "published" && (
+                            <DropdownMenuItem
+                              disabled
+                              className="gap-2 text-xs text-muted-foreground"
+                            >
+                              <XCircle className="size-3" />
+                              Published (read-only)
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={(e) => handleDelete(event._id, e as any)}
+                            className="gap-2 text-xs cursor-pointer text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="size-3" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 </div>
@@ -389,6 +487,17 @@ export function CustomEventsList({
           </SheetContent>
         </Sheet>
       )}
+
+      {/* Event Editor Modal */}
+      <CustomEventEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        eventToEdit={editingEvent}
+        onSuccess={() => {
+          setEditingEvent(null)
+          setEditorOpen(false)
+        }}
+      />
     </div>
   )
 }

@@ -18,7 +18,8 @@ import { toast } from "sonner"
 interface CustomEventEditorProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  eventId?: Id<"customEvents">
+  eventToEdit?: any
+  onSuccess?: () => void
 }
 
 interface MarketRow {
@@ -33,11 +34,13 @@ interface MarketRow {
 export function CustomEventEditor({
   open,
   onOpenChange,
-  eventId,
+  eventToEdit,
+  onSuccess,
 }: CustomEventEditorProps) {
   const router = useRouter()
   const isMobile = useMediaQuery("(max-width: 640px)")
   const createEvent = useMutation(api.customEvents.createCustomEvent)
+  const updateEvent = useMutation(api.customEvents.updateCustomEvent)
 
   const [step, setStep] = React.useState<"basic">("basic")
   const [loading, setLoading] = React.useState(false)
@@ -52,6 +55,31 @@ export function CustomEventEditor({
     description: "",
     startTime: "",
   })
+
+  // Initialize form with event data when editing
+  React.useEffect(() => {
+    if (eventToEdit) {
+      setFormData({
+        title: eventToEdit.title || "",
+        homeTeam: eventToEdit.homeTeam || "",
+        awayTeam: eventToEdit.awayTeam || "",
+        sport: eventToEdit.sport || "football",
+        competition: eventToEdit.competition || "Custom League",
+        description: eventToEdit.description || "",
+        startTime: new Date(eventToEdit.startTime).toISOString().slice(0, 16),
+      })
+    } else {
+      setFormData({
+        title: "",
+        homeTeam: "",
+        awayTeam: "",
+        sport: "football",
+        competition: "Custom League",
+        description: "",
+        startTime: "",
+      })
+    }
+  }, [eventToEdit, open])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -71,17 +99,35 @@ export function CustomEventEditor({
         return;
       }
 
-      const eventId = await createEvent({
-        title: formData.title,
-        description: formData.description || undefined,
-        homeTeam: formData.homeTeam,
-        awayTeam: formData.awayTeam,
-        startTime: startTimeMs,
-        sport: formData.sport,
-        competition: formData.competition,
-      });
+      if (eventToEdit) {
+        // Edit existing event
+        await updateEvent({
+          eventId: eventToEdit._id,
+          title: formData.title,
+          description: formData.description || undefined,
+          homeTeam: formData.homeTeam,
+          awayTeam: formData.awayTeam,
+          startTime: startTimeMs,
+          sport: formData.sport,
+          competition: formData.competition,
+        });
+        toast.success("Event updated successfully");
+      } else {
+        // Create new event
+        const eventId = await createEvent({
+          title: formData.title,
+          description: formData.description || undefined,
+          homeTeam: formData.homeTeam,
+          awayTeam: formData.awayTeam,
+          startTime: startTimeMs,
+          sport: formData.sport,
+          competition: formData.competition,
+        });
+        toast.success("Event created successfully");
+        // Navigate to the custom event detail page to configure markets and odds
+        router.push(`/admin/custom-events/${eventId}`);
+      }
 
-      toast.success("Event created successfully");
       onOpenChange(false);
       setStep("basic");
       setFormData({
@@ -94,10 +140,11 @@ export function CustomEventEditor({
         startTime: "",
       });
 
-      // Navigate to the custom event detail page to configure markets and odds
-      router.push(`/admin/custom-events/${eventId}`);
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to create event");
+      toast.error(error instanceof Error ? error.message : "Failed to save event");
     } finally {
       setLoading(false);
     }
@@ -190,7 +237,7 @@ export function CustomEventEditor({
           onClick={handleBasicSubmit}
           disabled={loading}
         >
-          {loading ? "Creating..." : "Create Event"}
+          {loading ? (eventToEdit ? "Updating..." : "Creating...") : (eventToEdit ? "Update Event" : "Create Event")}
         </Button>
       </div>
     </div>
@@ -203,10 +250,10 @@ export function CustomEventEditor({
         <DrawerContent className="flex flex-col gap-0 max-h-[85vh]">
           <DrawerHeader className="text-left px-6 pt-6 pb-3 border-b border-border bg-muted/20">
             <DrawerTitle className="text-lg font-bold">
-              {eventId ? "Edit Event" : "Create Custom Event"}
+              {eventToEdit ? "Edit Event" : "Create Custom Event"}
             </DrawerTitle>
             <DrawerDescription className="text-xs mt-1">
-              {eventId ? "Update event details and markets" : "Set up a new custom betting event"}
+              {eventToEdit ? "Update event details and markets" : "Set up a new custom betting event"}
             </DrawerDescription>
           </DrawerHeader>
           <ScrollArea className="flex-1 min-h-0">
@@ -225,10 +272,10 @@ export function CustomEventEditor({
       <SheetContent side="right" className="w-96 flex flex-col gap-0 p-0 border-l border-border">
         <SheetHeader className="px-6 pt-6 pb-3 border-b border-border bg-muted/20">
           <SheetTitle className="text-lg font-bold">
-            {eventId ? "Edit Event" : "Create Custom Event"}
+            {eventToEdit ? "Edit Event" : "Create Custom Event"}
           </SheetTitle>
           <SheetDescription className="text-xs mt-1">
-            {eventId ? "Update event details and markets" : "Set up a new custom betting event"}
+            {eventToEdit ? "Update event details and markets" : "Set up a new custom betting event"}
           </SheetDescription>
         </SheetHeader>
         <ScrollArea className="flex-1 min-h-0">
