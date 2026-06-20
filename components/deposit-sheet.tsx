@@ -9,7 +9,6 @@ import { api } from "@/convex/_generated/api"
 import { ArrowUpRight } from "lucide-react"
 import { MPesaLiveStatus, MPesaFeedback } from "@/components/mpesa-feedback"
 import { getMPesaFeedback } from "@/lib/mpesa-status-codes"
-import { useAuthClient } from "@/lib/auth-client"
 
 const QUICK_AMOUNTS = [100, 250, 500, 1000, 2500, 5000]
 const MIN_AMOUNT = 10
@@ -38,7 +37,6 @@ interface TransactionResult {
 
 export function DepositSheet() {
   const wallet = useQuery(api.mpesa.getWallet)
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthClient()
   const createTransaction = useMutation(api.mpesa.createTransaction)
 
   const [amount, setAmount] = React.useState("")
@@ -58,16 +56,8 @@ export function DepositSheet() {
   )
 
   React.useEffect(() => {
-    if (user?.phone) {
-      let rawPhone = user.phone
-      if (rawPhone.startsWith("+254")) {
-        rawPhone = "0" + rawPhone.slice(4)
-      } else if (rawPhone.startsWith("254")) {
-        rawPhone = "0" + rawPhone.slice(3)
-      }
-      setPhone(rawPhone)
-    }
-  }, [user])
+    // Set default phone if needed
+  }, [])
 
   // Listen to database updates from M-Pesa callback
   React.useEffect(() => {
@@ -152,13 +142,8 @@ export function DepositSheet() {
       return
     }
 
-    if (!isValidKenyanPhone(phone)) {
+  if (!isValidKenyanPhone(phone)) {
       setErrorMessage("Enter valid phone (e.g. 0712345678)")
-      return
-    }
-
-    if (!isAuthenticated || !user) {
-      setErrorMessage("Please log in to deposit")
       return
     }
 
@@ -172,7 +157,7 @@ export function DepositSheet() {
         body: JSON.stringify({
           phone: phone.trim(),
           amount: parsedAmount,
-          accountReference: `USER-${user.id}`,
+          accountReference: `DEPOSIT`,
           transactionDesc: `Betting deposit - KES ${parsedAmount}`,
         }),
       })
@@ -234,26 +219,6 @@ export function DepositSheet() {
   }
 
   // Render based on stage
-  if (authLoading) {
-    return (
-      <div className="space-y-3">
-        <div className="bg-muted/30 border border-border rounded p-3">
-          <p className="text-xs text-muted-foreground text-center">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="space-y-3">
-        <div className="bg-red-500/10 border border-red-500/20 rounded p-3">
-          <p className="text-xs text-red-700 text-center">Please log in to deposit</p>
-        </div>
-      </div>
-    )
-  }
-
   if (stage === "idle") {
     return (
       <form onSubmit={handleSubmit} className="space-y-3">

@@ -12,7 +12,6 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react"
-import { useAuthClient } from "@/lib/auth-client"
 
 const MIN_WITHDRAWAL = 50
 const MAX_WITHDRAWAL = 100000
@@ -26,23 +25,10 @@ type WithdrawalState = "idle" | "loading" | "confirming" | "success" | "failed"
 
 export function WithdrawalSheet() {
   const wallet = useQuery(api.mpesa.getWallet)
-  const { user, isAuthenticated, isLoading: authLoading } = useAuthClient()
 
   const [amount, setAmount] = React.useState("")
   const [phone, setPhone] = React.useState("")
   const [state, setState] = React.useState<WithdrawalState>("idle")
-
-  React.useEffect(() => {
-    if (user?.phone) {
-      let rawPhone = user.phone
-      if (rawPhone.startsWith("+254")) {
-        rawPhone = "0" + rawPhone.slice(4)
-      } else if (rawPhone.startsWith("254")) {
-        rawPhone = "0" + rawPhone.slice(3)
-      }
-      setPhone(rawPhone)
-    }
-  }, [user])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,11 +60,6 @@ export function WithdrawalSheet() {
       return
     }
 
-    if (!isAuthenticated || !user) {
-      toast.error("Please log in")
-      return
-    }
-
     setState("loading")
 
     try {
@@ -104,25 +85,6 @@ export function WithdrawalSheet() {
   const handleReset = () => {
     setAmount("")
     setState("idle")
-  }
-
-  if (authLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-2 py-4">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        <p className="text-xs text-muted-foreground">Loading...</p>
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="space-y-3">
-        <div className="bg-red-500/10 border border-red-500/20 rounded p-3">
-          <p className="text-xs text-red-700 text-center">Please log in to withdraw</p>
-        </div>
-      </div>
-    )
   }
 
   if (state === "idle") {

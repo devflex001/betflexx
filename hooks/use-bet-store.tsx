@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { useQuery, useMutation } from "convex/react"
-import { useSession, useAuthClient } from "@/lib/auth-client"
 import { api } from "@/convex/_generated/api"
 
 export interface Selection {
@@ -189,11 +188,11 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
     activeBets: 53
   })
 
-  // Dynamic balance, bets, transactions, and adminStats - check if queries returned data
-  const walletBalance: number = isAuthenticated ? (dbBalance ?? 1000) : localBalance
-  const myBets: PlacedBet[] = isAuthenticated ? (dbBets as PlacedBet[] | undefined) ?? [] : localBets
-  const transactions: Transaction[] = isAuthenticated ? (dbTransactions as Transaction[] | undefined) ?? [] : localTransactions
-  const adminStats = isAuthenticated ? (dbAdminStats ?? localAdminStats) : localAdminStats
+  // Dynamic balance, bets, transactions, and adminStats
+  const walletBalance: number = dbBalance ?? 1000
+  const myBets: PlacedBet[] = (dbBets as PlacedBet[] | undefined) ?? []
+  const transactions: Transaction[] = (dbTransactions as Transaction[] | undefined) ?? []
+  const adminStats = dbAdminStats ?? localAdminStats
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
