@@ -223,13 +223,13 @@ export function AdminEventsPanel() {
         ) : matches.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-border text-muted-foreground text-[9px] uppercase font-bold tracking-wider">
+              <thead className="border-b border-border text-muted-foreground text-[9px] font-semibold">
                 <tr>
-                  <th className="px-3 py-2">Start</th>
-                  <th className="px-3 py-2">Sport</th>
-                  <th className="px-3 py-2">Event</th>
-                  <th className="px-3 py-2">Competition</th>
-                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2 text-left">Start</th>
+                  <th className="px-3 py-2 text-left">Sport</th>
+                  <th className="px-3 py-2 text-left">Event</th>
+                  <th className="px-3 py-2 text-left">Competition</th>
+                  <th className="px-3 py-2 text-left">Status</th>
                   <th className="px-3 py-2 text-right">Markets</th>
                   <th className="px-3 py-2 text-right">Details</th>
                 </tr>
