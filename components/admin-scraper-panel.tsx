@@ -142,7 +142,7 @@ export function AdminScraperPanel() {
 
       {/* Runs Table */}
       {overview.runs.length > 0 && (
-        <div className="space-y-3 border border-border rounded-lg bg-card p-3 sm:p-4 shadow-sm">
+        <div className="space-y-3 border border-border rounded-lg bg-card p-2 sm:px-2 shadow-sm">
           <span className="text-sm font-semibold">Run History</span>
 
           {/* Desktop Table */}
