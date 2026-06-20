@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { CopyIcon, CheckIcon, Loader2, Eye, EyeOff } from "lucide-react"
-import { useAuthClient } from "@/lib/auth-client"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 

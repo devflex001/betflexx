@@ -3,7 +3,6 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useQuery } from "convex/react"
-import { useSession, useAuthClient } from "@/lib/auth-client"
 import { api } from "@/convex/_generated/api"
 import { useBetStore } from "@/hooks/use-bet-store"
 import { useTheme } from "next-themes"

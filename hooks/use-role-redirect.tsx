@@ -2,7 +2,6 @@
 
 import { useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { useAuthClient } from "@/lib/auth-client"
 
 /**
  * Simple role-based redirect hook.

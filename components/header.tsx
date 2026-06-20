@@ -31,8 +31,6 @@ import {
 } from "./modals"
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Betslip } from "./betslip"
-import { useAuthClient } from "@/lib/auth-client"
-import { useRouter } from "next/navigation"
 
 export function Header() {
   const { 
