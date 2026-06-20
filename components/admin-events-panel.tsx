@@ -42,11 +42,6 @@ function eventName(match: SportsMatchWithOdds) {
   return `${match.homeTeam} vs ${match.awayTeam}`
 }
 
-const SPORTS = [
-  { value: "football", label: "Football" },
-  { value: "all", label: "All Sports" },
-]
-
 const STATUSES = [
   { value: "all", label: "All" },
   { value: "upcoming", label: "Upcoming" },
@@ -82,6 +77,33 @@ export function AdminEventsPanel() {
     limit: 100,
   }) as SportsMatchWithOdds[] | undefined
 
+  // Get all available sports from all matches
+  const allMatches = useQuery(api.sportsData.listMatches, {
+    limit: 300,
+  }) as SportsMatchWithOdds[] | undefined
+
+  // Build dynamic sports list from available data
+  const availableSports = React.useMemo(() => {
+    if (!allMatches) return [{ value: "all", label: "All Sports" }]
+
+    const sports = new Set<string>()
+    allMatches.forEach((match) => {
+      if (match.sportSlug) sports.add(match.sportSlug)
+    })
+
+    const sportsList = Array.from(sports)
+      .map((slug) => ({
+        value: slug,
+        label: formatSportName(slug),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+
+    return [
+      { value: "all", label: "All Sports" },
+      ...sportsList,
+    ]
+  }, [allMatches])
+
   return (
     <div className="space-y-5">
       <div className="space-y-1">
@@ -113,12 +135,12 @@ export function AdminEventsPanel() {
                 size="sm"
                 className="h-8 text-xs gap-1.5 border-border"
               >
-                {SPORTS.find((s) => s.value === sport)?.label || "Sport"}
+                {availableSports.find((s) => s.value === sport)?.label || "Sport"}
                 <ChevronDown className="size-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-40">
-              {SPORTS.map((s) => (
+              {availableSports.map((s) => (
                 <DropdownMenuItem
                   key={s.value}
                   onClick={() => {
