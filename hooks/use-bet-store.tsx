@@ -425,43 +425,38 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   }
 
   const updateAdminTransactionStatus = async (txId: string, status: "success" | "pending" | "failed", errorDetail?: string) => {
-    if (convexUser) {
-      try {
-        await updateTransactionStatusMutation({ txId, status, errorDetail })
-      } catch (err) {
-        console.error(err)
-      }
-    } else {
-      let balanceToAdd = 0
-      const updated = transactions.map((t) => {
-        if (t.id === txId) {
-          if (status === "success" && t.status !== "success" && t.type === "deposit") {
-            saveAdminStats({
-              ...adminStats,
-              totalDeposits: adminStats.totalDeposits + t.amount
-            })
-            balanceToAdd = t.amount
-          }
-          return { ...t, status, errorDetail }
+    try {
+      await updateTransactionStatusMutation({ txId, status, errorDetail })
+    } catch (err) {
+      console.error(err)
+    }
+
+    let balanceToAdd = 0
+    const updated = transactions.map((t) => {
+      if (t.id === txId) {
+        if (status === "success" && t.status !== "success" && t.type === "deposit") {
+          saveAdminStats({
+            ...adminStats,
+            totalDeposits: adminStats.totalDeposits + t.amount
+          })
+          balanceToAdd = t.amount
         }
-        return t
-      })
-      saveTx(updated)
-      if (balanceToAdd > 0) {
-        saveBalance(walletBalance + balanceToAdd)
+        return { ...t, status, errorDetail }
       }
+      return t
+    })
+    saveTx(updated)
+    if (balanceToAdd > 0) {
+      saveBalance(walletBalance + balanceToAdd)
     }
   }
 
   const cancelBet = async (betId: string): Promise<boolean> => {
-    if (convexUser) {
-      try {
-        await cancelBetMutation({ betId: betId as any })
-        return true
-      } catch (err) {
-        console.error(err)
-        return false
-      }
+    try {
+      await cancelBetMutation({ betId: betId as any })
+      return true
+    } catch (err) {
+      console.error(err)
     }
 
     const bet = myBets.find((b) => b.id === betId)
