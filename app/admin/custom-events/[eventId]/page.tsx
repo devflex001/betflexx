@@ -10,24 +10,39 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Save, Send, Trash2, EyeOff, Calendar, Trophy, MapPin } from "lucide-react"
+import { ArrowLeft, Save, Send, Trash2, EyeOff } from "lucide-react"
 import { SmallLoader } from "@/components/small-loader"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 export default function CustomEventDetailPage() {
   const router = useRouter()
   const params = useParams()
   const eventId = params.eventId as string
-  const [isEditing, setIsEditing] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
 
   const event = useQuery(api.customEvents.getCustomEvent, {
     eventId: eventId as Id<"customEvents">,
   })
 
+  const markets = useQuery(api.customEvents.listCustomMarkets, {
+    eventId: eventId as Id<"customEvents">,
+  })
+
+  const odds = useQuery(api.customEvents.listCustomOddsByEvent, {
+    eventId: eventId as Id<"customEvents">,
+  })
+
   const updateEvent = useMutation(api.customEvents.updateCustomEvent)
   const updateScore = useMutation(api.customEvents.updateCustomEventScore)
+  const updateOdds = useMutation(api.customEvents.updateCustomOdds)
   const publishEvent = useMutation(api.customEvents.publishCustomEvent)
   const unpublishEvent = useMutation(api.customEvents.unpublishCustomEvent)
   const deleteEvent = useMutation(api.customEvents.deleteCustomEvent)
@@ -35,7 +50,6 @@ export default function CustomEventDetailPage() {
   // Form state for editing
   const [formData, setFormData] = React.useState({
     title: "",
-    description: "",
     homeTeam: "",
     awayTeam: "",
     sport: "",
@@ -45,12 +59,14 @@ export default function CustomEventDetailPage() {
     awayScore: 0,
   })
 
+  // Odds editing state
+  const [oddsEdits, setOddsEdits] = React.useState<Record<string, number>>({})
+
   // Initialize form when event loads
   React.useEffect(() => {
     if (event) {
       setFormData({
         title: event.title || "",
-        description: event.description || "",
         homeTeam: event.homeTeam || "",
         awayTeam: event.awayTeam || "",
         sport: event.sport || "",
@@ -89,7 +105,6 @@ export default function CustomEventDetailPage() {
       await updateEvent({
         eventId: eventId as Id<"customEvents">,
         title: formData.title,
-        description: formData.description || undefined,
         homeTeam: formData.homeTeam,
         awayTeam: formData.awayTeam,
         sport: formData.sport,
@@ -109,8 +124,17 @@ export default function CustomEventDetailPage() {
         })
       }
 
+      // Update odds edits
+      const oddEdits = Object.entries(oddsEdits)
+      for (const [oddId, oddValue] of oddEdits) {
+        await updateOdds({
+          oddId: oddId as Id<"customOdds">,
+          oddValue,
+        })
+      }
+      setOddsEdits({})
+
       toast.success("Event updated successfully")
-      setIsEditing(false)
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to update event"
@@ -159,7 +183,7 @@ export default function CustomEventDetailPage() {
     }
   }
 
-  if (!event) {
+  if (!event || !markets || !odds) {
     return (
       <AdminLayout>
         <div className="flex flex-col gap-4">
@@ -180,10 +204,19 @@ export default function CustomEventDetailPage() {
     )
   }
 
+  // Group odds by market for easier display
+  const oddsbyMarket = markets.reduce(
+    (acc, market) => {
+      acc[market._id] = odds.filter((o) => o.marketId === market._id)
+      return acc
+    },
+    {} as Record<string, any[]>
+  )
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Header with back button and title only */}
+      <div className="space-y-4">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
@@ -195,12 +228,7 @@ export default function CustomEventDetailPage() {
               <ArrowLeft className="size-3.5" />
               Back
             </Button>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight">Edit Event</h1>
-              <p className="text-xs text-muted-foreground">
-                Modify event details and settings
-              </p>
-            </div>
+            <h1 className="text-lg font-bold">Edit Event</h1>
           </div>
 
           <div className="flex items-center gap-2">
@@ -213,7 +241,20 @@ export default function CustomEventDetailPage() {
                 size="sm"
                 variant="outline"
                 className="h-8 gap-1.5 text-xs"
-                onClick={handleUnpublish}
+                onClick={async () => {
+                  try {
+                    await unpublishEvent({
+                      eventId: eventId as Id<"customEvents">,
+                    })
+                    toast.success("Event unpublished")
+                  } catch (error) {
+                    toast.error(
+                      error instanceof Error
+                        ? error.message
+                        : "Failed to unpublish"
+                    )
+                  }
+                }}
               >
                 <EyeOff className="size-3" />
                 Unpublish
@@ -222,7 +263,21 @@ export default function CustomEventDetailPage() {
               <Button
                 size="sm"
                 className="h-8 gap-1.5 text-xs"
-                onClick={handlePublish}
+                onClick={async () => {
+                  if (!confirm("Publish this event?")) return
+                  try {
+                    await publishEvent({
+                      eventId: eventId as Id<"customEvents">,
+                    })
+                    toast.success("Event published")
+                  } catch (error) {
+                    toast.error(
+                      error instanceof Error
+                        ? error.message
+                        : "Failed to publish"
+                    )
+                  }
+                }}
               >
                 <Send className="size-3" />
                 Publish
@@ -234,7 +289,20 @@ export default function CustomEventDetailPage() {
                 size="sm"
                 variant="outline"
                 className="h-8 gap-1.5 text-xs text-destructive hover:text-destructive"
-                onClick={handleDelete}
+                onClick={async () => {
+                  if (!confirm("Delete this event?")) return
+                  try {
+                    await deleteEvent({
+                      eventId: eventId as Id<"customEvents">,
+                    })
+                    toast.success("Event deleted")
+                    handleBack()
+                  } catch (error) {
+                    toast.error(
+                      error instanceof Error ? error.message : "Failed to delete"
+                    )
+                  }
+                }}
               >
                 <Trash2 className="size-3" />
                 Delete
@@ -248,163 +316,220 @@ export default function CustomEventDetailPage() {
               className="h-8 gap-1.5 text-xs"
             >
               <Save className="size-3" />
-              {isSaving ? "Saving..." : "Save Changes"}
+              {isSaving ? "Saving..." : "Save"}
             </Button>
           </div>
         </div>
 
-        {/* Compact, visually impressive edit form */}
-        <div className="rounded-lg border border-border bg-card">
-          {/* Event Title - Prominent */}
-          <div className="border-b border-border bg-muted/20 p-6">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold">Event Title</label>
-              <Input
-                placeholder="e.g., Champions League Final 2024"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                className="text-lg font-semibold h-12"
-              />
-            </div>
+        {/* Event Details - Compact Grid */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              Title
+            </label>
+            <Input
+              placeholder="Event title"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              className="h-8 text-sm"
+            />
           </div>
 
-          {/* Main event data in a grid layout */}
-          <div className="p-6 space-y-6">
-            {/* Teams and Score Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                <Trophy className="size-4" />
-                Match Details
-              </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              Home Team
+            </label>
+            <Input
+              placeholder="Home team"
+              value={formData.homeTeam}
+              onChange={(e) =>
+                setFormData({ ...formData, homeTeam: e.target.value })
+              }
+              className="h-8 text-sm"
+            />
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Home Team</label>
-                    <Input
-                      placeholder="e.g., Manchester United"
-                      value={formData.homeTeam}
-                      onChange={(e) =>
-                        setFormData({ ...formData, homeTeam: e.target.value })
-                      }
-                    />
-                  </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              Away Team
+            </label>
+            <Input
+              placeholder="Away team"
+              value={formData.awayTeam}
+              onChange={(e) =>
+                setFormData({ ...formData, awayTeam: e.target.value })
+              }
+              className="h-8 text-sm"
+            />
+          </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Home Score</label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={formData.homeScore}
-                      onChange={(e) =>
-                        setFormData({ ...formData, homeScore: parseInt(e.target.value) || 0 })
-                      }
-                      className="text-center text-lg font-mono"
-                    />
-                  </div>
-                </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              Start Time
+            </label>
+            <Input
+              type="datetime-local"
+              value={formData.startTime}
+              onChange={(e) =>
+                setFormData({ ...formData, startTime: e.target.value })
+              }
+              className="h-8 text-sm"
+            />
+          </div>
 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Away Team</label>
-                    <Input
-                      placeholder="e.g., Arsenal"
-                      value={formData.awayTeam}
-                      onChange={(e) =>
-                        setFormData({ ...formData, awayTeam: e.target.value })
-                      }
-                    />
-                  </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              Sport
+            </label>
+            <Input
+              placeholder="Sport"
+              value={formData.sport}
+              onChange={(e) =>
+                setFormData({ ...formData, sport: e.target.value })
+              }
+              className="h-8 text-sm"
+            />
+          </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Away Score</label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={formData.awayScore}
-                      onChange={(e) =>
-                        setFormData({ ...formData, awayScore: parseInt(e.target.value) || 0 })
-                      }
-                      className="text-center text-lg font-mono"
-                    />
-                  </div>
-                </div>
-              </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              Competition
+            </label>
+            <Input
+              placeholder="Competition"
+              value={formData.competition}
+              onChange={(e) =>
+                setFormData({ ...formData, competition: e.target.value })
+              }
+              className="h-8 text-sm"
+            />
+          </div>
 
-              {/* Visual score display */}
-              <div className="flex items-center justify-center p-4 rounded-lg bg-muted/30">
-                <div className="flex items-center gap-4 text-2xl font-mono font-bold">
-                  <span className="text-muted-foreground">{formData.homeTeam || "Home"}</span>
-                  <span className="px-4 py-2 rounded-md bg-primary/10 text-primary">
-                    {formData.homeScore} - {formData.awayScore}
-                  </span>
-                  <span className="text-muted-foreground">{formData.awayTeam || "Away"}</span>
-                </div>
-              </div>
-            </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              Home Score
+            </label>
+            <Input
+              type="number"
+              min={0}
+              value={formData.homeScore}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  homeScore: parseInt(e.target.value) || 0,
+                })
+              }
+              className="h-8 text-sm text-center"
+            />
+          </div>
 
-            {/* Event Information Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                <MapPin className="size-4" />
-                Event Information
-              </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              Away Score
+            </label>
+            <Input
+              type="number"
+              min={0}
+              value={formData.awayScore}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  awayScore: parseInt(e.target.value) || 0,
+                })
+              }
+              className="h-8 text-sm text-center"
+            />
+          </div>
+        </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Sport</label>
-                  <Input
-                    placeholder="e.g., Football"
-                    value={formData.sport}
-                    onChange={(e) =>
-                      setFormData({ ...formData, sport: e.target.value })
-                    }
-                  />
-                </div>
+        {/* Markets and Odds Table */}
+        <div className="border rounded-lg bg-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table className="text-xs">
+              <TableHeader className="bg-muted/50 sticky top-0">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="h-8 p-2 font-semibold">
+                    Market
+                  </TableHead>
+                  <TableHead className="h-8 p-2 font-semibold">Type</TableHead>
+                  <TableHead className="h-8 p-2 font-semibold">
+                    Outcome
+                  </TableHead>
+                  <TableHead className="h-8 p-2 font-semibold text-right">
+                    Odds
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {markets.map((market) => {
+                  const marketOdds = oddsbyMarket[market._id] || []
+                  const isFirstRow = true
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Competition</label>
-                  <Input
-                    placeholder="e.g., Premier League"
-                    value={formData.competition}
-                    onChange={(e) =>
-                      setFormData({ ...formData, competition: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-1">
-                    <Calendar className="size-3" />
-                    Start Time
-                  </label>
-                  <Input
-                    type="datetime-local"
-                    value={formData.startTime}
-                    onChange={(e) =>
-                      setFormData({ ...formData, startTime: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Description Section */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <Textarea
-                  placeholder="Optional event description..."
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  className="min-h-20 resize-none"
-                />
-              </div>
-            </div>
+                  return (
+                    <React.Fragment key={market._id}>
+                      {marketOdds.length === 0 ? (
+                        <TableRow className="hover:bg-muted/20">
+                          <TableCell className="p-2">{market.name}</TableCell>
+                          <TableCell className="p-2 text-muted-foreground">
+                            {market.marketType}
+                          </TableCell>
+                          <TableCell className="p-2 text-muted-foreground">
+                            —
+                          </TableCell>
+                          <TableCell className="p-2" />
+                        </TableRow>
+                      ) : (
+                        marketOdds.map((odd, idx) => (
+                          <TableRow key={odd._id} className="hover:bg-muted/20">
+                            {idx === 0 && (
+                              <>
+                                <TableCell className="p-2 font-medium">
+                                  {market.name}
+                                </TableCell>
+                                <TableCell className="p-2 text-muted-foreground">
+                                  {market.marketType}
+                                </TableCell>
+                              </>
+                            )}
+                            {idx !== 0 && (
+                              <>
+                                <TableCell className="p-2" />
+                                <TableCell className="p-2" />
+                              </>
+                            )}
+                            <TableCell className="p-2">
+                              {odd.outcomeName}
+                            </TableCell>
+                            <TableCell className="p-2">
+                              <Input
+                                type="number"
+                                step={0.01}
+                                min={1}
+                                value={
+                                  oddsEdits[odd._id as any] ?? odd.oddValue
+                                }
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value)
+                                  if (!isNaN(val)) {
+                                    setOddsEdits({
+                                      ...oddsEdits,
+                                      [odd._id]: val,
+                                    })
+                                  }
+                                }}
+                                className="h-7 text-xs text-right w-24"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </React.Fragment>
+                  )
+                })}
+              </TableBody>
+            </Table>
           </div>
         </div>
       </div>
