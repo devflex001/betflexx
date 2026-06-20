@@ -137,9 +137,11 @@ const schema = defineSchema({
 
   wallets: defineTable({
     balance: v.number(),
+    userId: v.optional(v.string()), // deprecated - being migrated away
   }),
 
   bets: defineTable({
+    userId: v.optional(v.string()), // deprecated - being migrated away
     selections: v.array(
       v.object({
         id: v.string(),
