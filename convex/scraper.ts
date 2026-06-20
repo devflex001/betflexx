@@ -106,8 +106,6 @@ async function getOrCreateSettings(ctx: MutationCtx, now: number) {
 export const getAdminOverview = query({
   args: {},
   handler: async (ctx) => {
-    // Admin check removed
-
     const settings = await ctx.db
       .query("scraperSettings")
       .withIndex("by_source", (q) => q.eq("source", KWIKBET_SOURCE))

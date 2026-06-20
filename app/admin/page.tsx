@@ -168,11 +168,6 @@ function SidebarContent({ activeTab, onTabChange, collapsed = false }: SidebarCo
 
 export default function AdminDashboard() {
   const router = useRouter()
-  
-  const adminStatus = useQuery(
-    api.admin.getAdminStatus,
-    {}
-  )
   const { theme, setTheme } = useTheme()
   const { user, transactions, adminStats, updateAdminTransactionStatus, logout } = useBetStore()
 
