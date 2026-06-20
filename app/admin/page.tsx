@@ -171,7 +171,7 @@ export default function AdminDashboard() {
   
   const adminStatus = useQuery(
     api.admin.getAdminStatus,
-    session ? {} : "skip"
+    {}
   )
   const { theme, setTheme } = useTheme()
   const { user, transactions, adminStats, updateAdminTransactionStatus, logout } = useBetStore()
@@ -184,27 +184,10 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = React.useState("dashboard")
   const [currentTime, setCurrentTime] = React.useState("")
 
-  // Redirect guard - check authUser role first for immediate feedback
+  // Redirect guard - admin page is accessible
   React.useEffect(() => {
-    if (isPending) return
-    
-    // Not logged in → redirect to auth
-    if (!session) { 
-      router.replace("/auth")
-      return 
-    }
-    
-    // Check auth client role (immediate, from session storage)
-    if (authUser && authUser.role !== "admin") {
-      router.replace("/")
-      return
-    }
-    
-    // Also check server-side admin status
-    if (adminStatus !== undefined && !adminStatus.isAdmin) {
-      router.replace("/")
-    }
-  }, [isPending, session, authUser, adminStatus, router])
+    // No auth check needed - system has no authentication
+  }, [])
 
   React.useEffect(() => {
     let a = true
@@ -265,7 +248,6 @@ export default function AdminDashboard() {
   }
 
   const handleLogout = async () => {
-    await logout()
     router.replace("/")
   }
 
@@ -275,21 +257,18 @@ export default function AdminDashboard() {
     setMobileSidebarOpen(false)
   }
 
-  const isPageLoading =
-    isPending || !session || adminStatus === undefined
+  const isPageLoading = false
 
   if (isPageLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
-          <p className="text-sm font-medium">Verifying access...</p>
+          <p className="text-sm font-medium">Loading...</p>
         </div>
       </div>
     )
   }
-
-  if (!adminStatus?.isAdmin) return null
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
