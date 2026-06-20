@@ -72,21 +72,21 @@ export function PublishedCustomEventsSection() {
               <button
                 key={event._id}
                 onClick={() => handleOpenDetail(event)}
-                className="group relative overflow-hidden rounded-lg border-2 border-yellow-500/50 bg-gradient-to-br from-yellow-950/40 to-yellow-900/20 hover:from-yellow-900/60 hover:to-yellow-800/40 transition-all p-4 text-left"
+                className="group relative overflow-hidden rounded-lg border-2 border-yellow-500/60 bg-yellow-50/5 hover:bg-yellow-50/10 transition-all p-4 text-left"
               >
                 {/* Golden accent line */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 via-yellow-400 to-transparent" />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-500" />
 
                 <div className="space-y-2">
                   {/* Event Title and Status */}
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="font-bold text-sm text-foreground group-hover:text-yellow-300 transition-colors">
+                      <h3 className="font-bold text-sm text-foreground group-hover:text-yellow-600 transition-colors">
                         {event.homeTeam} vs {event.awayTeam}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-1">{event.title}</p>
                     </div>
-                    <Badge className="bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 border border-yellow-500/50 text-[9px] font-bold shrink-0">
+                    <Badge className="bg-yellow-500/20 text-yellow-700 hover:bg-yellow-500/30 border border-yellow-500/60 text-[9px] font-bold shrink-0">
                       FEATURED
                     </Badge>
                   </div>
@@ -102,7 +102,7 @@ export function PublishedCustomEventsSection() {
                   <div className="pt-2 flex justify-end">
                     <Button
                       size="sm"
-                      className="h-7 text-xs bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/50"
+                      className="h-7 text-xs bg-yellow-500/20 text-yellow-700 hover:bg-yellow-500/30 border border-yellow-500/60"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleOpenDetail(event)
@@ -146,21 +146,21 @@ export function PublishedCustomEventsSection() {
             <button
               key={event._id}
               onClick={() => handleOpenDetail(event)}
-              className="group relative overflow-hidden rounded-lg border-2 border-yellow-500/50 bg-gradient-to-br from-yellow-950/40 to-yellow-900/20 hover:from-yellow-900/60 hover:to-yellow-800/40 transition-all p-4 text-left"
+              className="group relative overflow-hidden rounded-lg border-2 border-yellow-500/60 bg-yellow-50/5 hover:bg-yellow-50/10 transition-all p-4 text-left"
             >
               {/* Golden accent line */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 via-yellow-400 to-transparent" />
+              <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-500" />
 
               <div className="space-y-2">
                 {/* Event Title and Status */}
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h3 className="font-bold text-sm text-foreground group-hover:text-yellow-300 transition-colors">
+                    <h3 className="font-bold text-sm text-foreground group-hover:text-yellow-600 transition-colors">
                       {event.homeTeam} vs {event.awayTeam}
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1">{event.title}</p>
                   </div>
-                  <Badge className="bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 border border-yellow-500/50 text-[9px] font-bold shrink-0">
+                  <Badge className="bg-yellow-500/20 text-yellow-700 hover:bg-yellow-500/30 border border-yellow-500/60 text-[9px] font-bold shrink-0">
                     FEATURED
                   </Badge>
                 </div>
@@ -176,7 +176,7 @@ export function PublishedCustomEventsSection() {
                 <div className="pt-2 flex justify-end">
                   <Button
                     size="sm"
-                    className="h-7 text-xs bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/50"
+                    className="h-7 text-xs bg-yellow-500/20 text-yellow-700 hover:bg-yellow-500/30 border border-yellow-500/60"
                     onClick={(e) => {
                       e.stopPropagation()
                       handleOpenDetail(event)

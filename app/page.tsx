@@ -211,104 +211,54 @@ export default function Page() {
 
           {activeTab === "home" && (
             <>
-              {matches !== undefined && (
-                <div className="relative overflow-hidden rounded-lg border border-border bg-card h-44 sm:h-52">
-                  <Image
-                    key={SLIDES[slideIndex].id}
-                    src={SLIDES[slideIndex].image}
-                    alt={SLIDES[slideIndex].imageAlt}
-                    fill
-                    priority
-                    className="object-cover object-center transition-opacity duration-500"
-                    sizes="(max-width: 768px) 100vw, 900px"
-                  />
-                  <div className="absolute inset-0 bg-background/72" aria-hidden="true" />
-
-                  <div className="relative z-10 flex h-full flex-col justify-center p-6 sm:p-8">
-                    <div className="max-w-[80%] space-y-2 select-none">
-                      <Badge className="bg-primary/10 border-primary/30 text-primary font-bold hover:bg-primary/10 tracking-wide text-[9px] uppercase px-1.5 py-0.5">
-                        {SLIDES[slideIndex].title}
-                      </Badge>
-                      <h2 className="text-xl sm:text-2xl font-extrabold text-card-foreground leading-tight tracking-tight">
-                        {SLIDES[slideIndex].subtitle}
-                      </h2>
-                      <div className="pt-2">
-                        <Button
-                          size="sm"
-                          className="h-8 text-xs font-semibold"
-                          onClick={() => setActiveTab(slideIndex === 2 ? "featured" : "home")}
-                        >
-                          {SLIDES[slideIndex].cta}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1">
-                    {SLIDES.map((slide, index) => (
-                      <span
-                        key={slide.id}
-                        onClick={() => setSlideIndex(index)}
-                        className={`h-1.5 rounded-full cursor-pointer transition-all ${index === slideIndex ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/30"
-                          }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {activeTab === "home" && (
-            <>
-              {matches !== undefined && (
-                <div className="relative overflow-hidden rounded-lg border border-border bg-card h-44 sm:h-52">
-                  <Image
-                    key={SLIDES[slideIndex].id}
-                    src={SLIDES[slideIndex].image}
-                    alt={SLIDES[slideIndex].imageAlt}
-                    fill
-                    priority
-                    className="object-cover object-center transition-opacity duration-500"
-                    sizes="(max-width: 768px) 100vw, 900px"
-                  />
-                  <div className="absolute inset-0 bg-background/72" aria-hidden="true" />
-
-                  <div className="relative z-10 flex h-full flex-col justify-center p-6 sm:p-8">
-                    <div className="max-w-[80%] space-y-2 select-none">
-                      <Badge className="bg-primary/10 border-primary/30 text-primary font-bold hover:bg-primary/10 tracking-wide text-[9px] uppercase px-1.5 py-0.5">
-                        {SLIDES[slideIndex].title}
-                      </Badge>
-                      <h2 className="text-xl sm:text-2xl font-extrabold text-card-foreground leading-tight tracking-tight">
-                        {SLIDES[slideIndex].subtitle}
-                      </h2>
-                      <div className="pt-2">
-                        <Button
-                          size="sm"
-                          className="h-8 text-xs font-semibold"
-                          onClick={() => setActiveTab(slideIndex === 2 ? "featured" : "home")}
-                        >
-                          {SLIDES[slideIndex].cta}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1">
-                    {SLIDES.map((slide, index) => (
-                      <span
-                        key={slide.id}
-                        onClick={() => setSlideIndex(index)}
-                        className={`h-1.5 rounded-full cursor-pointer transition-all ${index === slideIndex ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/30"
-                          }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Published Custom Events Section */}
+              {/* Published Custom Events Section - Top Most Level */}
               <PublishedCustomEventsSection />
+
+              {matches !== undefined && (
+                <div className="relative overflow-hidden rounded-lg border border-border bg-card h-44 sm:h-52">
+                  <Image
+                    key={SLIDES[slideIndex].id}
+                    src={SLIDES[slideIndex].image}
+                    alt={SLIDES[slideIndex].imageAlt}
+                    fill
+                    priority
+                    className="object-cover object-center transition-opacity duration-500"
+                    sizes="(max-width: 768px) 100vw, 900px"
+                  />
+                  <div className="absolute inset-0 bg-background/72" aria-hidden="true" />
+
+                  <div className="relative z-10 flex h-full flex-col justify-center p-6 sm:p-8">
+                    <div className="max-w-[80%] space-y-2 select-none">
+                      <Badge className="bg-primary/10 border-primary/30 text-primary font-bold hover:bg-primary/10 tracking-wide text-[9px] uppercase px-1.5 py-0.5">
+                        {SLIDES[slideIndex].title}
+                      </Badge>
+                      <h2 className="text-xl sm:text-2xl font-extrabold text-card-foreground leading-tight tracking-tight">
+                        {SLIDES[slideIndex].subtitle}
+                      </h2>
+                      <div className="pt-2">
+                        <Button
+                          size="sm"
+                          className="h-8 text-xs font-semibold"
+                          onClick={() => setActiveTab(slideIndex === 2 ? "featured" : "home")}
+                        >
+                          {SLIDES[slideIndex].cta}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1">
+                    {SLIDES.map((slide, index) => (
+                      <span
+                        key={slide.id}
+                        onClick={() => setSlideIndex(index)}
+                        className={`h-1.5 rounded-full cursor-pointer transition-all ${index === slideIndex ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/30"
+                          }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
