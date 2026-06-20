@@ -131,19 +131,19 @@ export function ScraperConfigDrawer({
 
       <div className="flex gap-2 pt-4">
         <Button
-          onClick={handleStart}
-          disabled={isLoading}
-          className="flex-1"
-        >
-          {isLoading ? "Starting..." : "Start Scrape"}
-        </Button>
-        <Button
           variant="outline"
           onClick={() => onOpenChange(false)}
           disabled={isLoading}
           className="flex-1"
         >
           Cancel
+        </Button>
+        <Button
+          onClick={handleStart}
+          disabled={isLoading}
+          className="flex-1"
+        >
+          {isLoading ? "Starting..." : "Start Scrape"}
         </Button>
       </div>
     </div>

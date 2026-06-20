@@ -34,14 +34,12 @@ function formatTime(value: number | null) {
 
 export function AdminScraperPanel() {
   const overview = useQuery(api.scraper.getAdminOverview)
-  const updateSettings = useMutation(api.scraper.updateSettings)
   const triggerNow = useMutation(api.scraper.triggerNow)
 
   const [configOpen, setConfigOpen] = React.useState(false)
   const [selectedSport, setSelectedSport] = React.useState<string>("1")
   const [dateWindowDays, setDateWindowDays] = React.useState<string>("2")
   const [matchLimit, setMatchLimit] = React.useState<string>("50")
-  const [saving, setSaving] = React.useState(false)
   const [running, setRunning] = React.useState(false)
 
   const settings = overview?.settings as any
@@ -55,6 +53,24 @@ export function AdminScraperPanel() {
       setMatchLimit(String(settings.matchLimit ?? 50))
     }
   }, [settings])
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await updateSettings({
+        enabled: true,
+        cadenceMinutes: 5,
+        dateWindowDays: Number(dateWindowDays),
+        selectedSports: [selectedSport],
+        matchLimit: Number(matchLimit),
+      })
+      toast.success("Settings saved")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save")
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const handleSave = async () => {
     setSaving(true)
