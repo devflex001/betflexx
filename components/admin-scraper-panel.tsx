@@ -5,18 +5,12 @@ import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { SmallLoader } from "@/components/small-loader"
 import { toast } from "sonner"
-import { PlayCircle, Save } from "lucide-react"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { ScraperTerminal } from "@/components/scraper-terminal"
+import { PlayCircle } from "lucide-react"
+import { ScraperConfigDrawer, type ScraperConfig } from "@/components/scraper-config-drawer"
+import { StatCard } from "@/components/stat-card"
 
 // 8 Most popular sports from KwikBet
 const AVAILABLE_SPORTS = [
@@ -30,8 +24,6 @@ const AVAILABLE_SPORTS = [
   { id: 12, label: "Rugby" },
 ]
 
-const MATCH_LIMITS = [20, 50, 100, 200, 300, 500]
-
 function formatTime(value: number | null) {
   if (!value) return "Never"
   return new Date(value).toLocaleString([], {
@@ -42,16 +34,22 @@ function formatTime(value: number | null) {
   })
 }
 
+function formatDuration(ms: number | null) {
+  if (!ms) return "—"
+  const seconds = Math.floor(ms / 1000)
+  if (seconds < 60) return `${seconds}s`
+  const minutes = Math.floor(seconds / 60)
+  return `${minutes}m ${seconds % 60}s`
+}
+
 export function AdminScraperPanel() {
   const overview = useQuery(api.scraper.getAdminOverview)
-  const updateSettings = useMutation(api.scraper.updateSettings)
   const triggerNow = useMutation(api.scraper.triggerNow)
 
+  const [configOpen, setConfigOpen] = React.useState(false)
   const [selectedSport, setSelectedSport] = React.useState<string>("1")
-  const [cadenceMinutes, setCadenceMinutes] = React.useState<string>("5")
   const [dateWindowDays, setDateWindowDays] = React.useState<string>("2")
-  const [matchLimit, setMatchLimit] = React.useState<string>("50")
-  const [saving, setSaving] = React.useState(false)
+  const [matchLimit, setMatchLimit] = React.useState<string>("10")
   const [running, setRunning] = React.useState(false)
 
   const settings = overview?.settings as any
@@ -61,34 +59,20 @@ export function AdminScraperPanel() {
   React.useEffect(() => {
     if (settings) {
       setSelectedSport(String(settings.selectedSports?.[0] ?? 1))
-      setCadenceMinutes(String(settings.cadenceMinutes ?? 5))
       setDateWindowDays(String(settings.dateWindowDays ?? 2))
       setMatchLimit(String(settings.matchLimit ?? 50))
     }
   }, [settings])
 
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await updateSettings({
-        enabled: true,
-        cadenceMinutes: Number(cadenceMinutes),
-        dateWindowDays: Number(dateWindowDays),
-        selectedSports: [selectedSport],
-        matchLimit: Number(matchLimit),
-      })
-      toast.success("Settings saved")
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save")
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleRunNow = async () => {
+  const handleConfigStart = async (config: ScraperConfig) => {
     setRunning(true)
+    setConfigOpen(false)
     try {
-      await triggerNow({})
+      await triggerNow({
+        dateWindowDays: Number(config.dateWindowDays),
+        selectedSports: [config.selectedSport],
+        matchLimit: Number(config.matchLimit),
+      })
       toast.success("Scraper started")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to start")
@@ -101,160 +85,95 @@ export function AdminScraperPanel() {
     return <SmallLoader />
   }
 
-  const sportLabel = AVAILABLE_SPORTS.find(s => String(s.id) === selectedSport)?.label || "Soccer"
+  // Calculate metrics
+  const totalRuns = overview.runs.length
+  const successfulRuns = overview.runs.filter((r: any) => r.status === "success").length
+  const successRate = totalRuns > 0 ? Math.round((successfulRuns / totalRuns) * 100) : 0
 
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold tracking-tight">Sports Scraper</h1>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1">
+          <h1 className="text-lg font-bold tracking-tight">API Scrape</h1>
           <p className="text-xs text-muted-foreground">Manage KwikBet fixture ingestion</p>
         </div>
-        <Badge variant={isCurrentlyRunning ? "secondary" : "outline"} className="text-[10px] uppercase">
-          {isCurrentlyRunning ? "● Running" : "● Idle"}
-        </Badge>
-      </div>
-
-      {/* Controls */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground">Sport</label>
-          <Select value={selectedSport} onValueChange={setSelectedSport} disabled={isCurrentlyRunning}>
-            <SelectTrigger className="h-8 text-xs w-full rounded-md">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {AVAILABLE_SPORTS.map((sport) => (
-                <SelectItem key={sport.id} value={String(sport.id)}>
-                  {sport.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground">Cadence (min)</label>
-          <Input
-            type="number"
-            min="1"
-            max="120"
-            value={cadenceMinutes}
-            onChange={(e) => setCadenceMinutes(e.target.value)}
-            disabled={isCurrentlyRunning}
-            className="h-8 text-xs w-full"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground">Window (days)</label>
-          <Input
-            type="number"
-            min="1"
-            max="14"
-            value={dateWindowDays}
-            onChange={(e) => setDateWindowDays(e.target.value)}
-            disabled={isCurrentlyRunning}
-            className="h-8 text-xs w-full"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground">Match Limit</label>
-          <Select value={matchLimit} onValueChange={setMatchLimit} disabled={isCurrentlyRunning}>
-            <SelectTrigger className="h-8 text-xs w-full rounded-md">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MATCH_LIMITS.map((limit) => (
-                <SelectItem key={limit} value={String(limit)}>
-                  {limit}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-2">
         <Button
           size="sm"
           className="h-8 text-xs font-semibold gap-1.5"
-          onClick={handleSave}
-          disabled={saving || isCurrentlyRunning}
-        >
-          <Save className="size-3.5" />
-          Save
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 text-xs font-semibold gap-1.5"
-          onClick={handleRunNow}
+          onClick={() => setConfigOpen(true)}
           disabled={running || isCurrentlyRunning}
         >
           <PlayCircle className="size-3.5" />
-          Run
+          Scrape
         </Button>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="border rounded-md p-3">
-          <p className="text-[10px] text-muted-foreground mb-1">Last Run</p>
-          <p className="text-xs font-medium">{formatTime(overview.settings.lastRunAt)}</p>
-        </div>
-
-        <div className="border rounded-md p-3">
-          <p className="text-[10px] text-muted-foreground mb-1">Next Run</p>
-          <p className="text-xs font-medium">{formatTime(overview.settings.nextRunAt)}</p>
-        </div>
-
-        <div className="border rounded-md p-3">
-          <p className="text-[10px] text-muted-foreground mb-1">Sport</p>
-          <p className="text-xs font-medium">{sportLabel}</p>
-        </div>
-
-        <div className="border rounded-md p-3">
-          <p className="text-[10px] text-muted-foreground mb-1">Fetch Limit</p>
-          <p className="text-xs font-medium">{matchLimit}</p>
-        </div>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <StatCard
+          label="Success Rate"
+          value={`${successRate}%`}
+          subtitle={`${successfulRuns} of ${totalRuns}`}
+        />
+        <StatCard label="Total Runs" value={totalRuns} subtitle="All time" />
+        <StatCard
+          label="Last Run"
+          value={formatTime(overview.settings.lastRunAt)}
+          badge={
+            currentRun
+              ? {
+                label: currentRun.status,
+                variant:
+                  currentRun.status === "success"
+                    ? "default"
+                    : currentRun.status === "running"
+                      ? "secondary"
+                      : "destructive",
+              }
+              : undefined
+          }
+        />
       </div>
 
-      {/* Latest Run Summary */}
-      {currentRun && (
-        <div className="border rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b bg-muted/50">
-            <p className="text-sm font-semibold">Latest Run</p>
+      {/* Live Logs (when running) */}
+      {isCurrentlyRunning && (
+        <div className="flex flex-col gap-3 border border-border rounded-xl bg-card p-4 text-card-foreground space-y-3 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-foreground">Live Logs</span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-flex h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-xs text-muted-foreground">Running</span>
+            </span>
           </div>
-          <div className="p-4">
-            <ScraperTerminal run={currentRun as any} isRunning={isCurrentlyRunning} />
+          <div className="bg-black/5 dark:bg-black/20 font-mono text-[11px] h-32 overflow-y-auto space-y-1 rounded-md p-3">
+            <div className="text-muted-foreground">[INFO] Starting run for Soccer...</div>
+            <div className="text-muted-foreground">[INFO] Fetching matches...</div>
+            <div className="text-muted-foreground">[INFO] Discovered 247 matches</div>
           </div>
         </div>
       )}
 
-      {/* Recent Runs */}
-      {overview.runs.length > 1 && (
-        <div className="border rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b bg-muted/50">
-            <p className="text-sm font-semibold">Recent Runs</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead className="border-b bg-muted/30 text-muted-foreground text-[10px] uppercase">
-                <tr>
-                  <th className="px-4 py-2 text-left font-semibold">Time</th>
-                  <th className="px-4 py-2 text-left font-semibold">Status</th>
-                  <th className="px-4 py-2 text-left font-semibold">Sport</th>
-                  <th className="px-4 py-2 text-right font-semibold">Matches</th>
-                  <th className="px-4 py-2 text-right font-semibold">Markets</th>
-                  <th className="px-4 py-2 text-right font-semibold">Odds</th>
+      {/* Runs Table */}
+      {overview.runs.length > 0 && (
+        <div className="space-y-3 border border-border rounded-xl bg-card p-4 text-card-foreground shadow-sm">
+          <span className="text-sm font-bold text-foreground">Run History</span>
+          <div className="overflow-x-auto -mx-1">
+            <table className="w-full text-left text-xs border-collapse min-w-[520px]">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground text-[10px] uppercase font-bold tracking-wider">
+                  <th className="py-2.5 px-3">Time</th>
+                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3">Sport</th>
+                  <th className="py-2.5 px-3 text-right">Duration</th>
+                  <th className="py-2.5 px-3 text-right">Discovered</th>
+                  <th className="py-2.5 px-3 text-right">Saved</th>
+                  <th className="py-2.5 px-3 text-right">Markets</th>
+                  <th className="py-2.5 px-3 text-right">Odds</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
-                {overview.runs.slice(1, 10).map((run: any) => {
+              <tbody className="divide-y divide-border">
+                {overview.runs.slice(0, 10).map((run: any) => {
                   const sportNames = (run.selectedSports || [])
                     .map((sportId: string | number) => {
                       const sport = AVAILABLE_SPORTS.find(s => String(s.id) === String(sportId))
@@ -263,28 +182,39 @@ export function AdminScraperPanel() {
                     .join(", ")
 
                   return (
-                    <tr key={run._id} className="hover:bg-muted/30">
-                      <td className="px-4 py-2.5 font-mono">{formatTime(run.startedAt)}</td>
-                      <td className="px-4 py-2.5">
+                    <tr key={run._id} className="hover:bg-muted/30 transition-colors">
+                      <td className="py-3 px-3 font-mono text-muted-foreground">
+                        {formatTime(run.startedAt)}
+                      </td>
+                      <td className="py-3 px-3">
                         <Badge
-                          variant={
+                          className={
                             run.status === "success"
-                              ? "default"
+                              ? "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15 rounded-sm text-[10px] font-bold border border-emerald-500/20"
                               : run.status === "running"
-                              ? "secondary"
-                              : "destructive"
+                                ? "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15 rounded-sm text-[10px] font-bold border border-yellow-500/20"
+                                : "bg-rose-500/15 text-rose-600 hover:bg-rose-500/15 rounded-sm text-[10px] font-bold border border-rose-500/20"
                           }
-                          className="text-[9px] uppercase"
                         >
                           {run.status}
                         </Badge>
                       </td>
-                      <td className="px-4 py-2.5">{sportNames || "—"}</td>
-                      <td className="px-4 py-2.5 text-right font-mono">
-                        {run.matchesUpserted}/{run.matchesDiscovered}
-      </td>
-                      <td className="px-4 py-2.5 text-right font-mono">{run.marketsUpserted}</td>
-                      <td className="px-4 py-2.5 text-right font-mono">{run.oddsUpserted}</td>
+                      <td className="py-3 px-3 text-muted-foreground">{sportNames || "—"}</td>
+                      <td className="py-3 px-3 text-right font-mono text-muted-foreground">
+                        {formatDuration(run.durationMs)}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-medium">
+                        {run.matchesDiscovered}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-medium">
+                        {run.matchesUpserted}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-medium">
+                        {run.marketsUpserted}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-medium">
+                        {run.oddsUpserted}
+                      </td>
                     </tr>
                   )
                 })}
@@ -293,6 +223,19 @@ export function AdminScraperPanel() {
           </div>
         </div>
       )}
+
+      {/* Config Dialog/Drawer */}
+      <ScraperConfigDrawer
+        open={configOpen}
+        onOpenChange={setConfigOpen}
+        onStart={handleConfigStart}
+        isLoading={running}
+        initialValues={{
+          selectedSport,
+          dateWindowDays,
+          matchLimit,
+        }}
+      />
     </div>
   )
 }
