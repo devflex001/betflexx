@@ -170,9 +170,8 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   const updateTransactionStatusMutation = useMutation(api.bets.updateTransactionStatus)
 
   const user = React.useMemo(() => {
-    if (!authUser) return null
-    return { username: authUser.phone || "User" }
-  }, [authUser])
+    return { username: "User" }
+  }, [])
 
   const [activeTab, setActiveTabState] = React.useState<string>("home")
   const [searchQuery, setSearchQuery] = React.useState<string>("")
@@ -296,7 +295,6 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
-    await signOut()
     setBetslipState([])
     localStorage.setItem("bet_betslip", JSON.stringify([]))
   }
