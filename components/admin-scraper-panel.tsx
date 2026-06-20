@@ -54,42 +54,6 @@ export function AdminScraperPanel() {
     }
   }, [settings])
 
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await updateSettings({
-        enabled: true,
-        cadenceMinutes: 5,
-        dateWindowDays: Number(dateWindowDays),
-        selectedSports: [selectedSport],
-        matchLimit: Number(matchLimit),
-      })
-      toast.success("Settings saved")
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save")
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await updateSettings({
-        enabled: true,
-        cadenceMinutes: 5,
-        dateWindowDays: Number(dateWindowDays),
-        selectedSports: [selectedSport],
-        matchLimit: Number(matchLimit),
-      })
-      toast.success("Settings saved")
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save")
-    } finally {
-      setSaving(false)
-    }
-  }
-
   const handleConfigStart = async (config: ScraperConfig) => {
     setRunning(true)
     setConfigOpen(false)
