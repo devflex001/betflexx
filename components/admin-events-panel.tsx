@@ -26,6 +26,18 @@ function formatStartTime(startTime: number) {
   })
 }
 
+function formatSportName(sportSlug: string) {
+  return sportSlug
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+}
+
+function truncateEventName(name: string, maxLength: number) {
+  if (name.length <= maxLength) return name
+  return name.slice(0, maxLength) + "…"
+}
+
 function eventName(match: SportsMatchWithOdds) {
   return `${match.homeTeam} vs ${match.awayTeam}`
 }
@@ -47,6 +59,17 @@ export function AdminEventsPanel() {
   const [competition, setCompetition] = React.useState("All Leagues")
   const [status, setStatus] = React.useState<"all" | "live" | "upcoming">("all")
   const [selectedMatch, setSelectedMatch] = React.useState<SportsMatchWithOdds | null>(null)
+  const [screenWidth, setScreenWidth] = React.useState(1024)
+
+  React.useEffect(() => {
+    const handleResize = () => setScreenWidth(window.innerWidth)
+    window.addEventListener("resize", handleResize)
+    handleResize()
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
+  // Responsive event name length
+  const eventMaxLength = screenWidth < 640 ? 20 : screenWidth < 1024 ? 30 : 50
 
   const competitions = useQuery(api.sportsData.listCompetitions, { sport }) as
     | string[]
@@ -181,6 +204,7 @@ export function AdminEventsPanel() {
               <thead className="border-b border-border text-muted-foreground text-[9px] uppercase font-bold tracking-wider">
                 <tr>
                   <th className="px-3 py-2">Start</th>
+                  <th className="px-3 py-2">Sport</th>
                   <th className="px-3 py-2">Event</th>
                   <th className="px-3 py-2">Competition</th>
                   <th className="px-3 py-2">Status</th>
@@ -191,13 +215,16 @@ export function AdminEventsPanel() {
               <tbody className="divide-y divide-border">
                 {matches.map((match) => (
                   <tr key={match.sourceMatchId} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-3 py-2 font-mono text-muted-foreground text-[11px]">
+                    <td className="px-3 py-2 font-mono text-muted-foreground text-[10px]">
                       {formatStartTime(match.startTime)}
                     </td>
-                    <td className="px-3 py-2 font-semibold text-foreground">
-                      {eventName(match)}
+                    <td className="px-3 py-2 text-muted-foreground text-[10px]">
+                      {formatSportName(match.sportSlug)}
                     </td>
-                    <td className="px-3 py-2 text-muted-foreground text-[11px]">
+                    <td className="px-3 py-2 font-semibold text-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={eventName(match)}>
+                      {truncateEventName(eventName(match), eventMaxLength)}
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground text-[10px]">
                       {match.competitionName}
                     </td>
                     <td className="px-3 py-2">
@@ -211,7 +238,7 @@ export function AdminEventsPanel() {
                         {match.isLive ? "Live" : "Upcoming"}
                       </Badge>
                     </td>
-                    <td className="px-3 py-2 text-right font-mono text-muted-foreground text-[11px]">
+                    <td className="px-3 py-2 text-right font-mono text-muted-foreground text-[10px]">
                       {match.totalMarkets}
                     </td>
                     <td className="px-3 py-2 text-right">
