@@ -57,7 +57,7 @@ export function Header() {
   }
 
   const handleLogout = () => {
-    signOut()
+    // No-op - no authentication system
   }
 
   return (
@@ -136,8 +136,7 @@ export function Header() {
               </Sheet>
             </div>
 
-            {isAuthenticated ? (
-              <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
                 {/* Wallet Balance Display */}
                 <div className="hidden sm:flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-md text-xs font-semibold border border-border">
                   <Wallet className="size-3.5 text-primary" />
@@ -164,19 +163,13 @@ export function Header() {
                   <DropdownMenuContent align="end" className="w-56 mt-1">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-semibold leading-none">{user?.phone || "User"}</p>
+                        <p className="text-sm font-semibold leading-none">User</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          {user?.role === "admin" ? "Administrator" : "Registered User"}
+                          Registered User
                         </p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {isAdmin && (
-                      <DropdownMenuItem onClick={() => router.push("/admin")} className="text-primary focus:text-primary">
-                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                        <span>Admin Dashboard</span>
-                      </DropdownMenuItem>
-                    )}
                     <DropdownMenuItem className="sm:hidden flex items-center justify-between text-xs py-2">
                       <span className="flex items-center gap-2"><Wallet className="size-3.5" /> Balance:</span>
                       <span className="font-semibold">KES {walletBalance.toLocaleString()}</span>
@@ -201,25 +194,6 @@ export function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-            ) : (
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <Button
-                  variant="ghost"
-                  onClick={() => setLoginOpen(true)}
-                  size="sm"
-                  className="h-8 px-2 sm:px-3 text-xs font-semibold hover:bg-muted/50 text-muted-foreground hover:text-foreground"
-                >
-                  Log In
-                </Button>
-                <Button
-                  onClick={() => setRegisterOpen(true)}
-                  size="sm"
-                  className="bg-primary text-primary-foreground font-semibold px-3 sm:px-4 h-8 text-xs hover:opacity-90"
-                >
-                  Register
-                </Button>
-              </div>
-            )}
           </div>
         </div>
 
