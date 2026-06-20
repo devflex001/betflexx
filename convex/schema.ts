@@ -2,57 +2,6 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 const schema = defineSchema({
-  // Custom auth: users identified by phone number + hashed password
-  users: defineTable({
-    phone: v.string(), // normalized E.164 e.g. +254712345678
-    passwordHash: v.string(),
-    role: v.union(v.literal("admin"), v.literal("user")), // "admin" or "user"
-    createdAt: v.number(),
-  }).index("by_phone", ["phone"]),
-
-  // Application data tables
-  admins: defineTable({
-    userId: v.string(),
-    email: v.string(),
-    addedAt: v.number(),
-  })
-    .index("by_userId", ["userId"])
-    .index("by_email", ["email"]),
-
-  /**
-   * Tracks bans for users. One active ban per user at a time.
-   * bannedUntil = null means permanent ban.
-   */
-  userBans: defineTable({
-    userId: v.string(),
-    reason: v.string(),
-    bannedAt: v.number(),
-    bannedByAdminId: v.id("admins"),
-    /** null = permanent */
-    bannedUntil: v.union(v.number(), v.null()),
-    isActive: v.boolean(),
-  })
-    .index("by_userId", ["userId"])
-    .index("by_userId_and_isActive", ["userId", "isActive"]),
-
-  /**
-   * Appeal submissions from banned users.
-   */
-  banAppeals: defineTable({
-    banId: v.id("userBans"),
-    userId: v.string(),
-    message: v.string(),
-    submittedAt: v.number(),
-    /** pending | approved | rejected */
-    status: v.string(),
-    reviewedAt: v.union(v.number(), v.null()),
-    reviewedByAdminId: v.union(v.id("admins"), v.null()),
-    adminNote: v.union(v.string(), v.null()),
-  })
-    .index("by_banId", ["banId"])
-    .index("by_userId", ["userId"])
-    .index("by_status", ["status"]),
-
   scraperSettings: defineTable({
     source: v.string(),
     enabled: v.boolean(),
@@ -187,12 +136,10 @@ const schema = defineSchema({
     .index("by_sourceMatchId_and_status", ["sourceMatchId", "status"]),
 
   wallets: defineTable({
-    userId: v.string(),
     balance: v.number(),
-  }).index("by_userId", ["userId"]),
+  }),
 
   bets: defineTable({
-    userId: v.string(),
     selections: v.array(
       v.object({
         id: v.string(),
@@ -217,10 +164,9 @@ const schema = defineSchema({
     potentialReturn: v.number(),
     status: v.string(), // "active" | "won" | "lost"
     placedAt: v.number(),
-  }).index("by_userId", ["userId"]),
+  }),
 
   transactions: defineTable({
-    userId: v.string(),
     txId: v.string(),
     type: v.string(), // "deposit" | "withdrawal"
     amount: v.number(),
@@ -236,7 +182,6 @@ const schema = defineSchema({
     mpesaReceiptNumber: v.optional(v.string()),
     updatedAt: v.optional(v.number()),
   })
-    .index("by_userId", ["userId"])
     .index("by_txId", ["txId"])
     .index("by_checkoutRequestID", ["checkoutRequestID"]),
 });
