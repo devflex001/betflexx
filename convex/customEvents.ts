@@ -402,6 +402,8 @@ export const createCustomEvent = mutation({
       description: args.description,
       homeTeam: args.homeTeam,
       awayTeam: args.awayTeam,
+      homeScore: 0,
+      awayScore: 0,
       startTime: args.startTime,
       startTimeIso,
       sport: args.sport,
@@ -481,6 +483,36 @@ export const updateCustomEvent = mutation({
     }
 
     await ctx.db.patch(args.eventId, update)
+    return args.eventId
+  },
+})
+
+export const updateCustomEventScore = mutation({
+  args: {
+    eventId: v.id("customEvents"),
+    homeScore: v.number(),
+    awayScore: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const event = await ctx.db.get(args.eventId)
+    if (!event) throw new Error("Event not found")
+    if (
+      !Number.isInteger(args.homeScore) ||
+      !Number.isInteger(args.awayScore)
+    ) {
+      throw new Error("Scores must be whole numbers")
+    }
+    if (args.homeScore < 0 || args.awayScore < 0) {
+      throw new Error("Scores cannot be negative")
+    }
+
+    const now = Date.now()
+    await ctx.db.patch(args.eventId, {
+      homeScore: args.homeScore,
+      awayScore: args.awayScore,
+      updatedAt: now,
+    })
+
     return args.eventId
   },
 })
@@ -591,6 +623,26 @@ export const publishCustomEvent = mutation({
     await ctx.db.patch(args.eventId, {
       status: "published",
       publishedAt: now,
+      updatedAt: now,
+    })
+
+    return args.eventId
+  },
+})
+
+export const unpublishCustomEvent = mutation({
+  args: {
+    eventId: v.id("customEvents"),
+  },
+  handler: async (ctx, args) => {
+    const event = await ctx.db.get(args.eventId)
+    if (!event) throw new Error("Event not found")
+    if (event.status === "draft")
+      throw new Error("Event is already unpublished")
+
+    const now = Date.now()
+    await ctx.db.patch(args.eventId, {
+      status: "draft",
       updatedAt: now,
     })
 

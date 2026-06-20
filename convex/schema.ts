@@ -1,5 +1,5 @@
-import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
+import { defineSchema, defineTable } from "convex/server"
+import { v } from "convex/values"
 
 const schema = defineSchema({
   scraperSettings: defineTable({
@@ -191,6 +191,8 @@ const schema = defineSchema({
     description: v.optional(v.string()),
     homeTeam: v.string(),
     awayTeam: v.string(),
+    homeScore: v.optional(v.number()),
+    awayScore: v.optional(v.number()),
     startTime: v.number(),
     startTimeIso: v.string(),
     sport: v.string(),
@@ -234,6 +236,6 @@ const schema = defineSchema({
     .index("by_marketId", ["marketId"])
     .index("by_eventId", ["eventId"])
     .index("by_marketId_and_priority", ["marketId", "priority"]),
-});
+})
 
-export default schema;
+export default schema

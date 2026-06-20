@@ -23,7 +23,16 @@ import { CustomEventDetail } from "@/components/custom-event-detail"
 import { SmallLoader } from "@/components/small-loader"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { Search, Trash2, ListPlus, ChevronDown, MoreVertical, Edit2, CheckCircle, XCircle } from "lucide-react"
+import {
+  Search,
+  Trash2,
+  ListPlus,
+  ChevronDown,
+  MoreVertical,
+  Edit2,
+  CheckCircle,
+  EyeOff,
+} from "lucide-react"
 import { Id } from "@/convex/_generated/dataModel"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import {
@@ -60,9 +69,9 @@ export function CustomEventsList({
   const router = useRouter()
   const [search, setSearch] = React.useState("")
   const [sort, setSort] = React.useState<SortOption>("newest")
-  const [filterStatus, setFilterStatus] = React.useState<"draft" | "published" | "all">(
-    status || "all"
-  )
+  const [filterStatus, setFilterStatus] = React.useState<
+    "draft" | "published" | "all"
+  >(status || "all")
   const [detailOpen, setDetailOpen] = React.useState(false)
   const [selectedEvent, setSelectedEvent] = React.useState<any>(null)
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -75,6 +84,7 @@ export function CustomEventsList({
 
   const deleteEvent = useMutation(api.customEvents.deleteCustomEvent)
   const publishEvent = useMutation(api.customEvents.publishCustomEvent)
+  const unpublishEvent = useMutation(api.customEvents.unpublishCustomEvent)
 
   const handleDelete = async (eventId: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -95,6 +105,18 @@ export function CustomEventsList({
       toast.success("Event published")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to publish")
+    }
+  }
+
+  const handleUnpublish = async (eventId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      await unpublishEvent({ eventId: eventId as any })
+      toast.success("Event unpublished")
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to unpublish"
+      )
     }
   }
 
@@ -148,16 +170,16 @@ export function CustomEventsList({
   return (
     <div className="space-y-5">
       {/* Filters Card - matches events page pattern */}
-      <div className="border border-border rounded-lg bg-card p-3 space-y-3">
+      <div className="space-y-3 rounded-lg border border-border bg-card p-3">
         <div className="flex items-center gap-2">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search..."
-              className="h-8 pl-8 text-xs focus-visible:ring-primary bg-muted/50"
+              className="h-8 bg-muted/50 pl-8 text-xs focus-visible:ring-primary"
             />
           </div>
 
@@ -167,9 +189,10 @@ export function CustomEventsList({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs gap-1.5 border-border"
+                className="h-8 gap-1.5 border-border text-xs"
               >
-                {STATUS_OPTIONS.find((s) => s.value === filterStatus)?.label || "Status"}
+                {STATUS_OPTIONS.find((s) => s.value === filterStatus)?.label ||
+                  "Status"}
                 <ChevronDown className="size-3" />
               </Button>
             </DropdownMenuTrigger>
@@ -177,7 +200,9 @@ export function CustomEventsList({
               {STATUS_OPTIONS.map((s) => (
                 <DropdownMenuItem
                   key={s.value}
-                  onClick={() => setFilterStatus(s.value as "draft" | "published" | "all")}
+                  onClick={() =>
+                    setFilterStatus(s.value as "draft" | "published" | "all")
+                  }
                   className={filterStatus === s.value ? "bg-accent" : ""}
                 >
                   {s.label}
@@ -192,7 +217,7 @@ export function CustomEventsList({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs gap-1.5 border-border"
+                className="h-8 gap-1.5 border-border text-xs"
               >
                 {SORT_OPTIONS.find((s) => s.value === sort)?.label || "Sort"}
                 <ChevronDown className="size-3" />
@@ -214,10 +239,10 @@ export function CustomEventsList({
       </div>
 
       {/* Custom Events Table - standalone without outer card */}
-      <div className="border border-border rounded-lg bg-card overflow-hidden">
-        <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-3">
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
           <h2 className="text-sm font-bold">Custom Events</h2>
-          <Badge variant="outline" className="text-[10px] font-mono">
+          <Badge variant="outline" className="font-mono text-[10px]">
             {sortedEvents.length}
           </Badge>
         </div>
@@ -225,9 +250,9 @@ export function CustomEventsList({
         {sortedEvents.length > 0 ? (
           <>
             {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-border text-muted-foreground text-[9px] font-semibold">
+                <thead className="border-b border-border text-[9px] font-semibold text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2 text-left">Start</th>
                     <th className="px-3 py-2 text-left">Matchup</th>
@@ -239,15 +264,22 @@ export function CustomEventsList({
                 </thead>
                 <tbody className="divide-y divide-border">
                   {sortedEvents.map((event) => (
-                    <tr key={event._id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-3 py-2 font-mono text-muted-foreground text-[10px]">
+                    <tr
+                      key={event._id}
+                      className="transition-colors hover:bg-muted/30"
+                    >
+                      <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">
                         {formatTime(event.startTime)}
                       </td>
                       <td className="px-3 py-2 font-semibold text-foreground">
-                        <div className="truncate">{event.homeTeam} vs {event.awayTeam}</div>
-                        <div className="text-[10px] text-muted-foreground truncate">{event.title}</div>
+                        <div className="truncate">
+                          {event.homeTeam} vs {event.awayTeam}
+                        </div>
+                        <div className="truncate text-[10px] text-muted-foreground">
+                          {event.title}
+                        </div>
                       </td>
-                      <td className="px-3 py-2 text-muted-foreground text-[10px]">
+                      <td className="px-3 py-2 text-[10px] text-muted-foreground">
                         {event.competition}
                       </td>
                       <td className="px-3 py-2">
@@ -255,21 +287,21 @@ export function CustomEventsList({
                           className={cn(
                             "text-[9px] font-semibold",
                             event.status === "draft"
-                              ? "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15 rounded-sm border border-yellow-500/20"
-                              : "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15 rounded-sm border border-emerald-500/20"
+                              ? "rounded-sm border border-yellow-500/20 bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15"
+                              : "rounded-sm border border-emerald-500/20 bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15"
                           )}
                         >
                           {event.status}
                         </Badge>
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-muted-foreground text-[10px]">
+                      <td className="px-3 py-2 text-right font-mono text-[10px] text-muted-foreground">
                         {event.totalMarkets}
                       </td>
-                      <td className="px-3 py-2 text-right flex items-center justify-end gap-2">
+                      <td className="flex items-center justify-end gap-2 px-3 py-2 text-right">
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-7 text-xs gap-1 px-2"
+                          className="h-7 gap-1 px-2 text-xs"
                           onClick={() => {
                             setSelectedEvent(event)
                             setDetailOpen(true)
@@ -295,14 +327,16 @@ export function CustomEventsList({
                               <>
                                 <DropdownMenuItem
                                   onClick={(e) => handleEdit(event, e as any)}
-                                  className="gap-2 text-xs cursor-pointer"
+                                  className="cursor-pointer gap-2 text-xs"
                                 >
                                   <Edit2 className="size-3" />
                                   Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={(e) => handlePublish(event._id, e as any)}
-                                  className="gap-2 text-xs cursor-pointer"
+                                  onClick={(e) =>
+                                    handlePublish(event._id, e as any)
+                                  }
+                                  className="cursor-pointer gap-2 text-xs"
                                 >
                                   <CheckCircle className="size-3" />
                                   Publish
@@ -311,16 +345,18 @@ export function CustomEventsList({
                             )}
                             {event.status === "published" && (
                               <DropdownMenuItem
-                                disabled
-                                className="gap-2 text-xs text-muted-foreground"
+                                onClick={(e) =>
+                                  handleUnpublish(event._id, e as any)
+                                }
+                                className="cursor-pointer gap-2 text-xs"
                               >
-                                <XCircle className="size-3" />
-                                Published (read-only)
+                                <EyeOff className="size-3" />
+                                Unpublish
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem
                               onClick={(e) => handleDelete(event._id, e as any)}
-                              className="gap-2 text-xs cursor-pointer text-destructive hover:text-destructive"
+                              className="cursor-pointer gap-2 text-xs text-destructive hover:text-destructive"
                             >
                               <Trash2 className="size-3" />
                               Delete
@@ -335,15 +371,18 @@ export function CustomEventsList({
             </div>
 
             {/* Mobile Cards */}
-            <div className="md:hidden space-y-2 p-3">
+            <div className="space-y-2 p-3 md:hidden">
               {sortedEvents.map((event) => (
-                <div key={event._id} className="border border-border rounded-lg p-3 bg-card space-y-2">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm text-foreground mb-1 line-clamp-1">
+                <div
+                  key={event._id}
+                  className="space-y-2 rounded-lg border border-border bg-card p-3"
+                >
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 line-clamp-1 text-sm font-semibold text-foreground">
                         {event.homeTeam} vs {event.awayTeam}
                       </div>
-                      <div className="text-[10px] text-muted-foreground mb-1">
+                      <div className="mb-1 text-[10px] text-muted-foreground">
                         {event.title} • {event.competition}
                       </div>
                       <div className="font-mono text-[10px] text-muted-foreground">
@@ -354,15 +393,15 @@ export function CustomEventsList({
                       className={cn(
                         "text-[9px] font-semibold",
                         event.status === "draft"
-                          ? "bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15 rounded-sm border border-yellow-500/20"
-                          : "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15 rounded-sm border border-emerald-500/20"
+                          ? "rounded-sm border border-yellow-500/20 bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15"
+                          : "rounded-sm border border-emerald-500/20 bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15"
                       )}
                     >
                       {event.status}
                     </Badge>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <div className="flex items-center justify-between border-t border-border pt-2">
                     <div className="font-mono text-[10px] text-muted-foreground">
                       {event.totalMarkets} markets
                     </div>
@@ -370,7 +409,7 @@ export function CustomEventsList({
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-7 text-xs gap-1 px-2"
+                        className="h-7 gap-1 px-2 text-xs"
                         onClick={() => {
                           setSelectedEvent(event)
                           setDetailOpen(true)
@@ -396,14 +435,16 @@ export function CustomEventsList({
                             <>
                               <DropdownMenuItem
                                 onClick={(e) => handleEdit(event, e as any)}
-                                className="gap-2 text-xs cursor-pointer"
+                                className="cursor-pointer gap-2 text-xs"
                               >
                                 <Edit2 className="size-3" />
                                 Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={(e) => handlePublish(event._id, e as any)}
-                                className="gap-2 text-xs cursor-pointer"
+                                onClick={(e) =>
+                                  handlePublish(event._id, e as any)
+                                }
+                                className="cursor-pointer gap-2 text-xs"
                               >
                                 <CheckCircle className="size-3" />
                                 Publish
@@ -412,16 +453,18 @@ export function CustomEventsList({
                           )}
                           {event.status === "published" && (
                             <DropdownMenuItem
-                              disabled
-                              className="gap-2 text-xs text-muted-foreground"
+                              onClick={(e) =>
+                                handleUnpublish(event._id, e as any)
+                              }
+                              className="cursor-pointer gap-2 text-xs"
                             >
-                              <XCircle className="size-3" />
-                              Published (read-only)
+                              <EyeOff className="size-3" />
+                              Unpublish
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem
                             onClick={(e) => handleDelete(event._id, e as any)}
-                            className="gap-2 text-xs cursor-pointer text-destructive hover:text-destructive"
+                            className="cursor-pointer gap-2 text-xs text-destructive hover:text-destructive"
                           >
                             <Trash2 className="size-3" />
                             Delete
@@ -437,7 +480,9 @@ export function CustomEventsList({
         ) : (
           <div className="p-8 text-center text-xs text-muted-foreground">
             <p className="text-sm">No events found</p>
-            <p className="text-xs mt-1">Create your first custom event to get started</p>
+            <p className="mt-1 text-xs">
+              Create your first custom event to get started
+            </p>
           </div>
         )}
       </div>
@@ -445,17 +490,22 @@ export function CustomEventsList({
       {/* Event Detail Modal */}
       {isMobile ? (
         <Drawer open={detailOpen} onOpenChange={setDetailOpen}>
-          <DrawerContent className="h-[90vh] flex flex-col overflow-hidden p-0 bg-card">
+          <DrawerContent className="flex h-[90vh] flex-col overflow-hidden bg-card p-0">
             <DrawerHeader className="shrink-0 border-b border-border px-4 py-3 text-left">
               <DrawerTitle className="truncate text-sm font-semibold">
-                {selectedEvent ? `${selectedEvent.homeTeam} vs ${selectedEvent.awayTeam}` : "Event Details"}
+                {selectedEvent
+                  ? `${selectedEvent.homeTeam} vs ${selectedEvent.awayTeam}`
+                  : "Event Details"}
               </DrawerTitle>
-              <p className="truncate text-xs text-muted-foreground">{selectedEvent?.competition}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {selectedEvent?.competition}
+              </p>
             </DrawerHeader>
-            <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex flex-1 flex-col overflow-hidden">
               {selectedEvent && (
                 <CustomEventDetail
                   eventId={selectedEvent._id}
+                  adminControls
                   onBack={() => setDetailOpen(false)}
                 />
               )}
@@ -466,18 +516,23 @@ export function CustomEventsList({
         <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
           <SheetContent
             side="right"
-            className="!w-[min(50vw,720px)] !max-w-none flex h-dvh flex-col overflow-hidden p-0 bg-card"
+            className="flex h-dvh !w-[min(50vw,720px)] !max-w-none flex-col overflow-hidden bg-card p-0"
           >
             <SheetHeader className="shrink-0 border-b border-border px-4 py-3 text-left">
               <SheetTitle className="truncate text-sm font-semibold">
-                {selectedEvent ? `${selectedEvent.homeTeam} vs ${selectedEvent.awayTeam}` : "Event Details"}
+                {selectedEvent
+                  ? `${selectedEvent.homeTeam} vs ${selectedEvent.awayTeam}`
+                  : "Event Details"}
               </SheetTitle>
-              <p className="truncate text-xs text-muted-foreground">{selectedEvent?.competition}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {selectedEvent?.competition}
+              </p>
             </SheetHeader>
-            <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex flex-1 flex-col overflow-hidden">
               {selectedEvent && (
                 <CustomEventDetail
                   eventId={selectedEvent._id}
+                  adminControls
                   onBack={() => setDetailOpen(false)}
                 />
               )}

@@ -74,7 +74,12 @@ export default function CustomEventDetailPage() {
   }
 
   const handleSaveBasicInfo = async () => {
-    if (!formData.title || !formData.homeTeam || !formData.awayTeam || !formData.startTime) {
+    if (
+      !formData.title ||
+      !formData.homeTeam ||
+      !formData.awayTeam ||
+      !formData.startTime
+    ) {
       toast.error("Please fill in all required fields")
       return
     }
@@ -101,7 +106,9 @@ export default function CustomEventDetailPage() {
       toast.success("Event updated successfully")
       setIsEditingBasic(false)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update event")
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update event"
+      )
     } finally {
       setIsSaving(false)
     }
@@ -115,7 +122,7 @@ export default function CustomEventDetailPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="gap-2 h-8"
+              className="h-8 gap-2"
               onClick={handleBack}
             >
               <ArrowLeft className="size-3.5" />
@@ -135,7 +142,7 @@ export default function CustomEventDetailPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2 h-8"
+            className="h-8 gap-2"
             onClick={handleBack}
           >
             <ArrowLeft className="size-3.5" />
@@ -145,27 +152,27 @@ export default function CustomEventDetailPage() {
           {/* Edit Basic Info Button */}
           <Sheet open={isEditingBasic} onOpenChange={setIsEditingBasic}>
             <SheetTrigger asChild>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-              >
+              <Button size="sm" variant="outline" className="gap-1.5">
                 <Edit2 className="size-3.5" />
                 Edit Event
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-96 flex flex-col gap-0 p-0">
-              <SheetHeader className="px-6 pt-6 pb-3 border-b border-border bg-muted/20">
+            <SheetContent side="right" className="flex w-96 flex-col gap-0 p-0">
+              <SheetHeader className="border-b border-border bg-muted/20 px-6 pt-6 pb-3">
                 <SheetTitle>Edit Event Details</SheetTitle>
-                <SheetDescription>Update basic information about this event</SheetDescription>
+                <SheetDescription>
+                  Update basic information about this event
+                </SheetDescription>
               </SheetHeader>
-              <div className="flex-1 overflow-y-auto px-6 pt-4 pb-8 space-y-4">
+              <div className="flex-1 space-y-4 overflow-y-auto px-6 pt-4 pb-8">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold">Event Title *</label>
                   <Input
                     placeholder="e.g., Cup Final 2024"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     className="h-8 text-sm"
                   />
                 </div>
@@ -176,7 +183,9 @@ export default function CustomEventDetailPage() {
                     <Input
                       placeholder="e.g., Manchester United"
                       value={formData.homeTeam}
-                      onChange={(e) => setFormData({ ...formData, homeTeam: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, homeTeam: e.target.value })
+                      }
                       className="h-8 text-sm"
                     />
                   </div>
@@ -185,7 +194,9 @@ export default function CustomEventDetailPage() {
                     <Input
                       placeholder="e.g., Arsenal"
                       value={formData.awayTeam}
-                      onChange={(e) => setFormData({ ...formData, awayTeam: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, awayTeam: e.target.value })
+                      }
                       className="h-8 text-sm"
                     />
                   </div>
@@ -196,7 +207,9 @@ export default function CustomEventDetailPage() {
                   <Input
                     type="datetime-local"
                     value={formData.startTime}
-                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, startTime: e.target.value })
+                    }
                     className="h-8 text-sm"
                   />
                 </div>
@@ -207,7 +220,9 @@ export default function CustomEventDetailPage() {
                     <Input
                       placeholder="e.g., football"
                       value={formData.sport}
-                      onChange={(e) => setFormData({ ...formData, sport: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, sport: e.target.value })
+                      }
                       className="h-8 text-sm"
                     />
                   </div>
@@ -216,7 +231,12 @@ export default function CustomEventDetailPage() {
                     <Input
                       placeholder="e.g., Premier League"
                       value={formData.competition}
-                      onChange={(e) => setFormData({ ...formData, competition: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          competition: e.target.value,
+                        })
+                      }
                       className="h-8 text-sm"
                     />
                   </div>
@@ -227,13 +247,15 @@ export default function CustomEventDetailPage() {
                   <Textarea
                     placeholder="Optional event description..."
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="h-16 text-sm resize-none"
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    className="h-16 resize-none text-sm"
                   />
                 </div>
               </div>
 
-              <div className="shrink-0 border-t border-border px-6 py-3 flex gap-2 justify-end bg-muted/20">
+              <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-muted/20 px-6 py-3">
                 <Button
                   variant="outline"
                   size="sm"
@@ -254,55 +276,87 @@ export default function CustomEventDetailPage() {
         </div>
 
         {/* Event Info Card */}
-        <div className="border border-border rounded-lg bg-card p-4 space-y-3">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="space-y-3 rounded-lg border border-border bg-card p-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <div>
-              <p className="text-xs text-muted-foreground font-semibold">Title</p>
-              <p className="text-sm font-semibold text-foreground">{event.title}</p>
+              <p className="text-xs font-semibold text-muted-foreground">
+                Title
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {event.title}
+              </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-semibold">Matchup</p>
-              <p className="text-sm font-semibold text-foreground">{event.homeTeam} vs {event.awayTeam}</p>
+              <p className="text-xs font-semibold text-muted-foreground">
+                Matchup
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {event.homeTeam} vs {event.awayTeam}
+              </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-semibold">Competition</p>
-              <p className="text-sm font-semibold text-foreground">{event.competition}</p>
+              <p className="text-xs font-semibold text-muted-foreground">
+                Competition
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {event.competition}
+              </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-semibold">Sport</p>
-              <p className="text-sm font-semibold text-foreground">{event.sport}</p>
+              <p className="text-xs font-semibold text-muted-foreground">
+                Sport
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {event.sport}
+              </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-semibold">Start Time</p>
+              <p className="text-xs font-semibold text-muted-foreground">
+                Score
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {event.homeScore ?? 0} - {event.awayScore ?? 0}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground">
+                Start Time
+              </p>
               <p className="text-sm font-semibold text-foreground">
                 {new Date(event.startTime).toLocaleString()}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground font-semibold">Status</p>
-              <p className={`text-sm font-semibold ${event.status === "published" ? "text-emerald-600" : "text-yellow-600"}`}>
+              <p className="text-xs font-semibold text-muted-foreground">
+                Status
+              </p>
+              <p
+                className={`text-sm font-semibold ${event.status === "published" ? "text-emerald-600" : "text-yellow-600"}`}
+              >
                 {event.status}
               </p>
             </div>
           </div>
           {event.description && (
-            <div className="pt-2 border-t border-border">
-              <p className="text-xs text-muted-foreground font-semibold">Description</p>
+            <div className="border-t border-border pt-2">
+              <p className="text-xs font-semibold text-muted-foreground">
+                Description
+              </p>
               <p className="text-sm text-foreground">{event.description}</p>
             </div>
           )}
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="flex items-center gap-3 bg-card border border-border rounded-lg p-3">
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-9 pl-9 text-sm bg-muted/50 border-0"
+              className="h-9 border-0 bg-muted/50 pl-9 text-sm"
             />
           </div>
 
@@ -312,7 +366,7 @@ export default function CustomEventDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 text-xs gap-1.5"
+                className="h-9 gap-1.5 text-xs"
               >
                 All Markets
                 <ChevronDown className="size-3" />
@@ -336,7 +390,7 @@ export default function CustomEventDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 text-xs gap-1.5"
+                className="h-9 gap-1.5 text-xs"
               >
                 All
                 <ChevronDown className="size-3" />
@@ -354,7 +408,7 @@ export default function CustomEventDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 text-xs gap-1.5"
+                className="h-9 gap-1.5 text-xs"
               >
                 All Leagues
                 <ChevronDown className="size-3" />
@@ -367,9 +421,10 @@ export default function CustomEventDetailPage() {
         </div>
 
         {/* Detail View - Markets and Odds */}
-        <div className="border border-border rounded-lg bg-card p-4 h-[calc(100vh-520px)]">
+        <div className="h-[calc(100vh-520px)] rounded-lg border border-border bg-card p-4">
           <CustomEventDetail
             eventId={eventId as Id<"customEvents">}
+            adminControls
             onBack={handleBack}
             onEdit={() => {
               // Edit functionality can be added later

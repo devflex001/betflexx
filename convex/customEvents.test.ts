@@ -33,6 +33,8 @@ describe("custom event preconfiguration", () => {
     })
 
     expect(event?.totalMarkets).toBe(14)
+    expect(event?.homeScore).toBe(0)
+    expect(event?.awayScore).toBe(0)
     expect(markets).toHaveLength(14)
     expect(odds).toHaveLength(93)
     expect(markets.map((market) => market.name)).toEqual([
@@ -81,5 +83,35 @@ describe("custom event preconfiguration", () => {
       outcomeName: "OTHER",
       oddValue: 30.74,
     })
+  })
+
+  test("supports score updates and unpublishing", async () => {
+    const t = convexTest(schema, modules)
+
+    const eventId = await t.mutation(api.customEvents.createCustomEvent, {
+      title: "Home vs Away",
+      homeTeam: "Home",
+      awayTeam: "Away",
+      startTime: Date.parse("2026-07-01T12:00:00.000Z"),
+      sport: "football",
+      competition: "Custom League",
+    })
+
+    await t.mutation(api.customEvents.updateCustomEventScore, {
+      eventId,
+      homeScore: 2,
+      awayScore: 1,
+    })
+
+    let event = await t.query(api.customEvents.getCustomEvent, { eventId })
+    expect(event).toMatchObject({ homeScore: 2, awayScore: 1 })
+
+    await t.mutation(api.customEvents.publishCustomEvent, { eventId })
+    event = await t.query(api.customEvents.getCustomEvent, { eventId })
+    expect(event?.status).toBe("published")
+
+    await t.mutation(api.customEvents.unpublishCustomEvent, { eventId })
+    event = await t.query(api.customEvents.getCustomEvent, { eventId })
+    expect(event?.status).toBe("draft")
   })
 })

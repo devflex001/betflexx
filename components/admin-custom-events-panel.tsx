@@ -12,7 +12,9 @@ type ViewMode = "list" | "detail"
 
 export function AdminCustomEventsPanel() {
   const [viewMode, setViewMode] = React.useState<ViewMode>("list")
-  const [selectedEventId, setSelectedEventId] = React.useState<string | null>(null)
+  const [selectedEventId, setSelectedEventId] = React.useState<string | null>(
+    null
+  )
   const [editorOpen, setEditorOpen] = React.useState(false)
 
   const handleSelectEvent = (eventId: string) => {
@@ -31,11 +33,13 @@ export function AdminCustomEventsPanel() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-lg font-bold tracking-tight">Custom Events</h1>
-          <p className="text-xs text-muted-foreground">Create and manage custom betting events</p>
+          <p className="text-xs text-muted-foreground">
+            Create and manage custom betting events
+          </p>
         </div>
         <Button
           size="sm"
-          className="h-8 text-xs font-semibold gap-1.5"
+          className="h-8 gap-1.5 text-xs font-semibold"
           onClick={() => setEditorOpen(true)}
         >
           <Plus className="size-3.5" />
@@ -47,18 +51,16 @@ export function AdminCustomEventsPanel() {
       {viewMode === "list" ? (
         <>
           {/* Events List */}
-          <CustomEventsList
-            status="all"
-            onSelectEvent={handleSelectEvent}
-          />
+          <CustomEventsList status="all" onSelectEvent={handleSelectEvent} />
         </>
       ) : (
         <>
           {/* Detail View */}
-          <div className="border border-border rounded-lg bg-card p-4 h-[calc(100vh-250px)]">
+          <div className="h-[calc(100vh-250px)] rounded-lg border border-border bg-card p-4">
             {selectedEventId && (
               <CustomEventDetail
                 eventId={selectedEventId as Id<"customEvents">}
+                adminControls
                 onBack={handleBackFromDetail}
                 onEdit={() => {
                   // Could implement edit mode in detail view if needed
@@ -70,10 +72,7 @@ export function AdminCustomEventsPanel() {
       )}
 
       {/* Editor Modal */}
-      <CustomEventEditor
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-      />
+      <CustomEventEditor open={editorOpen} onOpenChange={setEditorOpen} />
     </div>
   )
 }
