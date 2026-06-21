@@ -65,6 +65,54 @@ const SLIDES = [
     image: "/images/p4.jfif",
     imageAlt: "Accumulator betting",
   },
+  {
+    id: "promo5",
+    title: "In-Play Betting",
+    subtitle: "React to the action and bet minute-by-minute.",
+    cta: "View In-Play",
+    image: "/images/p5.jfif",
+    imageAlt: "In-play betting action",
+  },
+  {
+    id: "promo6",
+    title: "Early Payouts",
+    subtitle: "Cash out your winnings early before the final whistle.",
+    cta: "Learn More",
+    image: "/images/p6.jfif",
+    imageAlt: "Early payout options",
+  },
+  {
+    id: "promo7",
+    title: "Boosted Odds",
+    subtitle: "Get maximum value with daily super-boosted markets.",
+    cta: "See Boosts",
+    image: "/images/p7.jfif",
+    imageAlt: "Boosted sports odds",
+  },
+  {
+    id: "promo8",
+    title: "Esports Arena",
+    subtitle: "Back your favorite teams in top tier esports tournaments.",
+    cta: "Bet Esports",
+    image: "/images/p8.jfif",
+    imageAlt: "Esports betting",
+  },
+  {
+    id: "promo9",
+    title: "Virtual Sports",
+    subtitle: "24/7 action with our high-definition virtual leagues.",
+    cta: "Play Virtuals",
+    image: "/images/p9.jfif",
+    imageAlt: "Virtual sports betting",
+  },
+  {
+    id: "promo10",
+    title: "VIP Rewards",
+    subtitle: "Join the VIP club for exclusive bonuses and cashback.",
+    cta: "Claim Bonus",
+    image: "/images/p10.jfif",
+    imageAlt: "VIP rewards and bonuses",
+  },
 ]
 
 function titleCase(value: string) {
@@ -75,7 +123,6 @@ function titleCase(value: string) {
     .join(" ")
 }
 
-// Helper for dynamic sport icons
 function getSportIcon(slug: string) {
   switch (slug.toLowerCase()) {
     case "football": return Circle;
@@ -108,12 +155,12 @@ export default function Page() {
     status: matchStatus,
     search: searchQuery,
     limit: 80,
-    includeFirstMarket: true, // Fetch first market for homepage display
+    includeFirstMarket: true,
   }) as (SportsMatch & { firstMarket?: any })[] | undefined
 
   const allMatches = useQuery(api.sportsData.listMatches, {
     limit: 300,
-    includeFirstMarket: false, // No need for market data in sport counting
+    includeFirstMarket: false,
   }) as SportsMatch[] | undefined
 
   const customEvents = useQuery(api.customEvents.listCustomEvents, {
@@ -211,10 +258,8 @@ export default function Page() {
         <main className="flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto h-full flex flex-col gap-6 scrollbar-thin">
           {(activeTab === "home" || activeTab === "live" || activeTab === "featured") && (
             
-            // --- INLINE FILTER BAR ---
             <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-2 border-b border-border scrollbar-none shrink-0">
               
-              {/* Primary Navigation Tabs */}
               <div className="flex items-center gap-2 shrink-0">
                 <Button
                   variant="ghost"
@@ -260,10 +305,8 @@ export default function Page() {
                 </Button>
               </div>
 
-              {/* Vertical Separator */}
               <div className="w-px h-6 bg-border mx-1 shrink-0" />
 
-              {/* Sports Filter */}
               <div className="flex items-center gap-2 shrink-0">
                 {!allMatches ? (
                   <>
@@ -304,10 +347,8 @@ export default function Page() {
                 )}
               </div>
 
-              {/* Vertical Separator */}
               <div className="w-px h-6 bg-border mx-1 shrink-0" />
 
-              {/* Leagues Filter */}
               <div className="flex items-center gap-2 shrink-0">
                 {!leagues ? (
                   <>
@@ -340,50 +381,51 @@ export default function Page() {
 
           {activeTab === "home" && (
             <>
-              {/* Published Custom Events Section - Top Most Level */}
               <PublishedCustomEventsSection />
 
               {matches !== undefined && (
-                <div className="relative overflow-hidden rounded-lg border border-border bg-card h-44 sm:h-52">
+                <div className="relative overflow-hidden rounded-lg border border-border bg-card w-full h-44 sm:h-52 lg:h-60">
                   <img
                     key={SLIDES[slideIndex].id}
                     src={SLIDES[slideIndex].image}
                     alt={SLIDES[slideIndex].imageAlt}
                     className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500"
                   />
-                  {/* Dark overlay to make the white text readable */}
-                  <div className="absolute inset-0 bg-background/70" aria-hidden="true" />
+                  
+                  <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/60 to-transparent" aria-hidden="true" />
 
-                  <div className="relative z-10 flex h-full flex-col justify-center p-6 sm:p-8">
-                    <div className="max-w-[80%] space-y-2 select-none">
-                      {/* Signature Green Badge */}
-                      <Badge className="bg-[#4b9f71]/15 border-[#4b9f71]/40 text-[#4b9f71] font-bold hover:bg-[#4b9f71]/20 tracking-wide text-[9px] uppercase px-1.5 py-0.5">
+                  {/* Horizontal Flex container: Text on the left, Button on the right */}
+                  <div className="relative z-10 flex h-full flex-col sm:flex-row justify-center sm:justify-between items-start sm:items-center p-6 sm:p-10 gap-3 sm:gap-6">
+                    
+                    {/* Left Side: Text */}
+                    <div className="max-w-[90%] sm:max-w-[60%] lg:max-w-[50%] space-y-2 select-none">
+                      <Badge className="bg-[#4b9f71]/15 border-[#4b9f71]/40 text-[#4b9f71] font-bold hover:bg-[#4b9f71]/20 tracking-wider text-[10px] uppercase px-2 py-0.5">
                         {SLIDES[slideIndex].title}
                       </Badge>
-                      <h2 className="text-xl sm:text-2xl font-extrabold text-white leading-tight tracking-tight">
+                      <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white leading-tight tracking-tight shadow-sm drop-shadow-md">
                         {SLIDES[slideIndex].subtitle}
                       </h2>
-                      <div className="pt-2">
-                        {/* Signature Green Button */}
-                        <Button
-                          size="sm"
-                          className="h-8 text-xs font-semibold bg-[#4b9f71] text-white hover:bg-[#3e865f] border-none"
-                          onClick={() => setActiveTab(slideIndex === 2 ? "featured" : "home")}
-                        >
-                          {SLIDES[slideIndex].cta}
-                        </Button>
-                      </div>
+                    </div>
+
+                    {/* Right Side: Button */}
+                    <div className="shrink-0 pb-4 sm:pb-0 sm:pr-8 lg:pr-12">
+                      <Button
+                        size="sm"
+                        className="h-9 sm:h-10 text-xs sm:text-sm px-6 font-bold bg-[#4b9f71] text-white hover:bg-[#3e865f] border-none shadow-md transition-transform hover:scale-105"
+                        onClick={() => setActiveTab(slideIndex === 2 ? "featured" : "home")}
+                      >
+                        {SLIDES[slideIndex].cta}
+                      </Button>
                     </div>
                   </div>
 
-                  {/* Slider Navigation Dots */}
-                  <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5">
+                  <div className="absolute bottom-3 right-5 z-10 flex flex-wrap max-w-[50%] justify-end items-center gap-1.5">
                     {SLIDES.map((slide, index) => (
                       <span
                         key={slide.id}
                         onClick={() => setSlideIndex(index)}
                         className={`h-1.5 rounded-full cursor-pointer transition-all ${
-                          index === slideIndex ? "w-5 bg-[#4b9f71]" : "w-1.5 bg-white/40 hover:bg-white/60"
+                          index === slideIndex ? "w-5 bg-[#4b9f71]" : "w-1.5 bg-white/50 hover:bg-white/80"
                         }`}
                       />
                     ))}
@@ -465,7 +507,7 @@ export default function Page() {
 
           {activeTab === "custom" && (
             <div className="text-center py-12 border border-dashed border-border rounded-lg text-muted-foreground text-xs">
-              Custom mock events aire disabled while live scraped markets are active.
+              Custom mock events are disabled while live scraped markets are active.
             </div>
           )}
 
