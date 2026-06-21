@@ -6,13 +6,12 @@ import { api } from "@/convex/_generated/api"
 import { AdminLayout } from "@/components/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Label } from "@/components/ui/label"
+import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, Check, Copy, Eye, EyeOff, Loader, Plus, Trash2, Check as CheckIcon } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Settings, Eye, EyeOff, Loader, Check } from "lucide-react"
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 interface DarajaConfig {
   _id: string
@@ -30,24 +29,18 @@ interface DarajaConfig {
   useEnvVariables: boolean
   source?: string
   updatedAt: number
-  updatedBy: string
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("overview")
+  const [showDrawer, setShowDrawer] = useState(false)
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-  const [testingConfig, setTestingConfig] = useState<string | null>(null)
+  const [isDesktop, setIsDesktop] = useState(true)
 
   const currentConfig = useQuery(api.daraja.getConfig)
-  const allConfigs = useQuery(api.daraja.getAllConfigs)
-
   const saveConfig = useMutation(api.daraja.saveConfig)
   const testConfig = useMutation(api.daraja.testConfig)
-  const switchToEnv = useMutation(api.daraja.switchToEnvVariables)
-  const activateConfig = useMutation(api.daraja.activateConfig)
-  const deleteConfig = useMutation(api.daraja.deleteConfig)
 
   const [formData, setFormData] = useState<Partial<DarajaConfig>>({
     consumerKey: "",
@@ -61,6 +54,13 @@ export default function SettingsPage() {
     initiatorPassword: "",
     isProduction: false,
   })
+
+  useEffect(() => {
+    setIsDesktop(window.innerWidth >= 1024)
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024)
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
 
   useEffect(() => {
     if (currentConfig && currentConfig.source !== "environment") {
@@ -88,9 +88,10 @@ export default function SettingsPage() {
         initiatorPassword: formData.initiatorPassword || "",
         isProduction: formData.isProduction || false,
       })
-      setMessage({ type: "success", text: "Configuration saved successfully" })
+      setMessage({ type: "success", text: "Configuration saved" })
+      setTimeout(() => setShowDrawer(false), 1000)
     } catch (error) {
-      setMessage({ type: "error", text: `Error saving configuration: ${String(error)}` })
+      setMessage({ type: "error", text: `Error: ${String(error)}` })
     } finally {
       setLoading(false)
     }
@@ -98,7 +99,7 @@ export default function SettingsPage() {
 
   const handleTestConfig = async () => {
     try {
-      setTestingConfig("current")
+      setLoading(true)
       setMessage(null)
       const result = await testConfig({
         consumerKey: formData.consumerKey || "",
@@ -106,46 +107,7 @@ export default function SettingsPage() {
       })
       setMessage({ type: result.success ? "success" : "error", text: result.message })
     } catch (error) {
-      setMessage({ type: "error", text: `Error testing configuration: ${String(error)}` })
-    } finally {
-      setTestingConfig(null)
-    }
-  }
-
-  const handleSwitchToEnv = async () => {
-    try {
-      setLoading(true)
-      setMessage(null)
-      await switchToEnv()
-      setMessage({ type: "success", text: "Switched to environment variables" })
-    } catch (error) {
-      setMessage({ type: "error", text: `Error switching: ${String(error)}` })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleActivateConfig = async (configId: string | any) => {
-    try {
-      setLoading(true)
-      setMessage(null)
-      await activateConfig({ configId: configId as any })
-      setMessage({ type: "success", text: "Configuration activated" })
-    } catch (error) {
-      setMessage({ type: "error", text: `Error activating configuration: ${String(error)}` })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDeleteConfig = async (configId: string | any) => {
-    try {
-      setLoading(true)
-      setMessage(null)
-      await deleteConfig({ configId: configId as any })
-      setMessage({ type: "success", text: "Configuration deleted" })
-    } catch (error) {
-      setMessage({ type: "error", text: `Error deleting configuration: ${String(error)}` })
+      setMessage({ type: "error", text: `Error: ${String(error)}` })
     } finally {
       setLoading(false)
     }
@@ -155,476 +117,170 @@ export default function SettingsPage() {
     setShowSecrets((prev) => ({ ...prev, [field]: !prev[field] }))
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    setMessage({ type: "success", text: "Copied to clipboard" })
-    setTimeout(() => setMessage(null), 2000)
-  }
+  const ConfigForm = () => (
+    <div className="space-y-5">
+      {message && (
+        <div className={`p-3 rounded text-xs font-medium ${message.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+          {message.text}
+        </div>
+      )}
 
-  const sensitiveFields = [
-    "consumerSecret",
-    "passkey",
-    "initiatorPassword",
-  ]
+      <div className="space-y-2">
+        <Label className="text-xs">Environment</Label>
+        <Select value={formData.isProduction ? "production" : "sandbox"} onValueChange={(value) => handleInputChange("isProduction", value === "production")}>
+          <SelectTrigger className="h-8">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="sandbox">🟡 Sandbox</SelectItem>
+            <SelectItem value="production">🔴 Production</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="consumerKey" className="text-xs">Consumer Key</Label>
+        <Input id="consumerKey" value={formData.consumerKey || ""} onChange={(e) => handleInputChange("consumerKey", e.target.value)} className="h-8 font-mono text-xs" />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs">Consumer Secret</Label>
+        <div className="flex gap-2">
+          <Input type={showSecrets.consumerSecret ? "text" : "password"} value={formData.consumerSecret || ""} onChange={(e) => handleInputChange("consumerSecret", e.target.value)} className="h-8 font-mono text-xs flex-1" />
+          <Button variant="ghost" size="sm" onClick={() => toggleShowSecret("consumerSecret")} className="h-8 w-8 p-0">
+            {showSecrets.consumerSecret ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label className="text-xs">Business Code</Label>
+          <Input value={formData.businessCode || ""} onChange={(e) => handleInputChange("businessCode", e.target.value)} className="h-8 font-mono text-xs" />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">Shortcode</Label>
+          <Input value={formData.shortcode || ""} onChange={(e) => handleInputChange("shortcode", e.target.value)} className="h-8 font-mono text-xs" />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs">Passkey</Label>
+        <div className="flex gap-2">
+          <Input type={showSecrets.passkey ? "text" : "password"} value={formData.passkey || ""} onChange={(e) => handleInputChange("passkey", e.target.value)} className="h-8 font-mono text-xs flex-1" />
+          <Button variant="ghost" size="sm" onClick={() => toggleShowSecret("passkey")} className="h-8 w-8 p-0">
+            {showSecrets.passkey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label className="text-xs">Initiator Name</Label>
+          <Input value={formData.initiatorName || ""} onChange={(e) => handleInputChange("initiatorName", e.target.value)} className="h-8 font-mono text-xs" />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">Initiator Password</Label>
+          <div className="flex gap-2">
+            <Input type={showSecrets.initiatorPassword ? "text" : "password"} value={formData.initiatorPassword || ""} onChange={(e) => handleInputChange("initiatorPassword", e.target.value)} className="h-8 font-mono text-xs flex-1" />
+            <Button variant="ghost" size="sm" onClick={() => toggleShowSecret("initiatorPassword")} className="h-8 w-8 p-0">
+              {showSecrets.initiatorPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs">Callback URL</Label>
+        <Input value={formData.callbackUrl || ""} onChange={(e) => handleInputChange("callbackUrl", e.target.value)} className="h-8 font-mono text-xs text-xs" />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs">Timeout URL</Label>
+        <Input value={formData.timeoutUrl || ""} onChange={(e) => handleInputChange("timeoutUrl", e.target.value)} className="h-8 font-mono text-xs" />
+      </div>
+
+      <div className="flex gap-2 pt-3">
+        <Button onClick={handleTestConfig} variant="outline" size="sm" disabled={loading} className="flex-1">
+          {loading ? <Loader className="size-4 animate-spin" /> : <Check className="size-4" />}
+          <span className="ml-1">Test</span>
+        </Button>
+        <Button onClick={handleSaveConfig} size="sm" disabled={loading} className="flex-1">
+          {loading ? <Loader className="size-4 animate-spin" /> : <Check className="size-4" />}
+          <span className="ml-1">Save</span>
+        </Button>
+      </div>
+    </div>
+  )
 
   return (
     <AdminLayout pageTitle="Settings">
-      <div className="flex-1 flex flex-col gap-6 p-6 overflow-y-auto bg-background">
-        <div className="max-w-5xl mx-auto w-full">
-          {/* Header */}
-          <div className="flex flex-col gap-2 mb-8">
-            <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-            <p className="text-sm text-muted-foreground">
-              Manage Daraja API configuration for M-Pesa integration
-            </p>
+      <div className="flex-1 flex flex-col gap-8 p-6 overflow-y-auto bg-background">
+        <div className="max-w-3xl">
+          <div className="flex flex-col gap-1 mb-8">
+            <h1 className="text-2xl font-bold">Settings</h1>
+            <p className="text-xs text-muted-foreground">Manage integrations and configurations</p>
           </div>
 
-          {/* Messages */}
-          {message && (
-            <Alert className={`mb-6 ${message.type === "success" ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
-              <AlertCircle className={`size-4 ${message.type === "success" ? "text-green-600" : "text-red-600"}`} />
-              <AlertDescription className={message.type === "success" ? "text-green-800" : "text-red-800"}>
-                {message.text}
-              </AlertDescription>
-            </Alert>
-          )}
+          {/* Daraja Config Card */}
+          <Card className="border border-border hover:shadow-sm transition-shadow">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Settings className="size-4 text-primary" />
+                    <h2 className="text-sm font-bold text-foreground">Daraja API</h2>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">M-Pesa payment configuration</p>
 
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="configure">Configure</TabsTrigger>
-              <TabsTrigger value="saved">Saved Configs</TabsTrigger>
-            </TabsList>
-
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-4">
-              {currentConfig && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Current Configuration</CardTitle>
-                    <CardDescription>
-                      Currently using: {currentConfig.source === "environment" ? "Environment Variables" : "Database Configuration"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Status Badge */}
-                    <div className="flex items-center gap-3 p-4 bg-accent rounded-lg border border-border">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-foreground">Active Source</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {currentConfig.source === "environment"
-                            ? "Using environment variables from .env"
-                            : `Using database configuration (Production: ${currentConfig.isProduction ? "Yes" : "No"})`}
-                        </p>
-                      </div>
-                      <div className={`px-3 py-1 rounded text-xs font-medium ${currentConfig.source === "environment" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
-                        {currentConfig.source === "environment" ? "ENV" : "DB"}
-                      </div>
-                    </div>
-
-                    {/* Config Details Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Business Code</Label>
-                        <p className="text-sm font-mono bg-muted p-2 rounded text-foreground">
-                          {currentConfig.businessCode}
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Shortcode</Label>
-                        <p className="text-sm font-mono bg-muted p-2 rounded text-foreground">
-                          {currentConfig.shortcode}
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Initiator Name</Label>
-                        <p className="text-sm font-mono bg-muted p-2 rounded text-foreground">
-                          {currentConfig.initiatorName}
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Environment</Label>
-                        <p className={`text-sm font-mono p-2 rounded ${currentConfig.isProduction ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>
+                  {currentConfig && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${currentConfig.isProduction ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>
                           {currentConfig.isProduction ? "🔴 Production" : "🟡 Sandbox"}
-                        </p>
+                        </span>
+                        <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${currentConfig.source === "environment" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"}`}>
+                          {currentConfig.source === "environment" ? "ENV" : "DB"}
+                        </span>
                       </div>
-                    </div>
-
-                    {/* Callback URLs */}
-                    <div className="space-y-3 border-t border-border pt-4">
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase">Callback URLs</Label>
-                      <div className="space-y-2">
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground">Callback URL</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-xs font-mono bg-muted p-2 rounded flex-1 text-foreground truncate">
-                              {currentConfig.callbackUrl}
-                            </p>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(currentConfig.callbackUrl)}
-                              className="size-8 p-0"
-                            >
-                              <Copy className="size-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground">Timeout URL</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-xs font-mono bg-muted p-2 rounded flex-1 text-foreground truncate">
-                              {currentConfig.timeoutUrl}
-                            </p>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(currentConfig.timeoutUrl)}
-                              className="size-8 p-0"
-                            >
-                              <Copy className="size-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    {currentConfig.source === "environment" && (
-                      <div className="pt-4 border-t border-border">
-                        <p className="text-xs text-muted-foreground mb-3">Want to override with database configuration?</p>
-                        <Button onClick={() => setActiveTab("configure")} variant="outline" size="sm">
-                          <Plus className="size-4 mr-2" />
-                          Add Configuration
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            {/* Configure Tab */}
-            <TabsContent value="configure" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Add/Edit Configuration</CardTitle>
-                  <CardDescription>
-                    Create a new Daraja API configuration to override environment variables
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Environment Toggle */}
-                  <div className="space-y-3 p-4 bg-accent rounded-lg border border-border">
-                    <Label className="text-sm font-medium text-foreground">Environment</Label>
-                    <Select value={formData.isProduction ? "production" : "sandbox"} onValueChange={(value) => handleInputChange("isProduction", value === "production")}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sandbox">🟡 Sandbox (Testing)</SelectItem>
-                        <SelectItem value="production">🔴 Production</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Credentials Section */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-foreground">API Credentials</h3>
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="consumerKey" className="text-sm font-medium">
-                          Consumer Key
-                        </Label>
-                        <Input
-                          id="consumerKey"
-                          value={formData.consumerKey || ""}
-                          onChange={(e) => handleInputChange("consumerKey", e.target.value)}
-                          placeholder="Enter consumer key"
-                          className="font-mono text-xs"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="consumerSecret" className="text-sm font-medium">
-                          Consumer Secret
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id="consumerSecret"
-                            type={showSecrets.consumerSecret ? "text" : "password"}
-                            value={formData.consumerSecret || ""}
-                            onChange={(e) => handleInputChange("consumerSecret", e.target.value)}
-                            placeholder="Enter consumer secret"
-                            className="font-mono text-xs"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleShowSecret("consumerSecret")}
-                            className="size-9 p-0"
-                          >
-                            {showSecrets.consumerSecret ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Business Details Section */}
-                  <div className="space-y-4 border-t border-border pt-4">
-                    <h3 className="text-sm font-semibold text-foreground">Business Details</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="businessCode" className="text-sm font-medium">
-                          Business Code
-                        </Label>
-                        <Input
-                          id="businessCode"
-                          value={formData.businessCode || ""}
-                          onChange={(e) => handleInputChange("businessCode", e.target.value)}
-                          placeholder="e.g., 174379"
-                          className="font-mono text-xs"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="shortcode" className="text-sm font-medium">
-                          Shortcode
-                        </Label>
-                        <Input
-                          id="shortcode"
-                          value={formData.shortcode || ""}
-                          onChange={(e) => handleInputChange("shortcode", e.target.value)}
-                          placeholder="e.g., 174379"
-                          className="font-mono text-xs"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Security Section */}
-                  <div className="space-y-4 border-t border-border pt-4">
-                    <h3 className="text-sm font-semibold text-foreground">Security</h3>
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="passkey" className="text-sm font-medium">
-                          Passkey
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id="passkey"
-                            type={showSecrets.passkey ? "text" : "password"}
-                            value={formData.passkey || ""}
-                            onChange={(e) => handleInputChange("passkey", e.target.value)}
-                            placeholder="Enter passkey"
-                            className="font-mono text-xs"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleShowSecret("passkey")}
-                            className="size-9 p-0"
-                          >
-                            {showSecrets.passkey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="initiatorName" className="text-sm font-medium">
-                            Initiator Name
-                          </Label>
-                          <Input
-                            id="initiatorName"
-                            value={formData.initiatorName || ""}
-                            onChange={(e) => handleInputChange("initiatorName", e.target.value)}
-                            placeholder="e.g., testapi"
-                            className="font-mono text-xs"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="initiatorPassword" className="text-sm font-medium">
-                            Initiator Password
-                          </Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              id="initiatorPassword"
-                              type={showSecrets.initiatorPassword ? "text" : "password"}
-                              value={formData.initiatorPassword || ""}
-                              onChange={(e) => handleInputChange("initiatorPassword", e.target.value)}
-                              placeholder="Enter password"
-                              className="font-mono text-xs"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleShowSecret("initiatorPassword")}
-                              className="size-9 p-0"
-                            >
-                              {showSecrets.initiatorPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Callbacks Section */}
-                  <div className="space-y-4 border-t border-border pt-4">
-                    <h3 className="text-sm font-semibold text-foreground">Callback URLs</h3>
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="callbackUrl" className="text-sm font-medium">
-                          Callback URL
-                        </Label>
-                        <Input
-                          id="callbackUrl"
-                          value={formData.callbackUrl || ""}
-                          onChange={(e) => handleInputChange("callbackUrl", e.target.value)}
-                          placeholder="https://yourdomain.com/api/mpesa/callback"
-                          className="font-mono text-xs"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="timeoutUrl" className="text-sm font-medium">
-                          Timeout URL
-                        </Label>
-                        <Input
-                          id="timeoutUrl"
-                          value={formData.timeoutUrl || ""}
-                          onChange={(e) => handleInputChange("timeoutUrl", e.target.value)}
-                          placeholder="https://yourdomain.com/api/mpesa/timeout"
-                          className="font-mono text-xs"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4 border-t border-border">
-                    <Button onClick={handleTestConfig} variant="outline" disabled={loading || testingConfig !== null}>
-                      {testingConfig === "current" ? (
-                        <>
-                          <Loader className="size-4 mr-2 animate-spin" />
-                          Testing...
-                        </>
-                      ) : (
-                        <>
-                          <CheckIcon className="size-4 mr-2" />
-                          Test Config
-                        </>
-                      )}
-                    </Button>
-                    <Button onClick={handleSaveConfig} disabled={loading} className="flex-1">
-                      {loading ? (
-                        <>
-                          <Loader className="size-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="size-4 mr-2" />
-                          Save & Activate
-                        </>
-                      )}
-                    </Button>
-                  </div>
-
-                  {currentConfig && currentConfig.source !== "environment" && (
-                    <div className="pt-4 border-t border-border">
-                      <Button onClick={handleSwitchToEnv} variant="outline" size="sm" className="w-full">
-                        Switch Back to Environment Variables
-                      </Button>
+                      <p className="text-xs text-muted-foreground">Code: {currentConfig.businessCode}</p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Saved Configs Tab */}
-            <TabsContent value="saved" className="space-y-4">
-              {!allConfigs || allConfigs.length === 0 ? (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="p-3 bg-muted rounded-full mb-4">
-                      <AlertCircle className="size-6 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm font-medium text-foreground mb-1">No saved configurations</p>
-                    <p className="text-xs text-muted-foreground">Create one in the Configure tab to get started</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {allConfigs.map((config) => (
-                    <Card key={config._id} className={config.isEnabled ? "border-primary border-2" : ""}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                              <h3 className="text-sm font-semibold text-foreground">
-                                {config.isProduction ? "🔴 Production" : "🟡 Sandbox"} - {config.businessCode}
-                              </h3>
-                              {config.isEnabled && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-                                  <Check className="size-3" />
-                                  Active
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              Consumer Key: {config.consumerKey.substring(0, 8)}***
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Updated: {new Date(config.updatedAt).toLocaleString()}
-                            </p>
-                          </div>
-                          <div className="flex gap-2 ml-4">
-                            {!config.isEnabled && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleActivateConfig(config._id)}
-                                disabled={loading}
-                              >
-                                Activate
-                              </Button>
-                            )}
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                                  <Trash2 className="size-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Delete Configuration</DialogTitle>
-                                  <DialogDescription>
-                                    Are you sure you want to delete this configuration? This action cannot be undone.
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="flex gap-3 justify-end pt-4">
-                                  <Button variant="outline">Cancel</Button>
-                                  <Button
-                                    variant="destructive"
-                                    onClick={() => handleDeleteConfig(config._id)}
-                                    disabled={loading}
-                                  >
-                                    Delete
-                                  </Button>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
                 </div>
-              )}
-            </TabsContent>
-          </Tabs>
+
+                <Button onClick={() => setShowDrawer(true)} variant="outline" size="sm" className="ml-4">
+                  Configure
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Desktop Modal or Mobile Drawer */}
+      {isDesktop ? (
+        <Dialog open={showDrawer} onOpenChange={setShowDrawer}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Configure Daraja API</DialogTitle>
+              <DialogClose />
+            </DialogHeader>
+            <ConfigForm />
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <Drawer open={showDrawer} onOpenChange={setShowDrawer}>
+          <DrawerContent>
+            <DrawerHeader className="flex justify-between items-center">
+              <DrawerTitle>Configure Daraja API</DrawerTitle>
+              <DrawerClose />
+            </DrawerHeader>
+            <div className="px-4 pb-6 overflow-y-auto max-h-[70vh]">
+              <ConfigForm />
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
     </AdminLayout>
   )
 }

@@ -99,7 +99,7 @@ interface BanModalProps {
 }
 
 function BanModal({ user, open, onClose }: BanModalProps) {
-  const banUser = useMutation(api.adminUsers.banUser)
+  // const banUser = useMutation(api.adminUsers.banUser)
   const [reason, setReason] = React.useState("")
   const [duration, setDuration] = React.useState<string>("permanent")
   const [loading, setLoading] = React.useState(false)

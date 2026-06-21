@@ -146,7 +146,7 @@ export function AdminLayout({ children, pageTitle }: AdminLayoutProps) {
 
   // Get current page label for mobile header
   const getCurrentLabel = () => {
-    const allItems = [...coreNavItems, ...operationsNavItems, ...insightsNavItems]
+    const allItems = [...coreNavItems, ...operationsNavItems, ...settingsNavItems]
     const current = allItems.find(item => item.href === pathname)
     return current?.label || pageTitle || "Admin"
   }
