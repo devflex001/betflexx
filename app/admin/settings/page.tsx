@@ -37,6 +37,8 @@ export default function SettingsPage() {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [showBulkImport, setShowBulkImport] = useState(false)
+  const [bulkEnvText, setBulkEnvText] = useState("")
   const isDesktop = useMediaQuery("(min-width: 1024px)")
 
   const currentConfig = useQuery(api.daraja.getConfig)
@@ -115,6 +117,42 @@ export default function SettingsPage() {
     setShowSecrets((prev) => ({ ...prev, [field]: !prev[field] }))
   }
 
+  const parseBulkEnvVars = (envText: string) => {
+    const envVarMap: Record<string, string> = {
+      MPESA_CONSUMER_KEY: "consumerKey",
+      MPESA_CONSUMER_SECRET: "consumerSecret",
+      MPESA_BUSINESS_CODE: "businessCode",
+      MPESA_PASSKEY: "passkey",
+      MPESA_CALLBACK_URL: "callbackUrl",
+      MPESA_TIMEOUT_URL: "timeoutUrl",
+      MPESA_SHORTCODE: "shortcode",
+      MPESA_INITIATOR_NAME: "initiatorName",
+      MPESA_INITIATOR_PASSWORD: "initiatorPassword",
+    }
+
+    const lines = envText.split("\n")
+    const updates: Partial<DarajaConfig> = {}
+
+    lines.forEach((line) => {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith("#")) return
+
+      const match = trimmed.match(/^([A-Z_]+)\s*=\s*(.+)$/)
+      if (match) {
+        const [, envKey, envValue] = match
+        const formField = envVarMap[envKey]
+        if (formField) {
+          updates[formField as keyof DarajaConfig] = envValue.trim()
+        }
+      }
+    })
+
+    setFormData((prev) => ({ ...prev, ...updates }))
+    setShowBulkImport(false)
+    setMessage({ type: "success", text: `${Object.keys(updates).length} field(s) imported successfully` })
+    setTimeout(() => setMessage(null), 3000)
+  }
+
   const ConfigForm = () => (
     <div className="space-y-4">
       {message && (
@@ -122,6 +160,54 @@ export default function SettingsPage() {
           {message.text}
         </div>
       )}
+
+      {/* Bulk Import Section */}
+      <div className="border-t pt-4">
+        <button
+          type="button"
+          onClick={() => setShowBulkImport(!showBulkImport)}
+          className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 mb-3"
+        >
+          <span>+</span> Import from .env
+        </button>
+
+        {showBulkImport && (
+          <div className="space-y-2 p-3 bg-muted/40 rounded border border-border">
+            <p className="text-xs text-muted-foreground">
+              Paste your environment variables and they'll be automatically mapped to the form fields.
+            </p>
+            <textarea
+              placeholder={`MPESA_CONSUMER_KEY=y4oYKF2t8ql7suePhYPVcvkL6BL1LArfSO1gHY55O0gC2SRC\nMPESA_CONSUMER_SECRET=zHYCg0GrtN3jAUEGbGLfzjyWwu9ymwCp4WHbzA4e8706ewyylCy17N7BFFlw6E1h\nMPESA_BUSINESS_CODE=174379\nMPESA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919`}
+              onChange={(e) => setBulkEnvText(e.target.value)}
+              value={bulkEnvText}
+              className="w-full h-24 p-2 text-xs font-mono bg-background border border-border rounded resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="default"
+                onClick={() => parseBulkEnvVars(bulkEnvText)}
+                className="flex-1 text-xs h-8"
+              >
+                Import
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setShowBulkImport(false)
+                  setBulkEnvText("")
+                }}
+                className="flex-1 text-xs h-8"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="consumerKey" className="text-xs font-semibold">Consumer Key</Label>
