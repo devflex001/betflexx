@@ -131,7 +131,7 @@ export default function SettingsPage() {
     }
 
     const lines = envText.split("\n")
-    const updates: Partial<DarajaConfig> = {}
+    const updates: Record<string, string> = {}
 
     lines.forEach((line) => {
       const trimmed = line.trim()
@@ -142,7 +142,7 @@ export default function SettingsPage() {
         const [, envKey, envValue] = match
         const formField = envVarMap[envKey]
         if (formField) {
-          updates[formField as keyof DarajaConfig] = envValue.trim()
+          updates[formField] = envValue.trim()
         }
       }
     })
