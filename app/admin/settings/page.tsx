@@ -345,11 +345,11 @@ export default function SettingsPage() {
       {isDesktop ? (
         <Sheet open={showDrawer} onOpenChange={setShowDrawer}>
           <SheetContent side="right" className="w-full sm:max-w-2xl p-0 flex flex-col border-l border-border bg-card">
-            <SheetHeader className="border-b border-border bg-muted/20 px-8 py-6 flex justify-between items-center">
-              <SheetTitle className="text-2xl font-bold">Configure Daraja API</SheetTitle>
+            <SheetHeader className="border-b border-border bg-muted/20 px-4 py-4 flex justify-between items-center">
+              <SheetTitle className="text-xl font-bold"> Daraja API</SheetTitle>
               <SheetClose />
             </SheetHeader>
-            <div className="flex-1 overflow-y-auto px-8 py-8">
+            <div className="flex-1 overflow-y-auto px-4 py-6">
               <ConfigForm />
             </div>
           </SheetContent>
