@@ -231,7 +231,7 @@ export function MPesaLiveStatus({
 
   return (
     <div
-      className={`border ${borderColor} ${bgColor} rounded-lg p-6 flex flex-col items-center justify-center gap-4 min-h-[280px]`}
+      className={`border ${borderColor} ${bgColor} rounded-lg p-6 flex flex-col items-center justify-center gap-4 min-h-[280px] animate-in fade-in-50`}
     >
       <div className="flex justify-center">{icon}</div>
       <div className="text-center space-y-3">

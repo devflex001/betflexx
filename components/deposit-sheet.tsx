@@ -99,11 +99,8 @@ export function DepositSheet() {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
       }
-    } else if (feedback.status === "pending") {
-      // Still waiting for user - no action needed
-      console.log("[Real-time DB] Still pending user confirmation...")
-    } else {
-      // Other error codes
+    } else if (feedback.status !== "pending") {
+      // Other error codes (not pending)
       setStage("complete")
       setTransactionResult({
         resultCode: resultCode,
@@ -115,6 +112,9 @@ export function DepositSheet() {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
       }
+    } else {
+      // Still waiting for user (pending status) - no action needed
+      console.log("[Real-time DB] Still pending user confirmation...")
     }
   }, [latestTransaction, stage])
 
@@ -224,18 +224,8 @@ export function DepositSheet() {
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         {errorMessage && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+          <div className="animate-in fade-in-50 slide-in-from-top-2 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
             <p className="text-xs font-medium text-red-700">{errorMessage}</p>
-          </div>
-        )}
-
-        {/* Wallet Balance Card */}
-        {wallet && wallet.balance > 0 && (
-          <div className="bg-primary/5 border border-primary/10 rounded-lg p-3">
-            <p className="text-xs text-muted-foreground mb-1">Current Balance</p>
-            <p className="text-lg font-bold text-primary">
-              KES {wallet.balance.toLocaleString()}
-            </p>
           </div>
         )}
 
@@ -252,30 +242,29 @@ export function DepositSheet() {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="text-sm font-semibold h-10"
+            autoFocus
           />
           <div className="grid grid-cols-3 gap-2 pt-2">
-            {QUICK_AMOUNTS.map((amt) => (
+            {QUICK_AMOUNTS.map((amt, idx) => (
               <Button
                 key={amt}
                 type="button"
                 variant="outline"
                 size="sm"
-                className="text-xs h-8 font-medium"
+                className="text-xs h-8 font-medium animate-in fade-in-50"
+                style={{ animationDelay: `${idx * 25}ms` }}
                 onClick={() => setAmount(amt.toString())}
               >
-                +{amt.toLocaleString()}
+                +{amt}
               </Button>
             ))}
           </div>
-          <p className="text-[10px] text-muted-foreground pt-1">
-            Min: KES {MIN_AMOUNT} • Max: KES {MAX_AMOUNT.toLocaleString()}
-          </p>
         </div>
 
         {/* Phone Section */}
         <div className="space-y-2">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            M-Pesa Phone Number
+            Phone Number
           </label>
           <Input
             type="tel"
@@ -284,39 +273,33 @@ export function DepositSheet() {
             onChange={(e) => setPhone(e.target.value)}
             className="text-sm font-semibold h-10"
           />
-          <p className="text-[10px] text-muted-foreground">
-            Format: 07XX XXX XXX or +254XX XXX XXX
-          </p>
         </div>
 
         {/* Submit Button */}
         <Button
           type="submit"
-          className="w-full text-sm font-bold gap-2 h-10"
+          className="w-full text-sm font-bold gap-2 h-10 animate-in fade-in-50"
           size="default"
         >
           <ArrowUpRight className="h-4 w-4" />
-          Deposit Funds
+          Deposit
         </Button>
-
-        {/* Info Message */}
-        <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg p-3">
-          <p className="text-[10px] text-blue-700">
-            ℹ️ An M-Pesa prompt will appear on your phone. Enter your PIN to complete the deposit.
-          </p>
-        </div>
       </form>
     )
   }
 
   if (stage === "error") {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 animate-in fade-in-50 slide-in-from-bottom-4">
         <MPesaLiveStatus
           stage="error"
           errorMessage={errorMessage || "An error occurred"}
         />
-        <Button className="w-full text-sm font-bold h-10" onClick={handleReset}>
+        <Button
+          className="w-full text-sm font-bold h-10"
+          onClick={handleReset}
+          variant="outline"
+        >
           Try Again
         </Button>
       </div>
@@ -329,12 +312,11 @@ export function DepositSheet() {
         navigator.clipboard.writeText(transactionResult.mpesaReceiptNumber)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
-        toast.success("Receipt copied to clipboard")
       }
     }
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-3 animate-in fade-in-50 slide-in-from-bottom-4">
         <MPesaFeedback
           resultCode={transactionResult.resultCode}
           resultDesc={transactionResult.resultDesc}
@@ -368,6 +350,7 @@ export function DepositSheet() {
         <Button
           className="w-full text-sm font-bold h-10"
           onClick={handleReset}
+          variant={transactionResult.resultCode === "0" ? "default" : "outline"}
         >
           {transactionResult.resultCode === "0" ? "Deposit Again" : "Try Again"}
         </Button>
