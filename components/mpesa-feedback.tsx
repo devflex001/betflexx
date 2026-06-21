@@ -73,7 +73,7 @@ export function MPesaFeedback({
 
   return (
     <div
-      className={`border ${colors.border} ${colors.bg} rounded-lg p-4 space-y-3`}
+      className={`border ${colors.border} ${colors.bg} rounded-lg p-4 space-y-3 animate-in fade-in-50`}
     >
       {/* Header with Icon and Status */}
       <div className="flex items-start gap-3">
@@ -82,7 +82,7 @@ export function MPesaFeedback({
           <h3 className={`font-semibold text-sm ${colors.text}`}>
             {feedback.message}
           </h3>
-          <p className={`text-xs ${colors.text}/70 mt-1`}>
+          <p className={`text-xs ${colors.text}/70 mt-1 leading-relaxed`}>
             {resultDesc}
           </p>
         </div>

@@ -86,21 +86,8 @@ export function DepositSheet() {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
       }
-    } else if (resultCode === "1" || resultCode === "1032") {
-      // User cancelled
-      setStage("complete")
-      setTransactionResult({
-        resultCode: resultCode,
-        resultDesc: latestTransaction.resultDesc || feedback.message,
-        timestamp: latestTransaction.updatedAt || Date.now(),
-      })
-      toast.error(feedback.message)
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-    } else if (feedback.status !== "pending") {
-      // Other error codes (not pending)
+    } else if (resultCode === "1" || resultCode === "1032" || resultCode === "2") {
+      // User cancelled or timeout
       setStage("complete")
       setTransactionResult({
         resultCode: resultCode,
@@ -113,8 +100,18 @@ export function DepositSheet() {
         clearTimeout(timeoutRef.current)
       }
     } else {
-      // Still waiting for user (pending status) - no action needed
-      console.log("[Real-time DB] Still pending user confirmation...")
+      // Other error codes
+      setStage("complete")
+      setTransactionResult({
+        resultCode: resultCode,
+        resultDesc: latestTransaction.resultDesc || feedback.message,
+        timestamp: latestTransaction.updatedAt || Date.now(),
+      })
+      toast.error(feedback.message)
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
     }
   }, [latestTransaction, stage])
 
