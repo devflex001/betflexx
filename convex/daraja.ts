@@ -107,13 +107,11 @@ export const switchToEnvVariables = mutation({
 /**
  * Activate a saved configuration
  */
-export const activateConfig = mutation(
-  {
-    args: {
-      configId: v.id("daraja_config"),
-    },
+export const activateConfig = mutation({
+  args: {
+    configId: v.id("daraja_config"),
   },
-  async (ctx, { configId }) => {
+  handler: async (ctx, args) => {
     // Disable all other configs
     const existingConfigs = await ctx.db.query("daraja_config").collect()
     for (const config of existingConfigs) {
@@ -121,42 +119,38 @@ export const activateConfig = mutation(
     }
 
     // Enable the selected config
-    await ctx.db.patch(configId, { isEnabled: true, useEnvVariables: false })
+    await ctx.db.patch(args.configId, { isEnabled: true, useEnvVariables: false })
 
     return { success: true }
-  }
-)
+  },
+})
 
 /**
  * Delete a saved configuration
  */
-export const deleteConfig = mutation(
-  {
-    args: {
-      configId: v.id("daraja_config"),
-    },
+export const deleteConfig = mutation({
+  args: {
+    configId: v.id("daraja_config"),
   },
-  async (ctx, { configId }) => {
-    await ctx.db.delete(configId)
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.configId)
     return { success: true }
-  }
-)
+  },
+})
 
 /**
  * Test configuration
  */
-export const testConfig = mutation(
-  {
-    args: {
-      consumerKey: v.string(),
-      consumerSecret: v.string(),
-    },
+export const testConfig = mutation({
+  args: {
+    consumerKey: v.string(),
+    consumerSecret: v.string(),
   },
-  async (ctx, { consumerKey, consumerSecret }) => {
+  handler: async (ctx, args) => {
     try {
       const baseUrl = "https://sandbox.safaricom.co.ke"
       const auth = Buffer.from(
-        `${consumerKey}:${consumerSecret}`
+        `${args.consumerKey}:${args.consumerSecret}`
       ).toString("base64")
 
       const response = await fetch(
@@ -183,5 +177,5 @@ export const testConfig = mutation(
         message: `Error testing configuration: ${String(error)}`,
       }
     }
-  }
-)
+  },
+})
