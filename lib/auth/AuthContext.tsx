@@ -79,8 +79,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role: result.role,
         });
 
-        // Trigger page reload to initialize Convex session with new token
-        window.location.reload();
+        // Redirect to dashboard based on role
+        if (result.role === "admin") {
+          window.location.href = "/admin/settings";
+        } else {
+          window.location.href = "/dashboard";
+        }
       }
     } catch (error) {
       setIsLoading(false);
