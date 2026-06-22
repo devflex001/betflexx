@@ -13,6 +13,7 @@ import type * as crons from "../crons.js";
 import type * as customEvents from "../customEvents.js";
 import type * as daraja from "../daraja.js";
 import type * as mpesa from "../mpesa.js";
+import type * as paymentMode from "../paymentMode.js";
 import type * as paystack from "../paystack.js";
 import type * as scraper from "../scraper.js";
 import type * as scraperValidators from "../scraperValidators.js";
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   customEvents: typeof customEvents;
   daraja: typeof daraja;
   mpesa: typeof mpesa;
+  paymentMode: typeof paymentMode;
   paystack: typeof paystack;
   scraper: typeof scraper;
   scraperValidators: typeof scraperValidators;
