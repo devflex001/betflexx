@@ -33,6 +33,7 @@ export const listUsers = query({
     paginationOpts: v.object({
       numItems: v.number(),
       cursor: v.union(v.string(), v.null()),
+      id: v.optional(v.number()), // Added to accept extra field from usePaginatedQuery
     }),
     search: v.optional(v.string()),
   },

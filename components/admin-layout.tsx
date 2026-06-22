@@ -158,38 +158,40 @@ export function AdminLayout({ children, pageTitle }: AdminLayoutProps) {
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
 
       {/* ── Desktop Sidebar ── */}
-      <aside
-        className={`hidden lg:flex flex-col gap-0 border-r border-border h-full bg-card text-card-foreground shrink-0 transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-60"
-          }`}
-      >
-        {/* Brand + collapse toggle */}
-        <div className="flex items-center justify-between px-3 h-14 border-b border-border shrink-0">
-          {!sidebarCollapsed && (
-            <span className="text-sm font-bold tracking-tight text-foreground select-none truncate">
-              BetFlexx Admin
-            </span>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8 shrink-0 ml-auto"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            aria-label="Toggle sidebar"
-          >
-            {sidebarCollapsed ? (
-              <ChevronRight className="size-4" />
-            ) : (
-              <ChevronLeft className="size-4" />
+      {mounted && (
+        <aside
+          className={`hidden lg:flex flex-col gap-0 border-r border-border h-full bg-card text-card-foreground shrink-0 transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-60"
+            }`}
+        >
+          {/* Brand + collapse toggle */}
+          <div className="flex items-center justify-between px-3 h-14 border-b border-border shrink-0">
+            {!sidebarCollapsed && (
+              <span className="text-sm font-bold tracking-tight text-foreground select-none truncate">
+                BetFlexx Admin
+              </span>
             )}
-          </Button>
-        </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0 ml-auto"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              aria-label="Toggle sidebar"
+            >
+              {sidebarCollapsed ? (
+                <ChevronRight className="size-4" />
+              ) : (
+                <ChevronLeft className="size-4" />
+              )}
+            </Button>
+          </div>
 
-        <SidebarContent
-          currentPath={pathname}
-          collapsed={sidebarCollapsed}
-          onNavigate={() => setMobileSidebarOpen(false)}
-        />
-      </aside>
+          <SidebarContent
+            currentPath={pathname}
+            collapsed={sidebarCollapsed}
+            onNavigate={() => setMobileSidebarOpen(false)}
+          />
+        </aside>
+      )}
 
       {/* ── Mobile Sidebar (Sheet) ── */}
       <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
