@@ -7,6 +7,7 @@ function compactSearch(value: string) {
   return value.trim().toLowerCase();
 }
 
+// Optimized query for initial page load - only match details, no odds
 export const listMatches = query({
   args: {
     sport: v.optional(v.string()),
@@ -14,25 +15,32 @@ export const listMatches = query({
     status: v.optional(v.union(v.literal("live"), v.literal("upcoming"))),
     search: v.optional(v.string()),
     limit: v.optional(v.number()),
+    offset: v.optional(v.number()),
+    includeFirstMarket: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const limit = Math.max(1, Math.min(args.limit ?? 80, 120));
-    const lowerBound = Date.now() - 12 * 60 * 60 * 1000;
+    const pageSize = Math.max(1, Math.min(args.limit ?? 10, 50));
+    const offset = Math.max(0, args.offset ?? 0);
+    const fetchLimit = (Math.ceil(offset / pageSize) + 2) * pageSize;
+
+    // Look back 24 hours and forward 30 days to catch recently scraped matches
+    const lowerBound = Date.now() - 24 * 60 * 60 * 1000;
+    const upperBound = Date.now() + 30 * 24 * 60 * 60 * 1000;
 
     const base =
       args.status === "live"
         ? await ctx.db
-            .query("sportsMatches")
-            .withIndex("by_source_and_status_and_startTime", (q) =>
-              q.eq("source", SOURCE).eq("status", 1).gte("startTime", lowerBound)
-            )
-            .take(limit * 3)
+          .query("sportsMatches")
+          .withIndex("by_source_and_status_and_startTime", (q) =>
+            q.eq("source", SOURCE).eq("status", 1).gte("startTime", lowerBound)
+          )
+          .take(fetchLimit)
         : await ctx.db
-            .query("sportsMatches")
-            .withIndex("by_source_and_startTime", (q) =>
-              q.eq("source", SOURCE).gte("startTime", lowerBound)
-            )
-            .take(limit * 3);
+          .query("sportsMatches")
+          .withIndex("by_source_and_startTime", (q) =>
+            q.eq("source", SOURCE).gte("startTime", lowerBound)
+          )
+          .take(fetchLimit);
 
     const search = compactSearch(args.search ?? "");
     const sport = args.sport && args.sport !== "all" ? args.sport : null;
@@ -44,43 +52,90 @@ export const listMatches = query({
         if (args.status === "upcoming" && match.status === 1) return false;
         if (sport && match.sportSlug !== sport) return false;
         if (competition && match.competitionName !== competition) return false;
+        // Filter out matches too far in the future
+        if (match.startTime > upperBound) return false;
         if (!search) return true;
 
         const text = `${match.homeTeam} ${match.awayTeam} ${match.competitionName} ${match.sourceMatchId}`.toLowerCase();
         return text.includes(search);
-      })
-      .slice(0, limit);
+      });
 
-    const page = await Promise.all(
-      filtered.map(async (match) => {
-        const mainMarket = await ctx.db
-          .query("sportsMarkets")
-          .withIndex("by_sourceMatchId_and_marketKey", (q) =>
-            q
-              .eq("sourceMatchId", match.sourceMatchId)
-              .eq(
-                "marketKey",
-                `${match.sourceMatchId}:1:1x2:main`
-              )
-          )
-          .unique();
+    const totalCount = filtered.length;
+    const paged = filtered.slice(offset, offset + pageSize);
 
-        const mainOdds = mainMarket
-          ? await ctx.db
+    // Return matches without odds by default - significantly reduces data load
+    // If includeFirstMarket is true, add the first market data for homepage display
+    if (args.includeFirstMarket) {
+      const page = await Promise.all(
+        paged.map(async (match) => {
+          const firstMarket = await ctx.db
+            .query("sportsMarkets")
+            .withIndex("by_sourceMatchId_and_marketPriority", (q) =>
+              q.eq("sourceMatchId", match.sourceMatchId)
+            )
+            .first();
+
+          // Get odds for the first market only
+          const firstMarketOdds = firstMarket
+            ? await ctx.db
               .query("sportsOdds")
               .withIndex("by_sourceMatchId_and_marketKey_and_priority", (q) =>
                 q
                   .eq("sourceMatchId", match.sourceMatchId)
-                  .eq("marketKey", mainMarket.marketKey)
+                  .eq("marketKey", firstMarket.marketKey)
               )
               .take(3)
-          : [];
+            : [];
 
-        return { ...match, mainOdds };
-      })
-    );
+          return {
+            ...match,
+            firstMarket: firstMarket
+              ? { ...firstMarket, odds: firstMarketOdds }
+              : null
+          };
+        })
+      );
+      return {
+        items: page,
+        totalCount,
+      };
+    }
 
-    return page;
+    return {
+      items: paged,
+      totalCount,
+    };
+  },
+});
+
+// New query to get main odds for a specific match when needed
+export const getMatchMainOdds = query({
+  args: {
+    sourceMatchId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const mainMarket = await ctx.db
+      .query("sportsMarkets")
+      .withIndex("by_sourceMatchId_and_marketKey", (q) =>
+        q
+          .eq("sourceMatchId", args.sourceMatchId)
+          .eq(
+            "marketKey",
+            `${args.sourceMatchId}:1:1x2:main`
+          )
+      )
+      .unique();
+
+    if (!mainMarket) return [];
+
+    return await ctx.db
+      .query("sportsOdds")
+      .withIndex("by_sourceMatchId_and_marketKey_and_priority", (q) =>
+        q
+          .eq("sourceMatchId", args.sourceMatchId)
+          .eq("marketKey", mainMarket.marketKey)
+      )
+      .take(3);
   },
 });
 
@@ -89,7 +144,10 @@ export const listCompetitions = query({
     sport: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const lowerBound = Date.now() - 12 * 60 * 60 * 1000;
+    // Look back 24 hours and forward 30 days to catch recently scraped matches
+    const lowerBound = Date.now() - 24 * 60 * 60 * 1000;
+    const upperBound = Date.now() + 30 * 24 * 60 * 60 * 1000;
+
     const matches = await ctx.db
       .query("sportsMatches")
       .withIndex("by_source_and_startTime", (q) =>
@@ -99,7 +157,13 @@ export const listCompetitions = query({
 
     const sport = args.sport && args.sport !== "all" ? args.sport : null;
     const names = matches
-      .filter((match) => !sport || match.sportSlug === sport)
+      .filter((match) => {
+        if (!sport || match.sportSlug === sport) {
+          // Filter out matches too far in the future
+          return match.startTime <= upperBound;
+        }
+        return false;
+      })
       .map((match) => match.competitionName)
       .filter(Boolean);
 
@@ -138,20 +202,21 @@ export const getMatchWithMainOdds = query({
     const mainMarket = await ctx.db
       .query("sportsMarkets")
       .withIndex("by_sourceMatchId_and_marketKey", (q) =>
-        q.eq("sourceMatchId", match.sourceMatchId).eq(
-          "marketKey",
-          `${match.sourceMatchId}:1:1x2:main`
-        )
+        q
+          .eq("sourceMatchId", args.sourceMatchId)
+          .eq("marketKey", `${args.sourceMatchId}:1:1x2:main`)
       )
       .unique();
 
     const mainOdds = mainMarket
       ? await ctx.db
-          .query("sportsOdds")
-          .withIndex("by_sourceMatchId_and_marketKey_and_priority", (q) =>
-            q.eq("sourceMatchId", match.sourceMatchId).eq("marketKey", mainMarket.marketKey)
-          )
-          .take(3)
+        .query("sportsOdds")
+        .withIndex("by_sourceMatchId_and_marketKey_and_priority", (q) =>
+          q
+            .eq("sourceMatchId", args.sourceMatchId)
+            .eq("marketKey", mainMarket.marketKey)
+        )
+        .take(3)
       : [];
 
     return { ...match, mainOdds };
@@ -169,6 +234,27 @@ export const listMarkets = query({
         q.eq("sourceMatchId", args.sourceMatchId)
       )
       .take(600);
+  },
+});
+
+// Optimized query to get market summary without odds details
+export const getMarketsCount = query({
+  args: {
+    sourceMatchId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const markets = await ctx.db
+      .query("sportsMarkets")
+      .withIndex("by_sourceMatchId_and_marketPriority", (q) =>
+        q.eq("sourceMatchId", args.sourceMatchId)
+      )
+      .take(600);
+
+    return {
+      totalMarkets: markets.length,
+      hasMainMarket: markets.some(m => m.marketKey.includes(":1x2:main")),
+      marketTypes: [...new Set(markets.flatMap(m => m.marketTypes || [m.marketType]).filter(Boolean))],
+    };
   },
 });
 

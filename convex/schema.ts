@@ -1,5 +1,5 @@
-import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
+import { defineSchema, defineTable } from "convex/server"
+import { v } from "convex/values"
 
 const schema = defineSchema({
   scraperSettings: defineTable({
@@ -29,7 +29,6 @@ const schema = defineSchema({
     marketsUpserted: v.number(),
     oddsUpserted: v.number(),
     failedMatches: v.number(),
-    errorSummary: v.union(v.string(), v.null()),
   })
     .index("by_source_and_startedAt", ["source", "startedAt"])
     .index("by_status", ["status"]),
@@ -173,7 +172,7 @@ const schema = defineSchema({
     type: v.string(), // "deposit" | "withdrawal"
     amount: v.number(),
     phone: v.optional(v.string()),
-    status: v.string(), // "success" | "pending" | "failed"
+    status: v.string(), // "success" | "pending" | "failed" | "cancelled"
     errorDetail: v.optional(v.string()),
     time: v.number(),
     // M-Pesa specific fields
@@ -182,10 +181,98 @@ const schema = defineSchema({
     resultCode: v.optional(v.string()),
     resultDesc: v.optional(v.string()),
     mpesaReceiptNumber: v.optional(v.string()),
+    // Feedback from server (single source of truth)
+    feedback: v.optional(v.string()),
+    feedbackType: v.optional(v.union(v.literal("success"), v.literal("error"), v.literal("warning"))),
     updatedAt: v.optional(v.number()),
   })
     .index("by_txId", ["txId"])
     .index("by_checkoutRequestID", ["checkoutRequestID"]),
-});
 
-export default schema;
+  customEvents: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    homeTeam: v.string(),
+    awayTeam: v.string(),
+    homeScore: v.optional(v.number()),
+    awayScore: v.optional(v.number()),
+    startTime: v.number(),
+    startTimeIso: v.string(),
+    sport: v.string(),
+    competition: v.string(),
+    status: v.union(v.literal("draft"), v.literal("published")), // draft or published
+    totalMarkets: v.number(),
+    createdBy: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    publishedAt: v.optional(v.number()),
+  })
+    .index("by_status", ["status"])
+    .index("by_startTime", ["startTime"])
+    .index("by_status_and_startTime", ["status", "startTime"])
+    .index("by_createdBy", ["createdBy"]),
+
+  customMarkets: defineTable({
+    eventId: v.id("customEvents"),
+    marketKey: v.string(),
+    name: v.string(),
+    marketType: v.string(),
+    marketTypes: v.array(v.string()),
+    description: v.optional(v.string()),
+    priority: v.number(),
+    isActive: v.boolean(),
+  })
+    .index("by_eventId", ["eventId"])
+    .index("by_eventId_and_priority", ["eventId", "priority"]),
+
+  customOdds: defineTable({
+    marketId: v.id("customMarkets"),
+    eventId: v.id("customEvents"),
+    outcomeId: v.string(),
+    outcomeName: v.string(),
+    outcomeAlias: v.optional(v.string()),
+    specifiers: v.optional(v.string()),
+    oddValue: v.number(),
+    priority: v.number(),
+    isActive: v.boolean(),
+  })
+    .index("by_marketId", ["marketId"])
+    .index("by_eventId", ["eventId"])
+    .index("by_marketId_and_priority", ["marketId", "priority"]),
+
+  daraja_config: defineTable({
+    consumerKey: v.string(),
+    consumerSecret: v.string(),
+    businessCode: v.string(),
+    passkey: v.string(),
+    callbackUrl: v.string(),
+    timeoutUrl: v.string(),
+    shortcode: v.string(),
+    initiatorName: v.string(),
+    initiatorPassword: v.string(),
+    isProduction: v.boolean(),
+    isEnabled: v.boolean(),
+    useEnvVariables: v.boolean(), // If true, use env vars instead of DB config
+    updatedAt: v.number(),
+    updatedBy: v.string(),
+  }).index("by_isEnabled", ["isEnabled"]),
+
+  paystack_config: defineTable({
+    publicKey: v.string(),
+    secretKey: v.string(),
+    isProduction: v.boolean(),
+    isEnabled: v.boolean(),
+    useEnvVariables: v.boolean(), // If true, use env vars instead of DB config
+    updatedAt: v.number(),
+    updatedBy: v.string(),
+  }).index("by_isEnabled", ["isEnabled"]),
+
+  payment_mode: defineTable({
+    mode: v.union(v.literal("mpesa"), v.literal("paystack")), // Active payment method
+    isEnabled: v.boolean(),
+    updatedAt: v.number(),
+    updatedBy: v.string(),
+  }),
+})
+
+export default schema
