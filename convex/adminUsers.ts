@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation, paginationOptsValidator } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { requireAdmin, requireAuth } from "./auth/authorization";
 
@@ -30,28 +30,33 @@ type UserWithBan = {
  */
 export const listUsers = query({
   args: {
-    paginationOpts: paginationOptsValidator,
+    paginationOpts: v.object({
+      numItems: v.number(),
+      cursor: v.union(v.string(), v.null()),
+    }),
     search: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Require admin authentication
     await requireAdmin(ctx);
 
-    let query_obj = ctx.db.query("users");
-
     // Apply search filter if provided
+    let paginatedUsers;
     if (args.search && args.search.trim()) {
       const searchTerm = args.search.toLowerCase().trim();
-      // Query by phone or ID - use the index
-      query_obj = query_obj.withIndex("by_phone", (q) =>
-        q.eq("phone", searchTerm)
-      );
+      // Query by phone using the index
+      paginatedUsers = await ctx.db
+        .query("users")
+        .withIndex("by_phone", (q) => q.eq("phone", searchTerm))
+        .order("desc")
+        .paginate(args.paginationOpts);
+    } else {
+      // Query all users without index
+      paginatedUsers = await ctx.db
+        .query("users")
+        .order("desc")
+        .paginate(args.paginationOpts);
     }
-
-    // Paginate results
-    const paginatedUsers = await query_obj
-      .order("desc")
-      .paginate(args.paginationOpts);
 
     // Fetch ban status for each user
     const usersWithBans: UserWithBan[] = await Promise.all(
@@ -69,12 +74,12 @@ export const listUsers = query({
           phone: user.phone,
           activeBan: activeBan
             ? {
-                _id: activeBan._id,
-                reason: activeBan.reason,
-                bannedAt: activeBan.bannedAt,
-                bannedUntil: activeBan.bannedUntil,
-                isActive: activeBan.isActive,
-              }
+              _id: activeBan._id,
+              reason: activeBan.reason,
+              bannedAt: activeBan.bannedAt,
+              bannedUntil: activeBan.bannedUntil,
+              isActive: activeBan.isActive,
+            }
             : null,
         };
       })
