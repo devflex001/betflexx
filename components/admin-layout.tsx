@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
+import { useAuth } from "@/lib/auth/AuthContext"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -140,8 +141,10 @@ export function AdminLayout({ children, pageTitle }: AdminLayoutProps) {
     return () => { a = false; clearTimeout(t) }
   }, [])
 
+  const { logout } = useAuth()
+
   const handleLogout = async () => {
-    router.replace("/")
+    await logout();
   }
 
   // Get current page label for mobile header
