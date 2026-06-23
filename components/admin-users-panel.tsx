@@ -4,6 +4,7 @@ import * as React from "react"
 import { useMutation, usePaginatedQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
+import { useAuthClient } from "@/lib/auth-client"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -96,9 +97,10 @@ interface BanModalProps {
   user: UserWithBan | null
   open: boolean
   onClose: () => void
+  adminUserId?: string
 }
 
-function BanModal({ user, open, onClose }: BanModalProps) {
+function BanModal({ user, open, onClose, adminUserId }: BanModalProps) {
   const banUser = useMutation(api.adminUsers.banUser)
   const [reason, setReason] = React.useState("")
   const [duration, setDuration] = React.useState<string>("permanent")
@@ -135,6 +137,7 @@ function BanModal({ user, open, onClose }: BanModalProps) {
     try {
       setLoading(true)
       await banUser({
+        userId: adminUserId as Id<"users"> | undefined,
         targetUserId: user._id as Id<"users">,
         reason: reason.trim(),
         durationHours,
@@ -234,9 +237,10 @@ interface EditModalProps {
   user: UserWithBan | null
   open: boolean
   onClose: () => void
+  adminUserId?: string
 }
 
-function EditModal({ user, open, onClose }: EditModalProps) {
+function EditModal({ user, open, onClose, adminUserId }: EditModalProps) {
   const editUser = useMutation(api.adminUsers.editUser)
   const [phone, setPhone] = React.useState("")
   const [loading, setLoading] = React.useState(false)
@@ -262,6 +266,7 @@ function EditModal({ user, open, onClose }: EditModalProps) {
     try {
       setLoading(true)
       await editUser({
+        userId: adminUserId as Id<"users"> | undefined,
         targetUserId: user._id as Id<"users">,
         email: phone.trim(),
       })
@@ -416,11 +421,13 @@ function UserDetailsModal({ user, open, onClose }: UserDetailsModalProps) {
   )
 }
 
+
 // ─── Main Users Panel ─────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 10
 
 export function AdminUsersPanel() {
+  const { user } = useAuthClient()
   const [search, setSearch] = React.useState("")
   const [debouncedSearch, setDebouncedSearch] = React.useState("")
 
@@ -431,7 +438,7 @@ export function AdminUsersPanel() {
 
   const { results: users, status, loadMore, isLoading } = usePaginatedQuery(
     api.adminUsers.listUsers,
-    { search: debouncedSearch || undefined },
+    { search: debouncedSearch || undefined, userId: user?._id },
     { initialNumItems: PAGE_SIZE }
   )
 
@@ -441,10 +448,10 @@ export function AdminUsersPanel() {
   const [editTarget, setEditTarget] = React.useState<UserWithBan | null>(null)
   const [detailTarget, setDetailTarget] = React.useState<UserWithBan | null>(null)
 
-  async function handleUnban(user: UserWithBan) {
+  async function handleUnban(targetUser: UserWithBan) {
     try {
-      await unbanUser({ targetUserId: user._id as Id<"users"> })
-      toast.success(`${user.phone ?? user._id.slice(-8)} has been unbanned`)
+      await unbanUser({ userId: user?._id as Id<"users"> | undefined, targetUserId: targetUser._id as Id<"users"> })
+      toast.success(`${targetUser.phone ?? targetUser._id.slice(-8)} has been unbanned`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to unban user")
     }
@@ -747,11 +754,13 @@ export function AdminUsersPanel() {
         user={banTarget}
         open={!!banTarget}
         onClose={() => setBanTarget(null)}
+        adminUserId={user?._id}
       />
       <EditModal
         user={editTarget}
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
+        adminUserId={user?._id}
       />
     </div>
   )

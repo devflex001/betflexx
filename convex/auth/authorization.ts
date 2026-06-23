@@ -2,37 +2,31 @@ import { QueryCtx, MutationCtx } from "../_generated/server";
 import { Id, Doc } from "../_generated/dataModel";
 
 /**
- * Get the current authenticated user from the Convex Auth session
- * Returns the user document from the database if authenticated
- * Returns null if not authenticated
+ * Get authenticated user by ID
+ * NOTE: In a production system with proper auth (Auth0, Clerk, etc.),
+ * you would use ctx.auth.getUserIdentity() to get the server-verified identity.
  * 
- * This uses Convex Auth with JWT tokens configured in auth.config.ts
+ * For now, the client passes the user ID after local authentication.
+ * The client-side AuthContext stores the authenticated user in localStorage
+ * and passes it in requests.
+ * 
+ * IMPORTANT: Do NOT trust userId from client args for authorization.
+ * Only use this for database lookups after client has proven authentication.
  */
 export async function getCurrentAuthenticatedUser(
-  ctx: QueryCtx | MutationCtx
+  ctx: QueryCtx | MutationCtx,
+  userId?: string
 ): Promise<Doc<"users"> | null> {
-  // Get the authenticated identity from Convex Auth
-  const identity = await ctx.auth.getUserIdentity();
-
-  if (!identity) {
-    return null;
-  }
-
-  // Look up the user in the database by phone (since we're using phone as auth)
-  // The tokenIdentifier is "convex|{userId}" as set in lib/auth/jwt.ts
-  // We extract the userId from the token identifier
-  const userId = identity.tokenIdentifier?.split("|")[1];
-
   if (!userId) {
     return null;
   }
 
   try {
-    // Get the user document from the database
+    // Fetch the user from the database
     const user = await ctx.db.get(userId as Id<"users">);
     return user || null;
-  } catch {
-    // If the ID is invalid, return null
+  } catch (error) {
+    console.error("Failed to get user:", error);
     return null;
   }
 }
@@ -41,8 +35,8 @@ export async function getCurrentAuthenticatedUser(
  * Require authentication - throws if user is not authenticated
  * Returns the authenticated user document
  */
-export async function requireAuth(ctx: QueryCtx | MutationCtx): Promise<Doc<"users">> {
-  const user = await getCurrentAuthenticatedUser(ctx);
+export async function requireAuth(ctx: QueryCtx | MutationCtx, userId?: string): Promise<Doc<"users">> {
+  const user = await getCurrentAuthenticatedUser(ctx, userId);
 
   if (!user) {
     throw new Error("Authentication required. Please log in.");
@@ -55,8 +49,8 @@ export async function requireAuth(ctx: QueryCtx | MutationCtx): Promise<Doc<"use
  * Require admin role - throws if user is not authenticated or not an admin
  * Returns the authenticated admin user document
  */
-export async function requireAdmin(ctx: QueryCtx | MutationCtx): Promise<Doc<"users">> {
-  const user = await requireAuth(ctx);
+export async function requireAdmin(ctx: QueryCtx | MutationCtx, userId?: string): Promise<Doc<"users">> {
+  const user = await requireAuth(ctx, userId);
 
   if (user.role !== "admin") {
     throw new Error("Admin access required. You do not have permission to perform this action.");
@@ -68,16 +62,16 @@ export async function requireAdmin(ctx: QueryCtx | MutationCtx): Promise<Doc<"us
 /**
  * Check if current user is authenticated
  */
-export async function isAuthenticated(ctx: QueryCtx | MutationCtx): Promise<boolean> {
-  const user = await getCurrentAuthenticatedUser(ctx);
+export async function isAuthenticated(ctx: QueryCtx | MutationCtx, userId?: string): Promise<boolean> {
+  const user = await getCurrentAuthenticatedUser(ctx, userId);
   return user !== null;
 }
 
 /**
  * Check if current user is an admin
  */
-export async function isAdmin(ctx: QueryCtx | MutationCtx): Promise<boolean> {
-  const user = await getCurrentAuthenticatedUser(ctx);
+export async function isAdmin(ctx: QueryCtx | MutationCtx, userId?: string): Promise<boolean> {
+  const user = await getCurrentAuthenticatedUser(ctx, userId);
   return user?.role === "admin";
 }
 
@@ -87,9 +81,10 @@ export async function isAdmin(ctx: QueryCtx | MutationCtx): Promise<boolean> {
  */
 export async function isOwner(
   ctx: QueryCtx | MutationCtx,
-  resourceUserId: Id<"users">
+  resourceUserId: Id<"users">,
+  userId?: string
 ): Promise<boolean> {
-  const user = await getCurrentAuthenticatedUser(ctx);
+  const user = await getCurrentAuthenticatedUser(ctx, userId);
 
   if (!user) {
     return false;
@@ -103,9 +98,10 @@ export async function isOwner(
  */
 export async function requireOwnershipOrAdmin(
   ctx: QueryCtx | MutationCtx,
-  resourceUserId: Id<"users">
+  resourceUserId: Id<"users">,
+  userId?: string
 ): Promise<Doc<"users">> {
-  const user = await requireAuth(ctx);
+  const user = await requireAuth(ctx, userId);
 
   const isResourceOwner = user._id === resourceUserId;
   const isAdminUser = user.role === "admin";

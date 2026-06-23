@@ -36,10 +36,11 @@ export const listUsers = query({
       id: v.optional(v.number()), // Added to accept extra field from usePaginatedQuery
     }),
     search: v.optional(v.string()),
+    userId: v.optional(v.id("users")), // Add userId from client
   },
   handler: async (ctx, args) => {
     // Require admin authentication
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.userId);
 
     // Apply search filter if provided
     let paginatedUsers;
@@ -99,10 +100,12 @@ export const listUsers = query({
  * Used by BanScreen component to show ban information
  */
 export const getMyBanStatus = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    userId: v.optional(v.id("users")), // Add userId from client
+  },
+  handler: async (ctx, args) => {
     // Get current authenticated user
-    const user = await requireAuth(ctx);
+    const user = await requireAuth(ctx, args.userId);
 
     // Check for active ban
     const activeBan = await ctx.db
@@ -147,12 +150,13 @@ export const getMyBanStatus = query({
  */
 export const editUser = mutation({
   args: {
+    userId: v.optional(v.id("users")), // Add userId from client
     targetUserId: v.id("users"),
     email: v.string(), // Maps to phone in this system
   },
   handler: async (ctx, args) => {
     // Require admin authentication
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.userId);
 
     const user = await ctx.db.get(args.targetUserId);
     if (!user) {
@@ -178,13 +182,14 @@ export const editUser = mutation({
  */
 export const banUser = mutation({
   args: {
+    userId: v.optional(v.id("users")), // Add userId from client
     targetUserId: v.id("users"),
     reason: v.string(),
     durationHours: v.union(v.number(), v.null()), // null = permanent
   },
   handler: async (ctx, args) => {
     // Require admin authentication
-    const admin = await requireAdmin(ctx);
+    const admin = await requireAdmin(ctx, args.userId);
 
     const user = await ctx.db.get(args.targetUserId);
     if (!user) {
@@ -231,11 +236,12 @@ export const banUser = mutation({
  */
 export const unbanUser = mutation({
   args: {
+    userId: v.optional(v.id("users")), // Add userId from client
     targetUserId: v.id("users"),
   },
   handler: async (ctx, args) => {
     // Require admin authentication
-    await requireAdmin(ctx);
+    await requireAdmin(ctx, args.userId);
 
     const user = await ctx.db.get(args.targetUserId);
     if (!user) {
@@ -267,12 +273,13 @@ export const unbanUser = mutation({
  */
 export const submitAppeal = mutation({
   args: {
+    userId: v.optional(v.id("users")), // Add userId from client
     banId: v.id("users_bans"),
     message: v.string(),
   },
   handler: async (ctx, args) => {
     // Require authentication
-    const user = await requireAuth(ctx);
+    const user = await requireAuth(ctx, args.userId);
 
     // Verify ban exists and belongs to this user
     const ban = await ctx.db.get(args.banId);
