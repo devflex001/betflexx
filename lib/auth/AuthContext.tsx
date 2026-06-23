@@ -35,26 +35,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [sessionTokenChecked, setSessionTokenChecked] = useState(false);
 
   // Convex mutations
   const loginMutation = useMutation(api.auth.login.loginUser);
   const registerMutation = useMutation(api.auth.register.registerUser);
   const logoutMutation = useMutation(api.auth.sessions.deleteSession);
 
-  // Get session token on mount
+  // Get session token on mount (only once)
   useEffect(() => {
     const token = getSessionToken();
     setSessionToken(token);
+    setSessionTokenChecked(true);
   }, []);
 
   // Get current user from Convex using session token
   const currentUser = useQuery(
     api.auth.user.getCurrentUser,
-    sessionToken && sessionToken.length > 0 ? { sessionToken } : "skip"
+    sessionTokenChecked && sessionToken && sessionToken.length > 0 ? { sessionToken } : "skip"
   );
 
   // Update user state when Convex query resolves or when session token changes
   useEffect(() => {
+    // Wait until we've checked for session token
+    if (!sessionTokenChecked) {
+      return;
+    }
+
     // If no session token, auth is done loading (user is not logged in)
     if (!sessionToken || sessionToken.length === 0) {
       setUser(null);
@@ -73,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSessionToken(null);
       }
     }
-  }, [currentUser, sessionToken]);
+  }, [currentUser, sessionToken, sessionTokenChecked]);
 
   const login = async (phone: string, password: string) => {
     try {
