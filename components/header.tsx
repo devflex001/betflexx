@@ -22,7 +22,8 @@ import {
   History,
   ArrowDownLeft,
   X,
-  Settings
+  Settings,
+  ArrowUpRight
 } from "lucide-react"
 import {
   LoginModal,
