@@ -10,9 +10,16 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { EyeOff, Send, Save, Trash2 } from "lucide-react"
+import { EyeOff, Send, Save, Trash2, Clock } from "lucide-react"
+import {
+  calculateEventTimer,
+  formatTimerDisplay,
+  formatCountdownToStart,
+  getEventBadgeConfig,
+} from "@/lib/event-timer"
 
 interface CustomEventDetailProps {
   eventId: Id<"customEvents">
@@ -59,20 +66,6 @@ function marketCategory(market: CustomMarketRow) {
 
 function sortOdds(a: CustomOddRow, b: CustomOddRow) {
   return a.priority - b.priority || a.outcomeName.localeCompare(b.outcomeName)
-}
-
-function formatCountdown(startTime: number, now: number) {
-  const diff = startTime - now
-  if (diff <= 0) return "Started"
-
-  const totalSeconds = Math.floor(diff / 1000)
-  const days = Math.floor(totalSeconds / 86400)
-  const hours = Math.floor((totalSeconds % 86400) / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-
-  if (days > 0) return `${days}d ${hours}h ${minutes}m`
-  return `${hours}h ${minutes}m ${seconds}s`
 }
 
 function CustomEventScoreControls({
@@ -297,8 +290,10 @@ export function CustomEventDetail({
 
   const currentHomeScore = event.homeScore ?? 0
   const currentAwayScore = event.awayScore ?? 0
-  const countdown = formatCountdown(event.startTime, now)
-  const hasStarted = event.startTime <= now
+
+  // Professional timer calculations
+  const timer = calculateEventTimer(event.startTime, now)
+  const badgeConfig = getEventBadgeConfig(timer.lifecycle)
 
   const renderOddButton = (odd: CustomOddRow) => {
     return (
@@ -408,69 +403,130 @@ export function CustomEventDetail({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="shrink-0 border-b border-border p-3 sm:p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0 space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-sm font-semibold">
-                {event.homeTeam} vs {event.awayTeam}
-              </h2>
-              <Badge variant="outline" className="text-[10px] capitalize">
-                {event.status}
-              </Badge>
+        <div className="flex flex-col gap-4">
+          {/* Top Row: Teams & Status */}
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="truncate text-sm font-semibold">
+                  {event.homeTeam} vs {event.awayTeam}
+                </h2>
+                <Badge variant="outline" className="text-[10px] capitalize">
+                  {event.status}
+                </Badge>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {event.competition}
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span>{event.competition}</span>
-              <span className="font-mono text-foreground">
-                {currentHomeScore} - {currentAwayScore}
-              </span>
-              <span>
-                {hasStarted ? "Started" : "Starts in:"}{" "}
-                {!hasStarted && (
-                  <span className="font-mono text-foreground">{countdown}</span>
-                )}
-              </span>
-            </div>
-          </div>
 
-          {adminControls && (
-            <div className="flex flex-wrap items-end gap-2">
-              <CustomEventScoreControls
-                key={`${event._id}:${currentHomeScore}:${currentAwayScore}`}
-                eventId={eventId}
-                initialHomeScore={currentHomeScore}
-                initialAwayScore={currentAwayScore}
-              />
-              {event.status === "published" ? (
+            {adminControls && (
+              <div className="flex flex-wrap items-end gap-2">
+                <CustomEventScoreControls
+                  key={`${event._id}:${currentHomeScore}:${currentAwayScore}`}
+                  eventId={eventId}
+                  initialHomeScore={currentHomeScore}
+                  initialAwayScore={currentAwayScore}
+                />
+                {event.status === "published" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1.5 text-xs"
+                    onClick={handleUnpublish}
+                  >
+                    <EyeOff className="size-3" />
+                    Unpublish
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs"
+                    onClick={handlePublish}
+                  >
+                    <Send className="size-3" />
+                    Publish
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 gap-1.5 text-xs"
-                  onClick={handleUnpublish}
+                  className="h-8 gap-1.5 text-xs text-destructive hover:text-destructive"
+                  onClick={handleDelete}
                 >
-                  <EyeOff className="size-3" />
-                  Unpublish
+                  <Trash2 className="size-3" />
+                  Delete
                 </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  className="h-8 gap-1.5 text-xs"
-                  onClick={handlePublish}
-                >
-                  <Send className="size-3" />
-                  Publish
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 gap-1.5 text-xs text-destructive hover:text-destructive"
-                onClick={handleDelete}
-              >
-                <Trash2 className="size-3" />
-                Delete
-              </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Score & Timer Section */}
+          <div className="border-t border-border/50 pt-4 space-y-3">
+            {/* Score Display */}
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Score</p>
+                <p className="text-2xl font-bold text-foreground tabular-nums">
+                  {currentHomeScore}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">vs</p>
+                <div className="text-sm font-medium text-muted-foreground">
+                  Match
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Score</p>
+                <p className="text-2xl font-bold text-foreground tabular-nums">
+                  {currentAwayScore}
+                </p>
+              </div>
             </div>
-          )}
+
+            {/* Timer Bar */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant={badgeConfig.variant}
+                    className={cn(
+                      "text-[10px] font-semibold",
+                      badgeConfig.animate && "animate-pulse"
+                    )}
+                  >
+                    {badgeConfig.label}
+                  </Badge>
+                  <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <Clock className="size-4" />
+                    <span className="font-mono">
+                      {timer.lifecycle === "not_started"
+                        ? formatCountdownToStart(timer.remainingMs)
+                        : formatTimerDisplay(timer.remainingMs)}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {timer.displayText}
+                </p>
+              </div>
+
+              {/* Progress Bar */}
+              <Progress
+                value={timer.progressPercent}
+                className="h-2 bg-muted"
+              />
+
+              {/* Match Timeline */}
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>0m</span>
+                <span>45m</span>
+                <span>60m</span>
+                <span>105m</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

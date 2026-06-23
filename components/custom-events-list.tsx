@@ -20,6 +20,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { CustomEventDetail } from "@/components/custom-event-detail"
+import { CustomEventCard } from "@/components/custom-event-card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Pagination } from "@/components/pagination"
 import { usePagination } from "@/hooks/use-pagination"
@@ -266,231 +267,47 @@ export function CustomEventsList({
 
         {sortedEvents.length > 0 ? (
           <>
-            {/* Desktop Table */}
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-border text-[9px] font-semibold text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2 text-left">Start</th>
-                    <th className="px-3 py-2 text-left">Matchup</th>
-                    <th className="px-3 py-2 text-left">Competition</th>
-                    <th className="px-3 py-2 text-left">Status</th>
-                    <th className="px-3 py-2 text-right">Markets</th>
-                    <th className="px-3 py-2 text-right">Details</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {sortedEvents.map((event) => (
-                    <tr
-                      key={event._id}
-                      className="transition-colors hover:bg-muted/30"
-                    >
-                      <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground">
-                        {formatTime(event.startTime)}
-                      </td>
-                      <td className="px-3 py-2 font-semibold text-foreground">
-                        <div className="truncate">
-                          {event.homeTeam} vs {event.awayTeam}
-                        </div>
-                        <div className="truncate text-[10px] text-muted-foreground">
-                          {event.title}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-[10px] text-muted-foreground">
-                        {event.competition}
-                      </td>
-                      <td className="px-3 py-2">
-                        <Badge
-                          className={cn(
-                            "text-[9px] font-semibold",
-                            event.status === "draft"
-                              ? "rounded-sm border border-yellow-500/20 bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15"
-                              : "rounded-sm border border-emerald-500/20 bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15"
-                          )}
-                        >
-                          {event.status}
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono text-[10px] text-muted-foreground">
-                        {event.totalMarkets}
-                      </td>
-                      <td className="flex items-center justify-end gap-2 px-3 py-2 text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 gap-1 px-2 text-xs"
-                          onClick={() => {
-                            setSelectedEvent(event)
-                            setDetailOpen(true)
-                          }}
-                        >
-                          <ListPlus className="size-3" />
-                          View
-                        </Button>
-
-                        {/* Actions Menu */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 px-1"
-                            >
-                              <MoreVertical className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40">
-                            {event.status === "draft" && (
-                              <>
-                                <DropdownMenuItem
-                                  onClick={(e) => handleEdit(event, e as any)}
-                                  className="cursor-pointer gap-2 text-xs"
-                                >
-                                  <Edit2 className="size-3" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={(e) =>
-                                    handlePublish(event._id, e as any)
-                                  }
-                                  className="cursor-pointer gap-2 text-xs"
-                                >
-                                  <CheckCircle className="size-3" />
-                                  Publish
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                            {event.status === "published" && (
-                              <DropdownMenuItem
-                                onClick={(e) =>
-                                  handleUnpublish(event._id, e as any)
-                                }
-                                className="cursor-pointer gap-2 text-xs"
-                              >
-                                <EyeOff className="size-3" />
-                                Unpublish
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              onClick={(e) => handleDelete(event._id, e as any)}
-                              className="cursor-pointer gap-2 text-xs text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="size-3" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Desktop Cards */}
+            <div className="hidden grid-cols-1 gap-3 p-4 md:grid lg:grid-cols-2">
+              {sortedEvents.map((event) => (
+                <CustomEventCard
+                  key={event._id}
+                  eventId={event._id}
+                  homeTeam={event.homeTeam}
+                  awayTeam={event.awayTeam}
+                  homeScore={event.homeScore || 0}
+                  awayScore={event.awayScore || 0}
+                  startTime={event.startTime}
+                  competition={event.competition}
+                  title={event.title}
+                  totalMarkets={event.totalMarkets}
+                  onClick={() => {
+                    setSelectedEvent(event)
+                    setDetailOpen(true)
+                  }}
+                />
+              ))}
             </div>
 
             {/* Mobile Cards */}
-            <div className="space-y-2 p-3 md:hidden">
+            <div className="space-y-3 p-3 md:hidden">
               {sortedEvents.map((event) => (
-                <div
+                <CustomEventCard
                   key={event._id}
-                  className="space-y-2 rounded-lg border border-border bg-card p-3"
-                >
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 line-clamp-1 text-sm font-semibold text-foreground">
-                        {event.homeTeam} vs {event.awayTeam}
-                      </div>
-                      <div className="mb-1 text-[10px] text-muted-foreground">
-                        {event.title} • {event.competition}
-                      </div>
-                      <div className="font-mono text-[10px] text-muted-foreground">
-                        {formatTime(event.startTime)}
-                      </div>
-                    </div>
-                    <Badge
-                      className={cn(
-                        "text-[9px] font-semibold",
-                        event.status === "draft"
-                          ? "rounded-sm border border-yellow-500/20 bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/15"
-                          : "rounded-sm border border-emerald-500/20 bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15"
-                      )}
-                    >
-                      {event.status}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-border pt-2">
-                    <div className="font-mono text-[10px] text-muted-foreground">
-                      {event.totalMarkets} markets
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 gap-1 px-2 text-xs"
-                        onClick={() => {
-                          setSelectedEvent(event)
-                          setDetailOpen(true)
-                        }}
-                      >
-                        <ListPlus className="size-3" />
-                        View
-                      </Button>
-
-                      {/* Actions Menu */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 px-1"
-                          >
-                            <MoreVertical className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
-                          {event.status === "draft" && (
-                            <>
-                              <DropdownMenuItem
-                                onClick={(e) => handleEdit(event, e as any)}
-                                className="cursor-pointer gap-2 text-xs"
-                              >
-                                <Edit2 className="size-3" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={(e) =>
-                                  handlePublish(event._id, e as any)
-                                }
-                                className="cursor-pointer gap-2 text-xs"
-                              >
-                                <CheckCircle className="size-3" />
-                                Publish
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                          {event.status === "published" && (
-                            <DropdownMenuItem
-                              onClick={(e) =>
-                                handleUnpublish(event._id, e as any)
-                              }
-                              className="cursor-pointer gap-2 text-xs"
-                            >
-                              <EyeOff className="size-3" />
-                              Unpublish
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={(e) => handleDelete(event._id, e as any)}
-                            className="cursor-pointer gap-2 text-xs text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="size-3" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </div>
+                  eventId={event._id}
+                  homeTeam={event.homeTeam}
+                  awayTeam={event.awayTeam}
+                  homeScore={event.homeScore || 0}
+                  awayScore={event.awayScore || 0}
+                  startTime={event.startTime}
+                  competition={event.competition}
+                  title={event.title}
+                  totalMarkets={event.totalMarkets}
+                  onClick={() => {
+                    setSelectedEvent(event)
+                    setDetailOpen(true)
+                  }}
+                />
               ))}
             </div>
           </>
