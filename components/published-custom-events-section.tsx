@@ -90,32 +90,32 @@ export function PublishedCustomEventsSection() {
             </h2>
           </div>
 
-          {/* Golden Styled Event Cards */}
+          {/* Signature Green Styled Event Cards (Mobile) */}
           <div className="grid grid-cols-1 gap-3">
             {sortedByStartTime.map((event) => (
               <div
                 key={event._id}
-                className="group relative overflow-hidden rounded-lg border-2 border-yellow-500/60 bg-yellow-50/5 hover:bg-yellow-50/10 transition-all p-4"
+                className="group relative overflow-hidden rounded-lg border-2 border-[#4b9f71]/40 bg-[#4b9f71]/5 hover:bg-[#4b9f71]/10 transition-all p-4"
               >
-                {/* Golden accent line */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-500" />
+                {/* Signature Green accent line */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-[#4b9f71]" />
 
                 <div className="space-y-2">
                   {/* Event Title and Status */}
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="font-bold text-sm text-foreground group-hover:text-yellow-600 transition-colors">
+                      <h3 className="font-bold text-sm text-foreground group-hover:text-[#4b9f71] transition-colors">
                         {event.homeTeam} vs {event.awayTeam}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-1">{event.title}</p>
                     </div>
-                    <Badge className="bg-yellow-500/20 text-yellow-700 hover:bg-yellow-500/30 border border-yellow-500/60 text-[9px] font-bold shrink-0">
+                    <Badge className="bg-[#4b9f71]/15 text-[#4b9f71] hover:bg-[#4b9f71]/25 border border-[#4b9f71]/40 text-[9px] font-bold shrink-0 uppercase">
                       FEATURED
                     </Badge>
                   </div>
 
                   {/* Event Meta */}
-                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-2 border-t border-yellow-500/20">
+                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-2 border-t border-[#4b9f71]/20">
                     <span>{event.competition}</span>
                     <span>•</span>
                     <span>{event.totalMarkets} markets</span>
@@ -125,7 +125,7 @@ export function PublishedCustomEventsSection() {
                   <div className="pt-2 flex justify-end">
                     <Button
                       size="sm"
-                      className="h-7 text-xs bg-yellow-500/20 text-yellow-700 hover:bg-yellow-500/30 border border-yellow-500/60"
+                      className="h-7 text-xs bg-[#4b9f71] text-white hover:bg-[#3e865f] font-semibold border-none"
                       onClick={() => handleOpenDetail(event)}
                     >
                       View Markets
@@ -160,32 +160,32 @@ export function PublishedCustomEventsSection() {
           </h2>
         </div>
 
-        {/* Golden Styled Event Cards */}
+        {/* Signature Green Styled Event Cards (Desktop) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {sortedByStartTime.map((event) => (
             <div
               key={event._id}
-              className="group relative overflow-hidden rounded-lg border-2 border-yellow-500/60 bg-yellow-50/5 hover:bg-yellow-50/10 transition-all p-4"
+              className="group relative overflow-hidden rounded-lg border-2 border-[#4b9f71]/40 bg-[#4b9f71]/5 hover:bg-[#4b9f71]/10 transition-all p-4"
             >
-              {/* Golden accent line */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-500" />
+              {/* Signature Green accent line */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-[#4b9f71]" />
 
               <div className="space-y-2">
                 {/* Event Title and Status */}
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h3 className="font-bold text-sm text-foreground group-hover:text-yellow-600 transition-colors">
+                    <h3 className="font-bold text-sm text-foreground group-hover:text-[#4b9f71] transition-colors">
                       {event.homeTeam} vs {event.awayTeam}
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1">{event.title}</p>
                   </div>
-                  <Badge className="bg-yellow-500/20 text-yellow-700 hover:bg-yellow-500/30 border border-yellow-500/60 text-[9px] font-bold shrink-0">
+                  <Badge className="bg-[#4b9f71]/15 text-[#4b9f71] hover:bg-[#4b9f71]/25 border border-[#4b9f71]/40 text-[9px] font-bold shrink-0 uppercase">
                     FEATURED
                   </Badge>
                 </div>
 
                 {/* Event Meta */}
-                <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-2 border-t border-yellow-500/20">
+                <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-2 border-t border-[#4b9f71]/20">
                   <span>{event.competition}</span>
                   <span>•</span>
                   <span>{event.totalMarkets} markets</span>
@@ -195,7 +195,7 @@ export function PublishedCustomEventsSection() {
                 <div className="pt-2 flex justify-end">
                   <Button
                     size="sm"
-                    className="h-7 text-xs bg-yellow-500/20 text-yellow-700 hover:bg-yellow-500/30 border border-yellow-500/60"
+                    className="h-7 text-xs bg-[#4b9f71] text-white hover:bg-[#3e865f] font-semibold border-none shadow-sm"
                     onClick={() => handleOpenDetail(event)}
                   >
                     View Markets
