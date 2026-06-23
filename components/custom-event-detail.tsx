@@ -84,6 +84,7 @@ export function CustomEventDetail({
   const deleteEvent = useMutation(api.customEvents.deleteCustomEvent)
   const updateScore = useMutation(api.customEvents.updateCustomEventScore)
 
+  // Effects after all hooks
   React.useEffect(() => {
     if (event) {
       setHomeScore(String(event.homeScore ?? 0))
@@ -170,6 +171,7 @@ export function CustomEventDetail({
 
   // Group odds by market
   const groupedOdds = React.useMemo(() => {
+    if (!allOdds || !markets) return new Map<string, CustomOddRow[]>()
     const groups = new Map<string, CustomOddRow[]>()
     for (const odd of allOdds) {
       const list = groups.get(odd.marketId) ?? []
@@ -180,10 +182,11 @@ export function CustomEventDetail({
       list.sort(sortOdds)
     }
     return groups
-  }, [allOdds])
+  }, [allOdds, markets])
 
   // Filter markets by search
   const filteredMarkets = React.useMemo(() => {
+    if (!markets) return []
     if (!search.trim()) return markets
     const q = search.toLowerCase()
     return markets.filter((m) => `${m.name} ${m.marketType}`.toLowerCase().includes(q))
@@ -191,6 +194,7 @@ export function CustomEventDetail({
 
   // Group by category
   const marketsByCategory = React.useMemo(() => {
+    if (!filteredMarkets) return new Map<string, CustomMarketRow[]>()
     const grouped = new Map<string, CustomMarketRow[]>()
     for (const m of filteredMarkets) {
       const cat = m.marketTypes[0] || m.marketType || "Other"
