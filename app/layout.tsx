@@ -7,7 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 import { BetStoreProvider } from "@/hooks/use-bet-store"
 import { ConvexProvider } from "@/components/convex-provider"
-import { Footer } from "@/components/footer"
 
 const robotoHeading = Roboto({ subsets: ['latin'], variable: '--font-heading' })
 
