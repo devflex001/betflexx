@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth/AuthContext"
 import { useBetStore } from "@/hooks/use-bet-store"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -13,32 +14,33 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { 
-  Search, 
-  Wallet, 
-  User, 
-  LogOut, 
-  History, 
-  ArrowUpRight, 
+import {
+  Search,
+  Wallet,
+  User,
+  LogOut,
+  History,
+  ArrowUpRight,
   ArrowDownLeft,
   X,
-  LayoutDashboard
+  Settings
 } from "lucide-react"
-import { 
-  LoginModal, 
-  RegisterModal, 
-  DepositModal, 
-  WithdrawModal 
+import {
+  LoginModal,
+  RegisterModal,
+  DepositModal,
+  WithdrawModal
 } from "./modals"
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Betslip } from "./betslip"
 
 export function Header() {
   const router = useRouter()
-  const { 
-    walletBalance, 
-    searchQuery, 
-    setSearchQuery, 
+  const { user, logout } = useAuth()
+  const {
+    walletBalance,
+    searchQuery,
+    setSearchQuery,
     setActiveTab,
     betslip
   } = useBetStore()
@@ -57,20 +59,20 @@ export function Header() {
   }
 
   const handleLogout = () => {
-    // No-op - no authentication system
+    logout()
   }
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur-md">
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur-md flex-shrink-0">
         <div className="flex h-16 items-center justify-between px-4 sm:px-6 md:grid md:grid-cols-3">
-          
+
           {/* Brand/Logo - Increased height to h-12 (mobile) and h-14 (desktop) */}
           <div className="flex items-center gap-2 cursor-pointer md:justify-self-start" onClick={handleLogoClick}>
-            <img 
-              src="/images/logo.png" 
-              alt="BetFlexx Logo" 
-              className="h-12 sm:h-14 w-auto object-contain transition-transform hover:scale-105" 
+            <img
+              src="/images/logo.png"
+              alt="BetFlexx Logo"
+              className="h-12 sm:h-14 w-auto object-contain transition-transform hover:scale-105"
             />
           </div>
 
@@ -107,46 +109,17 @@ export function Header() {
               {showMobileSearch ? <X className="size-4" /> : <Search className="size-4" />}
             </Button>
 
-            {/* Betslip Sheet trigger for mobile/tablet */}
-            <div className="hidden lg:block xl:hidden">
-              <Sheet open={betslipOpen} onOpenChange={setBetslipOpen}>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="relative h-8 px-2 sm:px-2.5 text-xs font-semibold border-border flex items-center gap-1"
-                  >
-                    <span className="hidden sm:inline">Betslip</span>
-                    <span className="sm:hidden">Slip</span>
-                    {betslip.length > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-[#4b9f71] text-[9px] font-bold text-white border border-background">
-                        {betslip.length}
-                      </span>
-                    )}
-                  </Button>
-                </SheetTrigger>
-                <SheetContent className="w-full sm:max-w-md p-0 flex flex-col gap-0 h-dvh sm:h-full border-l border-border bg-card">
-                  <SheetHeader className="p-4 border-b border-border bg-muted/20">
-                    <SheetTitle className="text-lg font-bold">Betslip Manager</SheetTitle>
-                    <SheetDescription className="text-xs">
-                      Review selections and place your bet.
-                    </SheetDescription>
-                  </SheetHeader>
-                  <div className="flex-1 min-h-0 flex flex-col">
-                    <Betslip onClose={() => setBetslipOpen(false)} />
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-
             <div className="flex items-center gap-1.5 sm:gap-2">
-                {/* Wallet Balance Display */}
+              {/* Wallet Balance Display - Only show if logged in */}
+              {user && (
                 <div className="hidden sm:flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-md text-xs font-semibold border border-border">
                   <Wallet className="size-3.5 text-[#4b9f71]" />
                   <span>KES {walletBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
+              )}
 
-                {/* Deposit action */}
+              {/* Deposit action - Only show if logged in */}
+              {user && (
                 <Button
                   onClick={() => router.push("/deposit")}
                   size="sm"
@@ -155,8 +128,10 @@ export function Header() {
                   <ArrowUpRight className="size-3.5" />
                   <span className="hidden sm:inline">Deposit</span>
                 </Button>
+              )}
 
-                {/* User menu dropdown */}
+              {/* User menu dropdown - Show login/signup for non-logged-in users */}
+              {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="size-8 rounded-full border border-border hover:bg-muted/50 shrink-0">
@@ -166,9 +141,9 @@ export function Header() {
                   <DropdownMenuContent align="end" className="w-56 mt-1">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-semibold leading-none">User</p>
+                        <p className="text-sm font-semibold leading-none">{user.phone}</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          Registered User
+                          {user.role === "admin" ? "Admin" : "User"} Account
                         </p>
                       </div>
                     </DropdownMenuLabel>
@@ -176,6 +151,10 @@ export function Header() {
                     <DropdownMenuItem className="sm:hidden flex items-center justify-between text-xs py-2">
                       <span className="flex items-center gap-2"><Wallet className="size-3.5 text-[#4b9f71]" /> Balance:</span>
                       <span className="font-semibold">KES {walletBalance.toLocaleString()}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/account")}>
+                      <User className="mr-2 h-4 w-4 text-blue-500" />
+                      <span>My Account</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/deposit")}>
                       <ArrowUpRight className="mr-2 h-4 w-4 text-[#4b9f71]" />
@@ -189,6 +168,15 @@ export function Header() {
                       <History className="mr-2 h-4 w-4 text-blue-500" />
                       <span>My Placed Bets</span>
                     </DropdownMenuItem>
+                    {user.role === "admin" && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => router.push("/admin")}>
+                          <Settings className="mr-2 h-4 w-4 text-amber-500" />
+                          <span>Admin Panel</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
@@ -196,7 +184,26 @@ export function Header() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
+              ) : (
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Button
+                    onClick={() => setLoginOpen(true)}
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs font-semibold"
+                  >
+                    Log In
+                  </Button>
+                  <Button
+                    onClick={() => setRegisterOpen(true)}
+                    size="sm"
+                    className="bg-[#4b9f71] text-white font-semibold h-8 text-xs hover:bg-[#3e865f]"
+                  >
+                    Sign Up
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

@@ -256,6 +256,59 @@ const schema = defineSchema({
     updatedAt: v.number(),
     updatedBy: v.string(),
   }).index("by_isEnabled", ["isEnabled"]),
+
+  paystack_config: defineTable({
+    publicKey: v.string(),
+    secretKey: v.string(),
+    isProduction: v.boolean(),
+    isEnabled: v.boolean(),
+    useEnvVariables: v.boolean(), // If true, use env vars instead of DB config
+    updatedAt: v.number(),
+    updatedBy: v.string(),
+  }).index("by_isEnabled", ["isEnabled"]),
+
+  payment_mode: defineTable({
+    mode: v.union(v.literal("mpesa"), v.literal("paystack")), // Active payment method
+    isEnabled: v.boolean(),
+    updatedAt: v.number(),
+    updatedBy: v.string(),
+  }),
+
+  users: defineTable({
+    phone: v.string(),
+    passwordHash: v.string(),
+    role: v.union(v.literal("user"), v.literal("admin")),
+    createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+  })
+    .index("by_phone", ["phone"])
+    .index("by_role", ["role"]),
+
+  users_bans: defineTable({
+    userId: v.id("users"),
+    reason: v.string(),
+    bannedAt: v.number(),
+    bannedUntil: v.union(v.number(), v.null()), // null = permanent ban
+    isActive: v.boolean(),
+    bannedBy: v.string(), // admin ID or email who banned the user
+  })
+    .index("by_userId", ["userId"])
+    .index("by_isActive", ["isActive"])
+    .index("by_userId_and_isActive", ["userId", "isActive"]),
+
+  ban_appeals: defineTable({
+    banId: v.id("users_bans"),
+    userId: v.id("users"),
+    message: v.string(),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    submittedAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+    reviewedBy: v.optional(v.string()), // admin ID
+    reviewResponse: v.optional(v.string()),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_banId", ["banId"])
+    .index("by_status", ["status"]),
 })
 
 export default schema
