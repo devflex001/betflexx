@@ -229,8 +229,10 @@ export function AdminEventsPanel() {
         </div>
 
         {!matchesData ? (
-          <div className="p-4">
-            <SmallLoader />
+          <div className="p-4 space-y-2">
+            <Skeleton className="h-32 rounded-lg" />
+            <Skeleton className="h-32 rounded-lg" />
+            <Skeleton className="h-32 rounded-lg" />
           </div>
         ) : matchesData.items && matchesData.items.length > 0 ? (
           <>
