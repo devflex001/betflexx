@@ -53,8 +53,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     sessionToken && sessionToken.length > 0 ? { sessionToken } : "skip"
   );
 
-  // Update user state when Convex query resolves
+  // Update user state when Convex query resolves or when session token changes
   useEffect(() => {
+    // If no session token, auth is done loading (user is not logged in)
+    if (!sessionToken || sessionToken.length === 0) {
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
+    // If we have a session token, wait for the query to resolve
     if (currentUser !== undefined) {
       setUser(currentUser);
       setIsLoading(false);
