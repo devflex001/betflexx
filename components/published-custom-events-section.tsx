@@ -4,6 +4,7 @@ import * as React from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { useBetStore } from "@/hooks/use-bet-store"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,8 +28,10 @@ import {
   getEventBadgeConfig,
 } from "@/lib/event-timer"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 export function PublishedCustomEventsSection() {
+  const { addToBetslip } = useBetStore()
   const [detailOpen, setDetailOpen] = React.useState(false)
   const [selectedEvent, setSelectedEvent] = React.useState<any>(null)
   const [now, setNow] = React.useState(() => Date.now())
@@ -73,6 +76,30 @@ export function PublishedCustomEventsSection() {
     setDetailOpen(true)
   }
 
+  const handleAddToSlip = (event: any, outcome: { label: string; odds: number }) => {
+    const outcomeMap: Record<string, string> = {
+      "1": event.homeTeam,
+      "X": "Draw",
+      "2": event.awayTeam,
+    }
+
+    addToBetslip({
+      id: `${event._id}-${outcome.label}`,
+      matchId: event._id,
+      matchName: `${event.homeTeam} vs ${event.awayTeam}`,
+      team1: event.homeTeam,
+      team2: event.awayTeam,
+      market: "1X2",
+      selection: outcome.label,
+      selectionName: outcomeMap[outcome.label] || outcome.label,
+      odds: outcome.odds,
+      marketName: "Match Winner",
+      outcomeName: outcomeMap[outcome.label] || outcome.label,
+      matchStartTime: event.startTime,
+    })
+    toast.success(`Added ${outcomeMap[outcome.label]} @ ${outcome.odds.toFixed(2)} to betslip`)
+  }
+
   const eventTitle = selectedEvent
     ? `${selectedEvent.homeTeam} vs ${selectedEvent.awayTeam}`
     : ""
@@ -93,7 +120,7 @@ export function PublishedCustomEventsSection() {
     return (
       <div
         key={event._id}
-        className="group relative overflow-hidden rounded-lg border border-border/60 bg-card hover:border-primary/40 hover:shadow-md transition-all cursor-pointer"
+        className="group relative overflow-hidden rounded-lg border border-border/60 bg-card hover:border-primary/40 hover:shadow-md transition-all"
       >
         {/* Header: Sport | Competition | Status & Markets (top right) */}
         <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-border/30 bg-muted/20">
@@ -122,14 +149,14 @@ export function PublishedCustomEventsSection() {
           </div>
         </div>
 
-        {/* Main content */}
-        <div className="p-4 space-y-3">
+        {/* Main content - TIGHT SPACING */}
+        <div className="p-3 space-y-2">
           {/* Countdown - CENTERED */}
-          <div className="space-y-1 text-center">
-            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
+          <div className="space-y-0.5 text-center">
+            <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wide">
               Starts In
             </p>
-            <p className="text-3xl font-black text-primary tabular-nums leading-tight">
+            <p className="text-3xl font-black text-primary tabular-nums leading-none">
               {timer.lifecycle === "not_started"
                 ? formatCountdownToStart(timer.remainingMs)
                 : formatTimerDisplay(timer.remainingMs)}
@@ -137,14 +164,14 @@ export function PublishedCustomEventsSection() {
           </div>
 
           {/* Teams - Compact */}
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-3">
             <p className="font-bold text-sm text-foreground truncate max-w-[40%]">{event.homeTeam}</p>
             <p className="text-xs font-semibold text-muted-foreground shrink-0">vs</p>
             <p className="font-bold text-sm text-foreground truncate max-w-[40%]">{event.awayTeam}</p>
           </div>
 
-          {/* Odds Display - Top 3 outcomes */}
-          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/30">
+          {/* Odds Display - Top 3 outcomes - ADD TO BETSLIP */}
+          <div className="grid grid-cols-3 gap-2 pt-1">
             {[
               { label: "1", odds: 2.35 },
               { label: "X", odds: 3.15 },
@@ -152,8 +179,8 @@ export function PublishedCustomEventsSection() {
             ].map((odd) => (
               <button
                 key={odd.label}
-                onClick={() => handleOpenDetail(event)}
-                className="flex flex-col items-center justify-center gap-0.5 p-2 rounded-md border border-border/40 bg-muted/30 hover:bg-muted/60 hover:border-primary/40 transition-all group/odd"
+                onClick={() => handleAddToSlip(event, odd)}
+                className="flex flex-col items-center justify-center gap-0.5 p-2 rounded-md border border-border/40 bg-muted/30 hover:bg-primary/10 hover:border-primary/40 transition-all group/odd"
               >
                 <span className="text-[9px] font-semibold text-muted-foreground group-hover/odd:text-foreground">
                   {odd.label}
@@ -172,7 +199,7 @@ export function PublishedCustomEventsSection() {
   if (isMobile) {
     return (
       <>
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-foreground">Custom Events</h2>
             <Badge variant="outline" className="text-[10px] font-mono">
@@ -180,7 +207,7 @@ export function PublishedCustomEventsSection() {
             </Badge>
           </div>
 
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-2">
             {sortedByStartTime.map(renderEventCard)}
           </div>
         </div>
@@ -201,7 +228,7 @@ export function PublishedCustomEventsSection() {
 
   return (
     <>
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-foreground">Custom Events</h2>
           <Badge variant="outline" className="text-[10px] font-mono">
@@ -209,7 +236,7 @@ export function PublishedCustomEventsSection() {
           </Badge>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {sortedByStartTime.map(renderEventCard)}
         </div>
       </div>
