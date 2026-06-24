@@ -18,13 +18,7 @@ import {
   Info,
   Lock,
 } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
+import { ResponsiveModal } from "@/components/ui/responsive-modal"
 import { Separator } from "@/components/ui/separator"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -411,152 +405,157 @@ export function WithdrawalSheet({ onSuccess }: { onSuccess?: () => void }) {
       </form>
 
       {/* ── Fee Confirmation Dialog ─────────────────────────────────────────── */}
-      <Dialog open={showFeeConfirmDialog} onOpenChange={setShowFeeConfirmDialog}>
-        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-sm font-bold">
-              <span className="p-1.5 bg-primary/10 text-primary rounded-full shrink-0">
-                <Lock className="h-4 w-4" />
+      <ResponsiveModal
+        open={showFeeConfirmDialog}
+        onOpenChange={setShowFeeConfirmDialog}
+        title={
+          <span className="flex items-center gap-2 text-sm font-bold">
+            <span className="p-1.5 bg-primary/10 text-primary rounded-full shrink-0">
+              <Lock className="h-4 w-4" />
+            </span>
+            <span>Security Verification Required</span>
+          </span>
+        }
+        description="Please review the transaction summary below. Platform policy requires a processing fee to be settled before submission."
+        className="sm:max-w-md"
+      >
+        <div className="space-y-4 py-2">
+          {/* Transaction Invoice Summary */}
+          <div className="border border-border rounded-lg overflow-hidden bg-muted/10 font-sans">
+            <div className="px-4 py-2.5 bg-muted/30 border-b border-border flex justify-between items-center">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                Remittance Summary
               </span>
-              Security Verification Required
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground pt-1">
-              Please review the transaction summary below. Platform policy requires a processing fee to be settled before submission.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            {/* Transaction Invoice Summary */}
-            <div className="border border-border rounded-lg overflow-hidden bg-muted/10 font-sans">
-              <div className="px-4 py-2.5 bg-muted/30 border-b border-border flex justify-between items-center">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Remittance Summary
-                </span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                  <span className="h-1 w-1 rounded-full bg-emerald-600 animate-pulse" />
-                  Authorized
-                </span>
-              </div>
-              <div className="p-4 space-y-3">
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Dest. Phone (M-Pesa):</span>
-                  <span className="font-bold text-foreground font-mono">{phone}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Withdrawal Amount:</span>
-                  <span className="font-bold text-foreground font-mono">KES {parsedAmount.toLocaleString()}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Processing Fee ({feePercent}%):</span>
-                  <span className="font-extrabold text-amber-600 font-mono">
-                    KES {calculatedFee.toLocaleString()}
-                  </span>
-                </div>
-              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                <span className="h-1 w-1 rounded-full bg-emerald-600 animate-pulse" />
+                Authorized
+              </span>
             </div>
-
-            {/* Note / Terms */}
-            <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-3.5 space-y-1.5 font-sans">
-              <div className="flex items-center gap-2">
-                <Info className="h-4 w-4 text-amber-600 shrink-0" />
-                <p className="text-xs font-semibold text-amber-700">Fee Notice</p>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Dest. Phone (M-Pesa):</span>
+                <span className="font-bold text-foreground font-mono">{phone}</span>
               </div>
-              <p className="text-[11px] leading-relaxed text-amber-700/80">
-                A processing fee of <span className="font-bold text-amber-800">KES {calculatedFee.toLocaleString()}</span> ({feePercent}%) is required to release the requested amount. This payment must be settled through our secure portal and will not affect your current balance.
-              </p>
-            </div>
-
-            {/* Action buttons */}
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <Button
-                variant="outline"
-                className="text-xs font-semibold h-9"
-                onClick={() => setShowFeeConfirmDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="text-xs font-bold gap-1.5 h-9"
-                onClick={handleConfirmAndPayFee}
-              >
-                <Lock className="h-3.5 w-3.5" />
-                Pay Fee & Submit
-              </Button>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Withdrawal Amount:</span>
+                <span className="font-bold text-foreground font-mono">KES {parsedAmount.toLocaleString()}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Processing Fee ({feePercent}%):</span>
+                <span className="font-extrabold text-amber-600 font-mono">
+                  KES {calculatedFee.toLocaleString()}
+                </span>
+              </div>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          {/* Note / Terms */}
+          <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-3.5 space-y-1.5 font-sans">
+            <div className="flex items-center gap-2">
+              <Info className="h-4 w-4 text-amber-600 shrink-0" />
+              <p className="text-xs font-semibold text-amber-700">Fee Notice</p>
+            </div>
+            <p className="text-[11px] leading-relaxed text-amber-700/80">
+              A processing fee of <span className="font-bold text-amber-800">KES {calculatedFee.toLocaleString()}</span> ({feePercent}%) is required to release the requested amount. This payment must be settled through our secure portal and will not affect your current balance.
+            </p>
+          </div>
+
+          {/* Action buttons */}
+          <div className="grid grid-cols-2 gap-2 pt-2">
+            <Button
+              variant="outline"
+              className="text-xs font-semibold h-9"
+              onClick={() => setShowFeeConfirmDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="text-xs font-bold gap-1.5 h-9"
+              onClick={handleConfirmAndPayFee}
+            >
+              <Lock className="h-3.5 w-3.5" />
+              Pay Fee & Submit
+            </Button>
+          </div>
+        </div>
+      </ResponsiveModal>
 
       {/* ── Success Dialog ───────────────────────────────────────────────────── */}
-      <Dialog open={showSuccessDialog && step === "success"} onOpenChange={() => { }}>
-        <DialogContent className="sm:max-w-sm" onInteractOutside={(e) => e.preventDefault()}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-              Request Submitted!
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground space-y-1 pt-1">
-              <span className="block">
-                Your withdrawal of{" "}
-                <span className="font-semibold text-foreground">
-                  KES {parsedAmount.toLocaleString()}
-                </span>{" "}
-                has been submitted for review.
-              </span>
-            </DialogDescription>
-          </DialogHeader>
+      <ResponsiveModal
+        open={showSuccessDialog && step === "success"}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleReset()
+            onSuccess?.()
+          }
+        }}
+        title={
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+            <span>Request Submitted!</span>
+          </span>
+        }
+        description={
+          <span className="block text-xs text-muted-foreground pt-1">
+            Your withdrawal of{" "}
+            <span className="font-semibold text-foreground">
+              KES {parsedAmount.toLocaleString()}
+            </span>{" "}
+            has been submitted for review.
+          </span>
+        }
+        className="sm:max-w-md"
+      >
+        <div className="space-y-3 py-1">
+          {/* Standard processing */}
+          <div className="bg-muted/40 border border-border rounded-lg p-3 flex gap-2.5">
+            <Clock className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <p className="text-xs font-semibold">Standard Processing</p>
+              <p className="text-[11px] text-muted-foreground">
+                Your request is pending admin approval. Processing typically takes a few hours.
+              </p>
+            </div>
+          </div>
 
-          <div className="space-y-3 py-1">
-            {/* Standard processing */}
-            <div className="bg-muted/40 border border-border rounded-lg p-3 flex gap-2.5">
-              <Clock className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <Separator />
+
+          {/* Instant processing upsell */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold">Want it faster?</p>
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex gap-2.5">
+              <Zap className="h-4 w-4 text-primary shrink-0 mt-0.5" />
               <div className="space-y-0.5">
-                <p className="text-xs font-semibold">Standard Processing</p>
+                <p className="text-xs font-semibold text-primary">Instant Processing</p>
                 <p className="text-[11px] text-muted-foreground">
-                  Your request is pending admin approval. Processing typically takes a few hours.
+                  Pay a one-time fee of{" "}
+                  <span className="font-bold text-foreground">
+                    KES {instantFee.toLocaleString()}
+                  </span>{" "}
+                  and your withdrawal will be prioritised immediately.
                 </p>
               </div>
             </div>
 
-            <Separator />
-
-            {/* Instant processing upsell */}
-            <div className="space-y-2">
-              <p className="text-xs font-semibold">Want it faster?</p>
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex gap-2.5">
-                <Zap className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <p className="text-xs font-semibold text-primary">Instant Processing</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Pay a one-time fee of{" "}
-                    <span className="font-bold text-foreground">
-                      KES {instantFee.toLocaleString()}
-                    </span>{" "}
-                    and your withdrawal will be prioritised immediately.
-                  </p>
-                </div>
-              </div>
-
-              <Button
-                className="w-full gap-1.5 text-xs font-bold h-9"
-                onClick={handlePayInstantFee}
-              >
-                <Zap className="h-3.5 w-3.5" />
-                Pay KES {instantFee.toLocaleString()} for Instant Processing
-              </Button>
-            </div>
-
             <Button
-              variant="outline"
-              className="w-full text-xs font-semibold h-8"
-              onClick={() => { handleReset(); onSuccess?.() }}
+              className="w-full gap-1.5 text-xs font-bold h-9"
+              onClick={handlePayInstantFee}
             >
-              No thanks, I&apos;ll wait
+              <Zap className="h-3.5 w-3.5" />
+              Pay KES {instantFee.toLocaleString()} for Instant Processing
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          <Button
+            variant="outline"
+            className="w-full text-xs font-semibold h-8"
+            onClick={() => { handleReset(); onSuccess?.() }}
+          >
+            No thanks, I&apos;ll wait
+          </Button>
+        </div>
+      </ResponsiveModal>
     </>
   )
 }
