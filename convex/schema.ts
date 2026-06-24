@@ -218,7 +218,6 @@ const schema = defineSchema({
     .index("by_startTime", ["startTime"])
     .index("by_status_and_startTime", ["status", "startTime"])
     .index("by_createdBy", ["createdBy"]),
-
   customMarkets: defineTable({
     eventId: v.id("customEvents"),
     marketKey: v.string(),
