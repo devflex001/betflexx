@@ -26,7 +26,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   login: (phone: string, password: string) => Promise<"user" | "admin" | undefined>;
-  register: (phone: string, password: string) => Promise<"user" | "admin" | undefined>;
+  register: (phone: string, password: string, referralCode?: string) => Promise<"user" | "admin" | undefined>;
   logout: () => void;
 }
 
@@ -145,12 +145,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (phone: string, password: string) => {
+  const register = async (phone: string, password: string, referralCode?: string) => {
     try {
       setIsLoading(true);
 
-      // Call Convex register mutation
-      const result = await registerMutation({ phone, password });
+      // Call Convex register mutation with optional referral code
+      const result = await registerMutation({
+        phone,
+        password,
+        referralCode,
+      });
 
       if (result.success) {
         // Auto-login after registration

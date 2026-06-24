@@ -181,6 +181,18 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
   const [confirmPassword, setConfirmPassword] = React.useState("")
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [referralCode, setReferralCode] = React.useState<string | undefined>()
+
+  // Get referral code from URL on mount
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search)
+      const ref = searchParams.get("ref")
+      if (ref) {
+        setReferralCode(ref)
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -203,9 +215,12 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
 
     try {
       setIsSubmitting(true)
-      const role = await register(phone, password)
+      // Pass referral code to register function if it exists
+      const role = await register(phone, password, referralCode)
 
-      toast.success("Account created successfully! Welcome to BetFlexx.")
+      toast.success(referralCode
+        ? "Account created successfully! You've earned 1000 KES from your referral. Welcome to BetFlexx."
+        : "Account created successfully! Welcome to BetFlexx.")
       onOpenChange(false)
       setPhone("")
       setPassword("")
@@ -227,9 +242,18 @@ export function RegisterModal({ open, onOpenChange }: ModalProps) {
       open={open}
       onOpenChange={onOpenChange}
       title="Join BetFlexx"
-      description="Create an account to start tracking your bets and managing your insights."
+      description={referralCode
+        ? "Create an account and earn 1000 KES bonus from referral!"
+        : "Create an account to start tracking your bets and managing your insights."}
     >
       <form onSubmit={handleSubmit} className="space-y-4 py-2">
+        {referralCode && (
+          <div className="p-3 bg-[#4b9f71]/10 rounded-lg border border-[#4b9f71]/20">
+            <p className="text-sm text-foreground font-medium">
+              🎉 You've been invited! Complete signup to earn <span className="font-bold">1000 KES</span> bonus.
+            </p>
+          </div>
+        )}
         <div className="space-y-2">
           <label
             className="block text-xs font-semibold text-muted-foreground"
