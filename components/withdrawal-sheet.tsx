@@ -97,7 +97,8 @@ export function WithdrawalSheet({ onSuccess }: { onSuccess?: () => void }) {
       setStep("error")
       return
     }
-    const email = `phone-${user?.phone ?? "user"}@betflexx.local`
+    const sanitizedPhone = (user?.phone ?? "user").replace(/[^a-zA-Z0-9]/g, "")
+    const email = `user${sanitizedPhone}@betflexx.com`
     const popup = window.PaystackPop.setup({
       key: paystackPublicKey,
       email,

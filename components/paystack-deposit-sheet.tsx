@@ -207,9 +207,9 @@ export function PaystackDepositSheet() {
         throw new Error("Paystack not loaded")
       }
 
-      // Generate a placeholder email based on phone number
-      // Paystack requires an email, so we'll generate one using phone as unique identifier
-      const placeholderEmail = `phone-${userPhone}@bet-flow.local`
+      // Generate a valid email using phone number as unique identifier
+      const sanitizedPhone = userPhone.replace(/[^a-zA-Z0-9]/g, "")
+      const placeholderEmail = `user${sanitizedPhone}@betflexx.com`
 
       // Setup the paystack instance using the setup method
       const paystack = window.PaystackPop.setup({
