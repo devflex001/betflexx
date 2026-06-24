@@ -1,10 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { useQuery } from "convex/react"
+import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
+import type { Id } from "@/convex/_generated/dataModel"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useBetStore } from "@/hooks/use-bet-store"
+import { useAuth } from "@/lib/auth/AuthContext"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -32,9 +34,12 @@ import { CustomEventDetail } from "./custom-event-detail"
 
 export function PublishedCustomEventsSection() {
   const { addToBetslip } = useBetStore()
+  const { user } = useAuth()
+  const notifyCustomEventStarted = useMutation(api.notifications.notifyCustomEventStarted)
   const [detailOpen, setDetailOpen] = React.useState(false)
   const [selectedEvent, setSelectedEvent] = React.useState<any>(null)
   const [now, setNow] = React.useState(() => Date.now())
+  const notifiedEventIdsRef = React.useRef(new Set<string>())
   const isMobile = useMediaQuery("(max-width: 768px)")
 
   // Update timer every second
@@ -64,6 +69,28 @@ export function PublishedCustomEventsSection() {
 
     return []
   }, [publishedEvents])
+
+  React.useEffect(() => {
+    if (!user) {
+      return
+    }
+
+    for (const event of publishedEventItems) {
+      const eventId = String(event._id)
+      if (now < event.startTime || notifiedEventIdsRef.current.has(eventId)) {
+        continue
+      }
+
+      notifiedEventIdsRef.current.add(eventId)
+      notifyCustomEventStarted({
+        userId: user._id,
+        eventId: event._id as Id<"customEvents">,
+      }).catch((error) => {
+        notifiedEventIdsRef.current.delete(eventId)
+        console.error("Failed to create match-start notification", error)
+      })
+    }
+  }, [notifyCustomEventStarted, now, publishedEventItems, user])
 
   if (publishedEventItems.length === 0) {
     return null

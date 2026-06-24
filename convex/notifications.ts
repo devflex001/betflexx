@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { requireAdmin, requireAuth } from "./auth/authorization";
@@ -214,50 +214,58 @@ export const createAdminSystemNotification = mutation({
   },
 });
 
-export const notifyStartedMatches = internalMutation({
-  args: {},
-  handler: async (ctx) => {
+export const notifyCustomEventStarted = mutation({
+  args: {
+    userId: v.id("users"),
+    eventId: v.id("customEvents"),
+  },
+  handler: async (ctx, args) => {
+    const user = await requireAuth(ctx, args.userId);
+    const event = await ctx.db.get(args.eventId);
+    if (!event || event.status !== "published") {
+      return { success: true, created: 0 };
+    }
+
     const now = Date.now();
-    const lookbackMs = 30 * 60 * 1000;
+    if (event.startTime > now) {
+      return { success: true, created: 0 };
+    }
+
     const activeBets = await ctx.db
       .query("bets")
-      .withIndex("by_status", (q) => q.eq("status", "active"))
+      .withIndex("by_userId", (q) => q.eq("userId", user._id.toString()))
       .take(100);
 
     let created = 0;
 
     for (const bet of activeBets) {
-      if (!bet.userId) {
+      if (bet.status !== "active") {
         continue;
       }
 
-      const recipientUserId = bet.userId as Id<"users">;
+      const matchingSelection = bet.selections.find(
+        (selection) => selection.matchId === args.eventId
+      );
 
-      for (const selection of bet.selections) {
-        if (
-          typeof selection.matchStartTime !== "number" ||
-          selection.matchStartTime > now ||
-          selection.matchStartTime < now - lookbackMs
-        ) {
-          continue;
-        }
+      if (!matchingSelection) {
+        continue;
+      }
 
-        const id = await notifyUser(ctx, {
-          recipientUserId,
-          type: "match",
-          title: "Match started",
-          message: `${selection.matchName} has started. Your ${selection.selectionName} bet is now live.`,
-          href: `/markets/${selection.matchId}`,
-          dedupeKey: `match-start:${bet._id}:${selection.matchId}`,
-          metadata: {
-            betId: bet._id,
-            sourceMatchId: selection.matchId,
-          },
-        });
+      const id = await notifyUser(ctx, {
+        recipientUserId: user._id,
+        type: "match",
+        title: "Match started",
+        message: `${event.homeTeam} vs ${event.awayTeam} has started. Your ${matchingSelection.selectionName} bet is now live.`,
+        href: "/my-bets",
+        dedupeKey: `custom-event-start:user:${user._id}:${event._id}`,
+        metadata: {
+          betId: bet._id,
+          sourceMatchId: event._id,
+        },
+      });
 
-        if (id) {
-          created += 1;
-        }
+      if (id) {
+        created += 1;
       }
     }
 
