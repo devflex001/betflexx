@@ -37,23 +37,6 @@ type Step =
   | "instant-done"  // Instant processing confirmed
   | "error"
 
-// ─── Paystack popup declaration ───────────────────────────────────────────────
-
-declare global {
-  interface Window {
-    PaystackPop?: {
-      setup: (opts: {
-        key: string
-        email: string
-        amount: number
-        ref: string
-        onSuccess: (tx: { reference: string }) => void
-        onClose: () => void
-      }) => { openIframe: () => void }
-    }
-  }
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function WithdrawalSheet({ onSuccess }: { onSuccess?: () => void }) {
