@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useMutation, usePaginatedQuery } from "convex/react"
+import { useMutation, useQuery, usePaginatedQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
 import { useAuthClient } from "@/lib/auth-client"
@@ -345,12 +345,18 @@ interface UserDetailsModalProps {
   user: UserWithBan | null
   open: boolean
   onClose: () => void
+  adminUserId?: string
 }
 
-function UserDetailsModal({ user, open, onClose }: UserDetailsModalProps) {
-  if (!user) return null
+function UserDetailsModal({ user, open, onClose, adminUserId }: UserDetailsModalProps) {
+  const ipInfo = useQuery(
+    api.ipTracking.getUserIPInfo,
+    user && open
+      ? { userId: user._id as Id<"users">, adminUserId: adminUserId as Id<"users"> | undefined }
+      : "skip"
+  )
 
-  const displayId = user.phone ?? user._id
+  if (!user) return null
 
   return (
     <ResponsiveModal
@@ -383,74 +389,72 @@ function UserDetailsModal({ user, open, onClose }: UserDetailsModalProps) {
         </div>
 
         {/* IP Tracking Info */}
-        {user.ipInfo && (
+        {ipInfo && (
           <>
             <Separator />
-            <div className="space-y-2.5 rounded-lg border border-primary/20 bg-primary/5 p-3">
-              <h3 className="font-bold text-primary flex items-center gap-1.5">
+            <div className="space-y-3.5">
+              <h3 className="font-bold text-foreground flex items-center gap-1.5">
                 <Globe className="size-3.5" />
                 IP & Location Information
               </h3>
 
               <div className="grid grid-cols-3 gap-y-2 gap-x-2 text-[11px]">
                 <span className="font-semibold text-muted-foreground">IP Address:</span>
-                <span className="col-span-2 font-mono text-foreground">{user.ipInfo.ip}</span>
+                <span className="col-span-2 font-mono text-foreground">{ipInfo.ip}</span>
 
                 <span className="font-semibold text-muted-foreground">Country:</span>
                 <span className="col-span-2 text-foreground">
-                  {user.ipInfo.location.country} ({user.ipInfo.location.countryCode})
+                  {ipInfo.location.country} ({ipInfo.location.countryCode})
                 </span>
 
-                {user.ipInfo.location.city && (
+                {ipInfo.location.city && (
                   <>
                     <span className="font-semibold text-muted-foreground">City:</span>
-                    <span className="col-span-2 text-foreground">{user.ipInfo.location.city}</span>
+                    <span className="col-span-2 text-foreground">{ipInfo.location.city}</span>
                   </>
                 )}
 
-                {user.ipInfo.location.state && (
+                {ipInfo.location.state && (
                   <>
                     <span className="font-semibold text-muted-foreground">State:</span>
-                    <span className="col-span-2 text-foreground">{user.ipInfo.location.state}</span>
+                    <span className="col-span-2 text-foreground">{ipInfo.location.state}</span>
                   </>
                 )}
 
-                {user.ipInfo.location.timezone && (
+                {ipInfo.location.timezone && (
                   <>
                     <span className="font-semibold text-muted-foreground">Timezone:</span>
-                    <span className="col-span-2 text-foreground">{user.ipInfo.location.timezone}</span>
+                    <span className="col-span-2 text-foreground">{ipInfo.location.timezone}</span>
                   </>
                 )}
 
                 <span className="font-semibold text-muted-foreground">Last Seen:</span>
                 <span className="col-span-2 text-foreground">
-                  {formatDate(user.ipInfo.lastSeen)}
+                  {formatDate(ipInfo.lastSeen)}
                 </span>
               </div>
 
-              <Separator className="my-2" />
-
-              <div className="space-y-2">
-                <h4 className="font-semibold text-muted-foreground text-[10px]">Device</h4>
+              <div className="space-y-2 pt-1 border-t border-border/50">
+                <h4 className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider">Device</h4>
                 <div className="grid grid-cols-3 gap-y-1.5 gap-x-2 text-[10px]">
-                  {user.ipInfo.device.deviceType && (
+                  {ipInfo.device.deviceType && (
                     <>
                       <span className="font-semibold text-muted-foreground">Type:</span>
-                      <span className="col-span-2 text-foreground capitalize">{user.ipInfo.device.deviceType}</span>
+                      <span className="col-span-2 text-foreground capitalize">{ipInfo.device.deviceType}</span>
                     </>
                   )}
 
-                  {user.ipInfo.device.browserName && (
+                  {ipInfo.device.browserName && (
                     <>
                       <span className="font-semibold text-muted-foreground">Browser:</span>
-                      <span className="col-span-2 text-foreground">{user.ipInfo.device.browserName}</span>
+                      <span className="col-span-2 text-foreground">{ipInfo.device.browserName}</span>
                     </>
                   )}
 
-                  {user.ipInfo.device.osName && (
+                  {ipInfo.device.osName && (
                     <>
                       <span className="font-semibold text-muted-foreground">OS:</span>
-                      <span className="col-span-2 text-foreground">{user.ipInfo.device.osName}</span>
+                      <span className="col-span-2 text-foreground">{ipInfo.device.osName}</span>
                     </>
                   )}
                 </div>
@@ -507,6 +511,7 @@ const PAGE_SIZE = 10
 
 export function AdminUsersPanel() {
   const { user } = useAuthClient()
+  const userStats = useQuery(api.adminUsers.getUserStats, { userId: user?._id })
   const [search, setSearch] = React.useState("")
   const [debouncedSearch, setDebouncedSearch] = React.useState("")
 
@@ -535,9 +540,6 @@ export function AdminUsersPanel() {
       toast.error(err instanceof Error ? err.message : "Failed to unban user")
     }
   }
-
-  const displayName = (u: UserWithBan) =>
-    u.phone ?? u._id.slice(-8)
 
   return (
     <div className="space-y-4">
@@ -578,6 +580,59 @@ export function AdminUsersPanel() {
 
       <Separator />
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="border border-border rounded-lg p-3.5 space-y-1 bg-card">
+          <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
+            <Users className="size-3.5 text-primary" /> Total Users
+          </span>
+          {userStats === undefined ? (
+            <Skeleton className="h-6 w-16" />
+          ) : (
+            <p className="text-lg font-bold tracking-tight font-mono">{userStats.totalUsers}</p>
+          )}
+        </div>
+
+        <div className="border border-border rounded-lg p-3.5 space-y-1 bg-card">
+          <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
+            <ShieldCheck className="size-3.5 text-blue-500" /> Admin Users
+          </span>
+          {userStats === undefined ? (
+            <Skeleton className="h-6 w-16" />
+          ) : (
+            <p className="text-lg font-bold tracking-tight font-mono text-blue-600 dark:text-blue-400">
+              {userStats.adminUsers}
+            </p>
+          )}
+        </div>
+
+        <div className="border border-border rounded-lg p-3.5 space-y-1 bg-card">
+          <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
+            <Ban className="size-3.5 text-rose-500" /> Banned Users
+          </span>
+          {userStats === undefined ? (
+            <Skeleton className="h-6 w-16" />
+          ) : (
+            <p className="text-lg font-bold tracking-tight font-mono text-rose-600 dark:text-rose-400">
+              {userStats.activeBans}
+            </p>
+          )}
+        </div>
+
+        <div className="border border-border rounded-lg p-3.5 space-y-1 bg-card">
+          <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
+            <AlertTriangle className="size-3.5 text-amber-500" /> Pending Appeals
+          </span>
+          {userStats === undefined ? (
+            <Skeleton className="h-6 w-16" />
+          ) : (
+            <p className="text-lg font-bold tracking-tight font-mono text-amber-600 dark:text-amber-400">
+              {userStats.pendingAppeals}
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* ── Mobile Card List (< sm) ── */}
       <div className="sm:hidden space-y-2">
         {isLoading && (
@@ -595,7 +650,21 @@ export function AdminUsersPanel() {
         )}
 
         {users.map((user, idx) => {
-          const u = { ...user, _id: (user as any)._id ?? (user as any).id, _creationTime: (user as any)._creationTime ?? (user as any).createdAt ?? 0, activeBan: (user as any).activeBan ?? null } as UserWithBan
+          const userObj = user as {
+            _id?: string
+            id?: string
+            _creationTime?: number
+            createdAt?: number
+            activeBan?: ActiveBan | null
+            phone?: string
+          }
+          const u = {
+            ...user,
+            _id: userObj._id ?? userObj.id ?? "",
+            _creationTime: userObj._creationTime ?? userObj.createdAt ?? 0,
+            activeBan: userObj.activeBan ?? null,
+            phone: userObj.phone,
+          } as UserWithBan
           return (
             <div
               key={u._id}
@@ -707,7 +776,21 @@ export function AdminUsersPanel() {
               )}
 
               {users.map((user, idx) => {
-                const u = { ...user, _id: (user as any)._id ?? (user as any).id, _creationTime: (user as any)._creationTime ?? (user as any).createdAt ?? 0, activeBan: (user as any).activeBan ?? null } as UserWithBan
+                const userObj = user as {
+                  _id?: string
+                  id?: string
+                  _creationTime?: number
+                  createdAt?: number
+                  activeBan?: ActiveBan | null
+                  phone?: string
+                }
+                const u = {
+                  ...user,
+                  _id: userObj._id ?? userObj.id ?? "",
+                  _creationTime: userObj._creationTime ?? userObj.createdAt ?? 0,
+                  activeBan: userObj.activeBan ?? null,
+                  phone: userObj.phone,
+                } as UserWithBan
                 return (
                   <tr key={u._id} className="hover:bg-muted/30 transition-colors">
                     <td className="py-3 px-4 text-muted-foreground font-medium">
@@ -831,7 +914,11 @@ export function AdminUsersPanel() {
       </div>
 
       {/* Contextual hint when banned users exist */}
-      {!isLoading && users.some((u) => !!(u as any).activeBan) && (
+      {!isLoading &&
+        users.some((u) => {
+          const userObj = u as { activeBan?: unknown }
+          return !!userObj.activeBan
+        }) && (
         <div className="flex items-start gap-2 p-3 rounded-lg border border-rose-500/20 bg-rose-500/5 text-xs text-rose-600">
           <AlertTriangle className="size-4 shrink-0 mt-0.5" />
           <span>
@@ -846,6 +933,7 @@ export function AdminUsersPanel() {
         user={detailTarget}
         open={!!detailTarget}
         onClose={() => setDetailTarget(null)}
+        adminUserId={user?._id}
       />
       <BanModal
         user={banTarget}
