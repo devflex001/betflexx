@@ -61,15 +61,6 @@ export function Betslip({ onClose }: BetslipProps) {
       return
     }
 
-    const now = Date.now()
-    const liveSelection = betslip.find(
-      (sel) => sel.matchStartTime && now >= sel.matchStartTime
-    )
-    if (liveSelection) {
-      toast.info(`Cannot place bet: "${liveSelection.matchName}" is already live.`)
-      return
-    }
-
     try {
       setIsPlacing(true)
       const success = await placeBet(parsedStake)
