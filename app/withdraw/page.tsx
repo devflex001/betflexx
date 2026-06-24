@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { Header } from "@/components/header"
 import { Sidebar } from "@/components/sidebar"
@@ -13,11 +12,6 @@ import { WithdrawalSheet } from "@/components/withdrawal-sheet"
 
 export default function WithdrawalPage() {
   const { user, isLoading } = useAuth()
-  const [loginOpen, setLoginOpen] = React.useState(false)
-
-  React.useEffect(() => {
-    setLoginOpen(!isLoading && !user)
-  }, [isLoading, user])
 
   if (isLoading) {
     return (
@@ -43,7 +37,7 @@ export default function WithdrawalPage() {
           </div>
           <BottomNav liveCount={0} />
         </div>
-        <LoginModal open={loginOpen} onOpenChange={setLoginOpen} />
+        <LoginModal open={true} onOpenChange={() => {}} />
       </>
     )
   }

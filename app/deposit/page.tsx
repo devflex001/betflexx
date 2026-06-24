@@ -1,7 +1,5 @@
 "use client"
 
-import * as React from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { LoginModal } from "@/components/modals"
 import { Header } from "@/components/header"
@@ -14,11 +12,6 @@ import { UnifiedDepositSheet } from "@/components/unified-deposit-sheet"
 
 export default function DepositPage() {
   const { user, isLoading } = useAuth()
-  const [loginOpen, setLoginOpen] = React.useState(false)
-
-  React.useEffect(() => {
-    setLoginOpen(!isLoading && !user)
-  }, [isLoading, user])
 
   if (isLoading) {
     return (
@@ -44,7 +37,7 @@ export default function DepositPage() {
           </div>
           <BottomNav liveCount={0} />
         </div>
-        <LoginModal open={loginOpen} onOpenChange={setLoginOpen} />
+        <LoginModal open={true} onOpenChange={() => {}} />
       </>
     )
   }

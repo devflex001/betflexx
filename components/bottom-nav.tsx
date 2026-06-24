@@ -32,9 +32,7 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
   }
 
   const handleLiveClick = () => {
-    setActiveTab("live")
-    setSelectedLeague("All Leagues")
-    router.push("/")
+    router.push("/live")
   }
 
   const handleProfileClick = () => {
@@ -56,7 +54,7 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
   return (
     <>
       <div className="pb-safe relative z-40 h-16 shrink-0 overflow-visible border-t border-border bg-card lg:hidden">
-        <div className="grid h-full grid-cols-4 items-center text-center">
+        <div className="grid h-full grid-cols-5 items-center text-center">
           {/* Home Tab */}
           <button
             onClick={handleHomeClick}
@@ -76,6 +74,25 @@ export function BottomNav({ liveCount }: { liveCount: number }) {
               )}
             />
             <span>Home</span>
+          </button>
+
+          {/* Live Tab */}
+          <button
+            onClick={handleLiveClick}
+            className={cn(
+              "flex h-full flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors",
+              pathname === "/live"
+                ? "font-semibold text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <PlayCircle
+              className={cn(
+                "size-5",
+                pathname === "/live" ? "text-primary" : "text-muted-foreground"
+              )}
+            />
+            <span>Live ({liveCount})</span>
           </button>
 
           {/* Betslip FAB */}
