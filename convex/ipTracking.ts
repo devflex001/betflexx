@@ -168,11 +168,17 @@ export const trackVisitor = mutation({
         .withIndex("by_ip", (q) => q.eq("ip", args.ip))
         .first()
 
+      const now = Date.now()
+
       if (existingVisitor) {
         // Update existing visitor - increment visit count
+        const currentCount = existingVisitor.visitCount || 1
+        const firstVisit = existingVisitor.firstVisitedAt || existingVisitor.visitedAt || now
+
         await ctx.db.patch(existingVisitor._id, {
-          visitCount: existingVisitor.visitCount + 1,
-          lastVisitedAt: Date.now(),
+          visitCount: currentCount + 1,
+          firstVisitedAt: firstVisit,
+          lastVisitedAt: now,
           // Update device info in case they switched device/browser
           device: args.device,
           location: args.location,
@@ -188,8 +194,8 @@ export const trackVisitor = mutation({
           location: args.location,
           device: args.device,
           visitCount: 1,
-          firstVisitedAt: Date.now(),
-          lastVisitedAt: Date.now(),
+          firstVisitedAt: now,
+          lastVisitedAt: now,
           isBot: args.isBot,
         })
 
@@ -417,7 +423,7 @@ export const getVisitorStats = query({
 
     const visitors = await ctx.db
       .query("visitors")
-      .withIndex("by_visitedAt", (q) => q.gte("visitedAt", startTime))
+      .withIndex("by_lastVisitedAt", (q) => q.gte("lastVisitedAt", startTime))
       .take(10000)
 
     // Group by country
@@ -425,7 +431,10 @@ export const getVisitorStats = query({
     const byDevice: Record<string, number> = {}
     const byBrowser: Record<string, number> = {}
 
+    let totalVisits = 0
+
     visitors.forEach((v) => {
+      totalVisits += v.visitCount
       byCountry[v.location.country] = (byCountry[v.location.country] || 0) + 1
       const device = v.device.deviceType || "unknown"
       byDevice[device] = (byDevice[device] || 0) + 1
@@ -434,7 +443,8 @@ export const getVisitorStats = query({
     })
 
     return {
-      totalVisitors: visitors.length,
+      uniqueVisitors: visitors.length,
+      totalVisits,
       byCountry,
       byDevice,
       byBrowser,

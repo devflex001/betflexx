@@ -375,9 +375,11 @@ const schema = defineSchema({
       osVersion: v.optional(v.string()),
       deviceType: v.optional(v.string()),
     }),
-    visitCount: v.number(), // Total number of visits from this IP
-    firstVisitedAt: v.number(),
-    lastVisitedAt: v.number(),
+    visitCount: v.optional(v.number()), // Total number of visits from this IP
+    firstVisitedAt: v.optional(v.number()),
+    lastVisitedAt: v.optional(v.number()),
+    // Legacy fields for backward compatibility
+    visitedAt: v.optional(v.number()),
     isBot: v.boolean(),
   })
     .index("by_ip", ["ip"])

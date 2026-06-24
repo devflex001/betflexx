@@ -55,7 +55,10 @@ type Visitor = {
     osVersion?: string
     deviceType?: string
   }
-  visitedAt: number
+  visitCount?: number
+  firstVisitedAt?: number
+  lastVisitedAt?: number
+  visitedAt?: number // Legacy field
   isBot: boolean
 }
 
@@ -147,10 +150,28 @@ function VisitorDetailsModal({
             {visitor._id}
           </span>
 
-          <span className="font-semibold text-muted-foreground">Visited At:</span>
-          <span className="col-span-2 text-foreground">
-            {formatDate(visitor.visitedAt)} at {formatTime(visitor.visitedAt)}
+          <span className="font-semibold text-muted-foreground">Total Visits:</span>
+          <span className="col-span-2 text-foreground font-bold text-lg">
+            {visitor.visitCount || 1}
           </span>
+
+          {visitor.firstVisitedAt && (
+            <>
+              <span className="font-semibold text-muted-foreground">First Visit:</span>
+              <span className="col-span-2 text-foreground">
+                {formatDate(visitor.firstVisitedAt)} at {formatTime(visitor.firstVisitedAt)}
+              </span>
+            </>
+          )}
+
+          {visitor.lastVisitedAt && (
+            <>
+              <span className="font-semibold text-muted-foreground">Last Visit:</span>
+              <span className="col-span-2 text-foreground">
+                {formatDate(visitor.lastVisitedAt)} at {formatTime(visitor.lastVisitedAt)}
+              </span>
+            </>
+          )}
 
           <span className="font-semibold text-muted-foreground">Status:</span>
           <div className="col-span-2">
@@ -411,7 +432,7 @@ export function VisitorsPanel() {
 
               <div className="flex items-center justify-between text-[10px]">
                 <span className="text-muted-foreground">
-                  {formatTime(v.visitedAt)}
+                  {(visitor.visitCount || 1)} visit{(visitor.visitCount || 1) !== 1 ? "s" : ""}
                 </span>
                 {v.device.browserName && (
                   <span className="flex items-center gap-1 text-muted-foreground">
@@ -435,7 +456,8 @@ export function VisitorsPanel() {
                 <th className="py-3 px-4 hidden md:table-cell">Location</th>
                 <th className="py-3 px-4 hidden lg:table-cell">Device</th>
                 <th className="py-3 px-4 hidden lg:table-cell">Browser</th>
-                <th className="py-3 px-4">Visited</th>
+                <th className="py-3 px-4">Visits</th>
+                <th className="py-3 px-4">Last Visit</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -454,7 +476,7 @@ export function VisitorsPanel() {
 
               {!isLoading && visitors.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-16 text-center text-muted-foreground text-xs">
+                  <td colSpan={7} className="py-16 text-center text-muted-foreground text-xs">
                     No visitors found.
                   </td>
                 </tr>
@@ -498,8 +520,13 @@ export function VisitorsPanel() {
                         </span>
                       </div>
                     </td>
+                    <td className="py-3 px-4 font-bold text-foreground">
+                      <Badge variant="outline" className="text-xs font-bold">
+                        {v.visitCount || 1}
+                      </Badge>
+                    </td>
                     <td className="py-3 px-4 text-muted-foreground text-xs">
-                      {formatTime(v.visitedAt)}
+                      {formatTime(v.lastVisitedAt || v.visitedAt || v._creationTime)}
                     </td>
                     <td className="py-3 px-4 text-right">
                       <DropdownMenu>
