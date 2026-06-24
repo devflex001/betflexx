@@ -39,11 +39,15 @@ const SLIDES = [
     id: "banner1",
     image: "/images/banner-1.png",
     imageAlt: "Banner 1",
+    title: "Live Matches",
+    subtitle: "Catch all the action right now",
   },
   {
     id: "banner2",
     image: "/images/banner-2.png",
     imageAlt: "Banner 2",
+    title: "Exclusive Odds",
+    subtitle: "Maximize your returns today",
     showButton: true,
     buttonText: "Explore",
     buttonAction: "home",
@@ -52,11 +56,15 @@ const SLIDES = [
     id: "banner3",
     image: "/images/banner-3.png",
     imageAlt: "Banner 3",
+    title: "Weekend Specials",
+    subtitle: "Premium markets for you",
   },
   {
     id: "banner4",
     image: "/images/banner-4.png",
     imageAlt: "Banner 4",
+    title: "In-Play Betting",
+    subtitle: "React to every moment",
     showButton: true,
     buttonText: "Bet Now",
     buttonAction: "live",
@@ -65,16 +73,22 @@ const SLIDES = [
     id: "banner5",
     image: "/images/banner-5.png",
     imageAlt: "Banner 5",
+    title: "Accumulator Bets",
+    subtitle: "Build your ultimate slip",
   },
   {
     id: "banner6",
     image: "/images/banner-6.png",
     imageAlt: "Banner 6",
+    title: "Early Payouts",
+    subtitle: "Cash out before the final whistle",
   },
   {
     id: "banner7",
     image: "/images/banner-7.png",
     imageAlt: "Banner 7",
+    title: "Boosted Odds",
+    subtitle: "Daily super-boosted markets",
   },
 ]
 
@@ -355,34 +369,38 @@ export default function Page() {
                         src={SLIDES[slideIndex].image}
                         alt={SLIDES[slideIndex].imageAlt}
                         className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500"
+                        loading="eager"
+                        decoding="async"
                       />
 
-                      {/* Button on selected slides */}
-                      {SLIDES[slideIndex].showButton && (
-                        <div className="absolute inset-0 flex items-center justify-end p-4 z-10">
+                      {/* Dark gradient overlay for text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" aria-hidden="true" />
+
+                      {/* Text and Button at Bottom Left */}
+                      <div className="absolute bottom-0 left-0 flex flex-col items-start gap-2 px-4 sm:px-6 py-2 sm:py-3 z-10">
+                        {/* Button */}
+                        {SLIDES[slideIndex].showButton && (
                           <Button
                             size="sm"
-                            className="h-8 text-xs px-4 font-semibold bg-[#4b9f71] text-white hover:bg-[#3e865f] shadow-md"
+                            className="h-7 sm:h-8 text-[11px] sm:text-xs px-3 sm:px-4 font-semibold bg-[#4b9f71] text-white hover:bg-[#3e865f] shadow-md"
                             onClick={() => SLIDES[slideIndex].buttonAction === "live" ? router.push("/live") : setActiveTab("home")}
                           >
                             {SLIDES[slideIndex].buttonText}
                           </Button>
+                        )}
+
+                        {/* Text */}
+                        <div className="space-y-0.5 text-left">
+                          <h3 className="text-xs sm:text-sm font-bold text-white">
+                            {SLIDES[slideIndex].title}
+                          </h3>
+                          <p className="text-[10px] sm:text-xs text-white/95">
+                            {SLIDES[slideIndex].subtitle}
+                          </p>
                         </div>
-                      )}
+                      </div>
                     </>
                   )}
-
-                  {/* Slider Navigation Dots */}
-                  <div className="absolute bottom-2 right-3 z-10 flex justify-end items-center gap-0.5">
-                    {SLIDES.map((slide, index) => (
-                      <span
-                        key={slide.id}
-                        onClick={() => setSlideIndex(index)}
-                        className={`h-1 rounded-full cursor-pointer transition-all ${index === slideIndex ? "w-3 bg-[#4b9f71]" : "w-1 bg-white/50 hover:bg-white/80"
-                          }`}
-                      />
-                    ))}
-                  </div>
                 </div>
               )}
 
@@ -537,34 +555,38 @@ export default function Page() {
                         src={SLIDES[slideIndex].image}
                         alt={SLIDES[slideIndex].imageAlt}
                         className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500"
+                        loading="eager"
+                        decoding="async"
                       />
 
-                      {/* Button on selected slides */}
-                      {SLIDES[slideIndex].showButton && (
-                        <div className="absolute inset-0 flex items-center justify-end p-4 z-10">
+                      {/* Dark gradient overlay for text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" aria-hidden="true" />
+
+                      {/* Text and Button at Bottom Left */}
+                      <div className="absolute bottom-0 left-0 flex flex-col items-start gap-2 px-4 sm:px-6 py-2 sm:py-3 z-10">
+                        {/* Button */}
+                        {SLIDES[slideIndex].showButton && (
                           <Button
                             size="sm"
-                            className="h-8 text-xs px-4 font-semibold bg-[#4b9f71] text-white hover:bg-[#3e865f] shadow-md"
+                            className="h-7 sm:h-8 text-[11px] sm:text-xs px-3 sm:px-4 font-semibold bg-[#4b9f71] text-white hover:bg-[#3e865f] shadow-md"
                             onClick={() => SLIDES[slideIndex].buttonAction === "live" ? router.push("/live") : setActiveTab("home")}
                           >
                             {SLIDES[slideIndex].buttonText}
                           </Button>
+                        )}
+
+                        {/* Text */}
+                        <div className="space-y-0.5 text-left">
+                          <h3 className="text-xs sm:text-sm font-bold text-white">
+                            {SLIDES[slideIndex].title}
+                          </h3>
+                          <p className="text-[10px] sm:text-xs text-white/95">
+                            {SLIDES[slideIndex].subtitle}
+                          </p>
                         </div>
-                      )}
+                      </div>
                     </>
                   )}
-
-                  {/* Slider Navigation Dots */}
-                  <div className="absolute bottom-2 right-3 z-10 flex justify-end items-center gap-0.5">
-                    {SLIDES.map((slide, index) => (
-                      <span
-                        key={slide.id}
-                        onClick={() => setSlideIndex(index)}
-                        className={`h-1 rounded-full cursor-pointer transition-all ${index === slideIndex ? "w-3 bg-[#4b9f71]" : "w-1 bg-white/50 hover:bg-white/80"
-                          }`}
-                      />
-                    ))}
-                  </div>
                 </div>
               )}
 
