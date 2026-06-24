@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
+import { useAuthClient } from "@/lib/auth-client"
 import { AdminLayout } from "@/components/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -76,8 +77,32 @@ export default function SettingsPage() {
   const testPaystackConfig = useMutation(api.paystack.testConfig)
   const setPaymentMode = useMutation(api.paymentMode.setMode)
 
+  const { user } = useAuthClient()
+
+  // Platform config
+  const platformConfig = useQuery(api.platformConfig.getConfig, {
+    userId: user?._id,
+  })
+  const savePlatformConfig = useMutation(api.platformConfig.saveConfig)
+
   const [limitsForm, setLimitsForm] = useState({ minDeposit: "100", minWithdrawal: "500" })
-  const [feesForm, setFeesForm] = useState({ withdrawalFeePercent: "2.5", flatFee: "0" })
+  const [feesForm, setFeesForm] = useState({ withdrawalFeePercent: "2.5", instantProcessingFee: "150" })
+  const [limitsLoading, setLimitsLoading] = useState(false)
+  const [feesLoading, setFeesLoading] = useState(false)
+
+  // Populate limits/fees forms from DB when loaded
+  useEffect(() => {
+    if (platformConfig) {
+      setLimitsForm({
+        minDeposit: platformConfig.minDeposit.toString(),
+        minWithdrawal: platformConfig.minWithdrawal.toString(),
+      })
+      setFeesForm({
+        withdrawalFeePercent: platformConfig.withdrawalFeePercent.toString(),
+        instantProcessingFee: platformConfig.instantProcessingFee.toString(),
+      })
+    }
+  }, [platformConfig])
 
   const [darajaFormData, setDarajaFormData] = useState<Partial<DarajaConfig>>({
     consumerKey: "",
@@ -422,6 +447,7 @@ export default function SettingsPage() {
                   value={limitsForm.minDeposit}
                   onChange={(e) => setLimitsForm((prev) => ({ ...prev, minDeposit: e.target.value }))}
                   className="h-8 text-xs"
+                  min={1}
                 />
               </div>
               <div className="space-y-1.5">
@@ -431,11 +457,38 @@ export default function SettingsPage() {
                   value={limitsForm.minWithdrawal}
                   onChange={(e) => setLimitsForm((prev) => ({ ...prev, minWithdrawal: e.target.value }))}
                   className="h-8 text-xs"
+                  min={1}
                 />
               </div>
             </CardContent>
             <CardFooter>
-              <Button size="sm" className="w-full">
+              <Button
+                size="sm"
+                className="w-full"
+                disabled={limitsLoading}
+                onClick={async () => {
+                  const minDep = parseFloat(limitsForm.minDeposit)
+                  const minWith = parseFloat(limitsForm.minWithdrawal)
+                  if (isNaN(minDep) || isNaN(minWith) || minDep <= 0 || minWith <= 0) {
+                    toast.error("Please enter valid positive numbers")
+                    return
+                  }
+                  try {
+                    setLimitsLoading(true)
+                    await savePlatformConfig({
+                      userId: user?._id,
+                      minDeposit: minDep,
+                      minWithdrawal: minWith,
+                    })
+                    toast.success("Transaction limits saved")
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Failed to save limits")
+                  } finally {
+                    setLimitsLoading(false)
+                  }
+                }}
+              >
+                {limitsLoading ? <Loader className="size-3 animate-spin mr-1" /> : null}
                 Save Limits
               </Button>
             </CardFooter>
@@ -446,7 +499,7 @@ export default function SettingsPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Percent className="size-4 text-primary" />
-                <CardTitle className="text-sm">Fees & Charges</CardTitle>
+                <CardTitle className="text-sm">Fees &amp; Charges</CardTitle>
               </div>
               <CardDescription className="text-xs">Configure platform transaction cuts.</CardDescription>
             </CardHeader>
@@ -456,23 +509,56 @@ export default function SettingsPage() {
                 <Input
                   type="number"
                   step="0.1"
+                  min={0}
+                  max={100}
                   value={feesForm.withdrawalFeePercent}
                   onChange={(e) => setFeesForm((prev) => ({ ...prev, withdrawalFeePercent: e.target.value }))}
                   className="h-8 text-xs"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Flat Additional Fee (KES)</Label>
+                <Label className="text-xs">Instant Processing Fee (KES)</Label>
                 <Input
                   type="number"
-                  value={feesForm.flatFee}
-                  onChange={(e) => setFeesForm((prev) => ({ ...prev, flatFee: e.target.value }))}
+                  min={0}
+                  value={feesForm.instantProcessingFee}
+                  onChange={(e) => setFeesForm((prev) => ({ ...prev, instantProcessingFee: e.target.value }))}
                   className="h-8 text-xs"
                 />
               </div>
             </CardContent>
             <CardFooter>
-              <Button size="sm" className="w-full">
+              <Button
+                size="sm"
+                className="w-full"
+                disabled={feesLoading}
+                onClick={async () => {
+                  const feePercent = parseFloat(feesForm.withdrawalFeePercent)
+                  const instantFee = parseFloat(feesForm.instantProcessingFee)
+                  if (isNaN(feePercent) || feePercent < 0 || feePercent > 100) {
+                    toast.error("Withdrawal fee must be between 0 and 100")
+                    return
+                  }
+                  if (isNaN(instantFee) || instantFee < 0) {
+                    toast.error("Instant processing fee must be 0 or more")
+                    return
+                  }
+                  try {
+                    setFeesLoading(true)
+                    await savePlatformConfig({
+                      userId: user?._id,
+                      withdrawalFeePercent: feePercent,
+                      instantProcessingFee: instantFee,
+                    })
+                    toast.success("Fees saved")
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Failed to save fees")
+                  } finally {
+                    setFeesLoading(false)
+                  }
+                }}
+              >
+                {feesLoading ? <Loader className="size-3 animate-spin mr-1" /> : null}
                 Save Fees
               </Button>
             </CardFooter>

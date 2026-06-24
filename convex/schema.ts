@@ -385,6 +385,39 @@ const schema = defineSchema({
     .index("by_ip", ["ip"])
     .index("by_userId", ["userId"])
     .index("by_lastVisitedAt", ["lastVisitedAt"]),
+
+  platform_config: defineTable({
+    key: v.string(), // singleton row — always "main"
+    minDeposit: v.number(),
+    minWithdrawal: v.number(),
+    withdrawalFeePercent: v.number(),
+    instantProcessingFee: v.number(), // KES 150 by default
+    updatedAt: v.number(),
+    updatedBy: v.string(),
+  }).index("by_key", ["key"]),
+
+  withdrawal_requests: defineTable({
+    userId: v.id("users"),
+    amount: v.number(), // amount user wants to withdraw
+    feeAmount: v.number(), // the % fee they paid
+    feeTxReference: v.string(), // Paystack reference for fee payment
+    phone: v.string(), // M-Pesa number to send funds to
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected")
+    ),
+    isInstant: v.boolean(), // did they pay the KES 150 instant fee?
+    instantFeeTxReference: v.optional(v.string()),
+    requestedAt: v.number(),
+    processedAt: v.optional(v.number()),
+    processedBy: v.optional(v.string()), // admin user ID
+    rejectionReason: v.optional(v.string()),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_status", ["status"])
+    .index("by_userId_and_status", ["userId", "status"])
+    .index("by_requestedAt", ["requestedAt"]),
 })
 
 export default schema

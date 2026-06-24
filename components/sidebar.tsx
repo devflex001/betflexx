@@ -15,6 +15,8 @@ import {
   Activity,
   ArrowUpRight,
   ArrowDownLeft,
+  ArrowDownToLine,
+  ArrowUpFromLine,
   PanelLeftClose,
   PanelLeftOpen,
   CircleDashed,
@@ -28,6 +30,7 @@ import { useRouter, usePathname } from "next/navigation"
 
 interface SidebarProps {
   className?: string
+  onClose?: () => void
 }
 
 type MatchRecord = {
@@ -57,7 +60,7 @@ function getSportIcon(slug: string) {
   }
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, onClose }: SidebarProps) {
   const { activeTab, setActiveTab, setSelectedSport, selectedSport, selectedLeague, setSelectedLeague } =
     useBetStore()
   const { user } = useAuth()
@@ -114,6 +117,7 @@ export function Sidebar({ className }: SidebarProps) {
   ]
 
   const handleTabClick = (id: string) => {
+    onClose?.()
     if (id === "mybets") {
       router.push("/my-bets")
       return
@@ -163,7 +167,7 @@ export function Sidebar({ className }: SidebarProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground hidden lg:flex"
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
             {isCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
@@ -219,9 +223,12 @@ export function Sidebar({ className }: SidebarProps) {
                   "h-9 w-full text-sm font-normal text-muted-foreground hover:bg-accent/50 hover:text-foreground",
                   isCollapsed ? "justify-center px-0" : "justify-start gap-2.5 px-3"
                 )}
-                onClick={() => router.push("/deposit")}
+                onClick={() => {
+                  onClose?.()
+                  router.push("/deposit")
+                }}
               >
-                <ArrowUpRight className="size-4 shrink-0 text-emerald-500" />
+                <ArrowDownToLine className="size-4 shrink-0 text-emerald-500" />
                 {!isCollapsed && <span>Deposit</span>}
               </Button>
               <Button
@@ -231,9 +238,12 @@ export function Sidebar({ className }: SidebarProps) {
                   "h-9 w-full text-sm font-normal text-muted-foreground hover:bg-accent/50 hover:text-foreground",
                   isCollapsed ? "justify-center px-0" : "justify-start gap-2.5 px-3"
                 )}
-                onClick={() => router.push("/withdraw")}
+                onClick={() => {
+                  onClose?.()
+                  router.push("/withdraw")
+                }}
               >
-                <ArrowDownLeft className="size-4 shrink-0 text-amber-500" />
+                <ArrowUpFromLine className="size-4 shrink-0 text-amber-500" />
                 {!isCollapsed && <span>Withdraw</span>}
               </Button>
             </>
@@ -272,6 +282,7 @@ export function Sidebar({ className }: SidebarProps) {
                       : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                   )}
                   onClick={() => {
+                    onClose?.()
                     setSelectedSport(sport.id)
                     setSelectedLeague("All Leagues")
                     setActiveTab("home")
@@ -327,6 +338,7 @@ export function Sidebar({ className }: SidebarProps) {
                       : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                   )}
                   onClick={() => {
+                    onClose?.()
                     setSelectedLeague(competition)
                     setActiveTab("home")
                     if (pathname !== "/") {

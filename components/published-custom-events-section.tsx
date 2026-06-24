@@ -93,7 +93,7 @@ export function PublishedCustomEventsSection() {
       selection: outcome.label,
       selectionName: outcomeMap[outcome.label] || outcome.label,
       odds: outcome.odds,
-      marketName: "Match Winner",
+      marketName: "1X2",
       outcomeName: outcomeMap[outcome.label] || outcome.label,
       matchStartTime: event.startTime,
     })
@@ -109,6 +109,7 @@ export function PublishedCustomEventsSection() {
       <CustomEventDetail
         eventId={selectedEvent._id}
         onBack={() => setDetailOpen(false)}
+        hideHeader={true}
       />
     </div>
   )

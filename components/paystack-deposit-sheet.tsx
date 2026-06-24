@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useAuth } from "@/lib/auth/AuthContext"
-import { ArrowUpRight, Copy, Check, Loader, AlertCircle } from "lucide-react"
+import { ArrowDownToLine, Copy, Check, Loader, AlertCircle, Lock } from "lucide-react"
 
 // Official Paystack Popup v2 - modal-based (no redirect)
 const QUICK_AMOUNTS = [100, 250, 500, 1000, 2500, 5000]
@@ -30,9 +30,27 @@ interface TransactionResult {
 export function PaystackDepositSheet() {
   const { user } = useAuth()
   const wallet = useQuery(api.mpesa.getWallet)
+  const config = useQuery(api.platformConfig.getUserFacingConfig)
   const createPaystackTransaction = useMutation(api.paystack.createTransaction)
 
+  const minDeposit = config?.minDeposit ?? 10
+  const isLoading = config === undefined || wallet === undefined
+
   const [amount, setAmount] = React.useState("")
+  const [phone, setPhone] = React.useState("")
+  const [isEditingPhone, setIsEditingPhone] = React.useState(false)
+
+  React.useEffect(() => {
+    if (user?.phone && !phone) {
+      setPhone(user.phone)
+    }
+  }, [user?.phone])
+
+  React.useEffect(() => {
+    if (config?.minDeposit && !amount) {
+      setAmount(config.minDeposit.toString())
+    }
+  }, [config?.minDeposit])
   const [stage, setStage] = React.useState<DepositStage>("idle")
   const [transactionResult, setTransactionResult] = React.useState<TransactionResult | null>(null)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
@@ -94,6 +112,27 @@ export function PaystackDepositSheet() {
       }
     }
   }, [])
+
+  // Force body pointer-events to auto when Paystack modal is active, overriding Radix UI's modal blocker
+  React.useEffect(() => {
+    if (stage === "initiating") {
+      const originalPointerEvents = document.body.style.pointerEvents
+      document.body.style.pointerEvents = "auto"
+      
+      const styleEl = document.createElement("style")
+      styleEl.id = "paystack-deposit-pointer-override"
+      styleEl.innerHTML = `
+        body { pointer-events: auto !important; }
+      `
+      document.head.appendChild(styleEl)
+
+      return () => {
+        document.body.style.pointerEvents = originalPointerEvents
+        const el = document.getElementById("paystack-deposit-pointer-override")
+        if (el) el.remove()
+      }
+    }
+  }, [stage])
 
   // Query latest transaction for real-time updates
   const latestTransaction = useQuery(
@@ -207,9 +246,9 @@ export function PaystackDepositSheet() {
         throw new Error("Paystack not loaded")
       }
 
-      // Generate a placeholder email based on phone number
-      // Paystack requires an email, so we'll generate one using phone as unique identifier
-      const placeholderEmail = `phone-${userPhone}@bet-flow.local`
+      // Generate a valid email using phone number as unique identifier
+      const sanitizedPhone = userPhone.replace(/[^a-zA-Z0-9]/g, "")
+      const placeholderEmail = `user${sanitizedPhone}@betflexx.com`
 
       // Setup the paystack instance using the setup method
       const paystack = window.PaystackPop.setup({
@@ -242,6 +281,11 @@ export function PaystackDepositSheet() {
     setErrorMessage(null)
     setTransactionResult(null)
 
+    if (isLoading) {
+      setErrorMessage("Loading configuration, please wait...")
+      return
+    }
+
     // Check if user is authenticated
     if (!user?.phone) {
       setErrorMessage("You must be logged in to deposit funds")
@@ -256,8 +300,8 @@ export function PaystackDepositSheet() {
       return
     }
 
-    if (parsedAmount < MIN_AMOUNT || parsedAmount > MAX_AMOUNT) {
-      setErrorMessage(`Amount must be KES ${MIN_AMOUNT} - ${MAX_AMOUNT}`)
+    if (parsedAmount < minDeposit || parsedAmount > MAX_AMOUNT) {
+      setErrorMessage(`Amount must be KES ${minDeposit.toLocaleString()} - ${MAX_AMOUNT.toLocaleString()}`)
       return
     }
 
@@ -285,14 +329,14 @@ export function PaystackDepositSheet() {
       await createPaystackTransaction({
         type: "deposit",
         amount: parsedAmount,
-        email: user.phone,
+        email: phone,
         reference: ref,
       })
 
       console.log("[Paystack] Transaction record created successfully")
 
       // Open official Paystack Popup v2 modal with user's phone
-      openPaystackModal(ref, user.phone, parsedAmount)
+      openPaystackModal(ref, phone, parsedAmount)
     } catch (error) {
       console.error("[Paystack] Error during deposit initiation:", error)
       setErrorMessage("Failed to initiate payment. Please try again.")
@@ -324,30 +368,72 @@ export function PaystackDepositSheet() {
 
         {/* User Info Display */}
         {user && (
-          <div className="bg-slate-500/5 border border-slate-500/10 rounded-lg p-3">
-            <p className="text-xs text-muted-foreground">Depositing with:</p>
-            <p className="text-sm font-semibold text-foreground">{user.phone}</p>
+          <div className="bg-slate-500/5 border border-slate-500/10 rounded-lg p-3 flex justify-between items-center">
+            <div className="space-y-0.5 flex-1">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Depositing with:</p>
+              {isEditingPhone ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="h-7 text-xs w-40 focus-visible:ring-primary py-1 px-2 font-mono"
+                    placeholder="e.g. 0712345678"
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-[10px] font-semibold text-emerald-600 hover:text-emerald-500 hover:bg-emerald-500/10"
+                    onClick={() => setIsEditingPhone(false)}
+                  >
+                    Save
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-sm font-bold text-foreground font-mono">{phone}</p>
+              )}
+            </div>
+            {!isEditingPhone && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                onClick={() => setIsEditingPhone(true)}
+              >
+                Change
+              </Button>
+            )}
           </div>
         )}
 
         {/* Amount Section */}
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Amount (KES)
-          </label>
+          <div className="flex justify-between items-center">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Amount (KES)
+            </label>
+            {config && (
+              <span className="text-[10px] text-muted-foreground">
+                Min: KES {minDeposit.toLocaleString()}
+              </span>
+            )}
+          </div>
           <Input
             type="number"
-            min={MIN_AMOUNT}
+            min={minDeposit}
             max={MAX_AMOUNT}
-            placeholder="Enter amount"
+            placeholder={`Min KES ${minDeposit.toLocaleString()}`}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="text-sm font-semibold h-10"
-            disabled={stage === "initiating"}
+            disabled={stage === "initiating" || isLoading}
             autoFocus
           />
           <div className="grid grid-cols-3 gap-2 pt-2">
-            {QUICK_AMOUNTS.map((amt, idx) => (
+            {QUICK_AMOUNTS.filter((amt) => amt >= minDeposit).slice(1, 4).map((amt, idx) => (
               <Button
                 key={amt}
                 type="button"
@@ -356,7 +442,7 @@ export function PaystackDepositSheet() {
                 className="text-xs h-8 font-medium animate-in fade-in-50"
                 style={{ animationDelay: `${idx * 25}ms` }}
                 onClick={() => setAmount(amt.toString())}
-                disabled={stage === "initiating"}
+                disabled={stage === "initiating" || isLoading}
               >
                 +{amt}
               </Button>
@@ -369,20 +455,30 @@ export function PaystackDepositSheet() {
           type="submit"
           className="w-full text-sm font-bold gap-2 h-10 animate-in fade-in-50"
           size="default"
-          disabled={stage === "initiating" || !paystackPublicKey || !paystackLoaded || !user}
+          disabled={stage === "initiating" || !paystackPublicKey || !paystackLoaded || !user || isLoading}
         >
-          {stage === "initiating" ? (
+          {isLoading ? (
             <>
               <Loader className="h-4 w-4 animate-spin" />
-              Opening Payment Modal...
+              Loading configuration...
+            </>
+          ) : stage === "initiating" ? (
+            <>
+              <Loader className="h-4 w-4 animate-spin" />
+              Processing...
             </>
           ) : (
             <>
-              <ArrowUpRight className="h-4 w-4" />
-              Pay with Paystack
+              <ArrowDownToLine className="h-4 w-4" />
+              Deposit
             </>
           )}
         </Button>
+
+        <div className="flex items-center justify-center gap-1.5 pt-2 text-[10px] text-muted-foreground/80 font-medium font-sans">
+          <Lock className="h-3 w-3 text-emerald-600" />
+          <span>Secured by Paystack. PCI-DSS Compliant.</span>
+        </div>
       </form>
     )
   }

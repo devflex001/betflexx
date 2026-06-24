@@ -140,7 +140,7 @@ const CUSTOM_MARKET_TEMPLATE: CustomMarketTemplate[] = [
     ],
   },
   {
-    name: "BOTH TEAMS TO SCORE (GG/NG)",
+    name: "BOTH TEAMS TO SCORE",
     marketType: "both_teams_to_score_gg_ng",
     marketTypes: ["Both Teams To Score"],
     priority: 6,
