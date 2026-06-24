@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { EyeOff, Send, Save, Trash2, Search } from "lucide-react"
+import { formatOddOutcome } from "@/lib/odds-format"
 
 interface CustomEventDetailProps {
   eventId: Id<"customEvents">
@@ -69,7 +70,7 @@ export function CustomEventDetail({
   const [savingScore, setSavingScore] = React.useState(false)
 
   // All context/store hooks
-  const { addToBetslip } = useBetStore()
+  const { betslip, addToBetslip } = useBetStore()
 
   // All query hooks
   const event = useQuery(api.customEvents.getCustomEvent, { eventId }) as
@@ -119,17 +120,7 @@ export function CustomEventDetail({
     return markets.filter((m) => `${m.name} ${m.marketType}`.toLowerCase().includes(q))
   }, [markets, search])
 
-  const marketsByCategory = React.useMemo(() => {
-    if (!filteredMarkets) return new Map<string, CustomMarketRow[]>()
-    const grouped = new Map<string, CustomMarketRow[]>()
-    for (const m of filteredMarkets) {
-      const cat = m.marketTypes[0] || m.marketType || "Other"
-      const list = grouped.get(cat) ?? []
-      list.push(m)
-      grouped.set(cat, list)
-    }
-    return grouped
-  }, [filteredMarkets])
+
 
   // Handler functions
   const handleAddOdd = (odd: CustomOddRow, market: CustomMarketRow) => {
@@ -274,51 +265,77 @@ export function CustomEventDetail({
 
       {/* Markets List */}
       <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin">
-        <div className="p-3 space-y-3">
-          {marketsByCategory.size === 0 ? (
+        <div className="p-3 space-y-4">
+          {filteredMarkets.length === 0 ? (
             <div className="text-center py-8 text-xs text-muted-foreground">No markets found</div>
           ) : (
-            Array.from(marketsByCategory.entries()).map(([category, categoryMarkets]) => (
-              <div key={category} className="space-y-2">
-                {/* Category Header */}
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{category}</p>
- 
-                {/* Markets */}
-                <div className="space-y-2">
-                  {categoryMarkets.map((market) => {
-                    const odds = groupedOdds.get(market._id) || []
-                    return (
-                      <div key={market._id} className="space-y-1">
-                        {/* Market Title */}
-                        <div className="flex items-center justify-between px-2">
-                          <p className="text-xs font-semibold text-foreground">{market.name}</p>
-                          <p className="text-[9px] text-muted-foreground">{odds.length}</p>
-                        </div>
- 
-                        {/* Odds Grid */}
-                        <div
+            filteredMarkets.map((market) => {
+              const odds = groupedOdds.get(market._id) || []
+              if (odds.length === 0) return null
+
+              return (
+                <div key={market._id} className="space-y-2 border-b border-border/20 pb-4 last:border-0 last:pb-0">
+                  {/* Market Title */}
+                  <div className="flex items-center justify-between px-2">
+                    <p className="text-xs font-bold text-foreground">{market.name}</p>
+                    <p className="text-[9px] text-muted-foreground">{odds.length} options</p>
+                  </div>
+
+                  {/* Odds Grid */}
+                  <div
+                    className={cn(
+                      "grid gap-2 px-2",
+                      odds.length === 2 || odds.length === 4 ? "grid-cols-2" : "grid-cols-3"
+                    )}
+                  >
+                    {odds.map((odd) => {
+                      const isSelected = betslip.some((item) => item.id === `${event._id}-${odd._id}`)
+                      const outcome = formatOddOutcome(
+                        {
+                          marketName: market.name,
+                          outcomeId: odd.outcomeId,
+                          outcomeName: odd.outcomeName,
+                        },
+                        {
+                          homeTeam: event.homeTeam,
+                          awayTeam: event.awayTeam,
+                        }
+                      )
+
+                      return (
+                        <button
+                          key={odd._id}
+                          onClick={() => handleAddOdd(odd, market)}
                           className={cn(
-                            "grid gap-2 px-2",
-                            odds.length === 2 ? "grid-cols-2" : odds.length === 4 ? "grid-cols-2" : "grid-cols-3"
+                            "group flex flex-col items-center justify-center gap-0.5 h-10 py-1 px-1.5 rounded border transition-all w-full text-center min-w-0",
+                            isSelected
+                              ? "bg-primary border-primary text-primary-foreground hover:bg-primary/95"
+                              : "border-border/50 bg-muted/30 hover:bg-primary/10 hover:border-primary/40 text-foreground"
                           )}
                         >
-                          {odds.map((odd) => (
-                            <button
-                              key={odd._id}
-                              onClick={() => handleAddOdd(odd, market)}
-                              className="group flex flex-col items-center justify-center gap-0.5 h-10 py-1 px-1.5 rounded border border-border/50 bg-muted/30 hover:bg-primary/10 hover:border-primary/40 transition-all w-full text-center"
-                            >
-                              <span className="text-[9px] font-semibold text-muted-foreground group-hover:text-foreground truncate min-w-0 w-full">{odd.outcomeName}</span>
-                              <span className="font-bold text-[11px] text-foreground group-hover:text-primary font-mono">{odd.oddValue.toFixed(2)}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  })}
+                          <span
+                            className={cn(
+                              "text-[9px] font-semibold truncate min-w-0 w-full",
+                              isSelected ? "text-primary-foreground/90" : "text-muted-foreground group-hover:text-foreground"
+                            )}
+                          >
+                            {outcome.code}
+                          </span>
+                          <span
+                            className={cn(
+                              "font-bold text-[11px] font-mono",
+                              isSelected ? "text-primary-foreground" : "text-foreground group-hover:text-primary"
+                            )}
+                          >
+                            {odd.oddValue.toFixed(2)}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </div>
