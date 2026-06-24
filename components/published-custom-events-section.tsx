@@ -77,6 +77,12 @@ export function PublishedCustomEventsSection() {
   }
 
   const handleAddToSlip = (event: any, outcome: { label: string; odds: number }) => {
+    const timer = calculateEventTimer(event.startTime, now)
+    if (timer.isFinished) {
+      toast.error("This event has finished. Betting is no longer available.")
+      return
+    }
+
     const outcomeMap: Record<string, string> = {
       "1": event.homeTeam,
       "X": "Draw",
@@ -117,6 +123,7 @@ export function PublishedCustomEventsSection() {
   const renderEventCard = (event: any) => {
     const timer = calculateEventTimer(event.startTime, now)
     const badgeConfig = getEventBadgeConfig(timer.lifecycle)
+    const isEventFinished = timer.isFinished
 
     return (
       <div
@@ -172,7 +179,10 @@ export function PublishedCustomEventsSection() {
           </div>
 
           {/* Odds Display - Top 3 outcomes - ADD TO BETSLIP */}
-          <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+          <div className={cn(
+            "grid grid-cols-3 gap-1.5 pt-0.5",
+            isEventFinished && "opacity-50 pointer-events-none"
+          )}>
             {[
               { label: "1", odds: 2.35 },
               { label: "X", odds: 3.15 },
@@ -180,8 +190,12 @@ export function PublishedCustomEventsSection() {
             ].map((odd) => (
               <button
                 key={odd.label}
-                onClick={() => handleAddToSlip(event, odd)}
-                className="flex flex-col items-center justify-center gap-0.5 p-1.5 rounded border border-border/40 bg-muted/30 hover:bg-primary/10 hover:border-primary/40 transition-all group/odd"
+                disabled={isEventFinished}
+                onClick={() => !isEventFinished && handleAddToSlip(event, odd)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-0.5 p-1.5 rounded border border-border/40 bg-muted/30 hover:bg-primary/10 hover:border-primary/40 transition-all group/odd",
+                  isEventFinished && "opacity-50 cursor-not-allowed"
+                )}
               >
                 <span className="text-[8px] font-semibold text-muted-foreground group-hover/odd:text-foreground">
                   {odd.label}
