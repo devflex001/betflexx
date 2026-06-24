@@ -87,6 +87,27 @@ export function WithdrawalSheet({ onSuccess }: { onSuccess?: () => void }) {
       .catch(() => toast.error("Failed to load payment config"))
   }, [])
 
+  // Force body pointer-events to auto when Paystack modal is active, overriding Radix UI's modal blocker
+  React.useEffect(() => {
+    if (step === "fee-paying" || step === "instant-paying") {
+      const originalPointerEvents = document.body.style.pointerEvents
+      document.body.style.pointerEvents = "auto"
+      
+      const styleEl = document.createElement("style")
+      styleEl.id = "paystack-pointer-override"
+      styleEl.innerHTML = `
+        body { pointer-events: auto !important; }
+      `
+      document.head.appendChild(styleEl)
+
+      return () => {
+        document.body.style.pointerEvents = originalPointerEvents
+        const el = document.getElementById("paystack-pointer-override")
+        if (el) el.remove()
+      }
+    }
+  }, [step])
+
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   function openPaystack(opts: {

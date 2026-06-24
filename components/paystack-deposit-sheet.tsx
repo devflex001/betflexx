@@ -99,6 +99,27 @@ export function PaystackDepositSheet() {
     }
   }, [])
 
+  // Force body pointer-events to auto when Paystack modal is active, overriding Radix UI's modal blocker
+  React.useEffect(() => {
+    if (stage === "initiating") {
+      const originalPointerEvents = document.body.style.pointerEvents
+      document.body.style.pointerEvents = "auto"
+      
+      const styleEl = document.createElement("style")
+      styleEl.id = "paystack-deposit-pointer-override"
+      styleEl.innerHTML = `
+        body { pointer-events: auto !important; }
+      `
+      document.head.appendChild(styleEl)
+
+      return () => {
+        document.body.style.pointerEvents = originalPointerEvents
+        const el = document.getElementById("paystack-deposit-pointer-override")
+        if (el) el.remove()
+      }
+    }
+  }, [stage])
+
   // Query latest transaction for real-time updates
   const latestTransaction = useQuery(
     api.paystack.getLatestTransaction,
