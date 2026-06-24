@@ -7,8 +7,8 @@ import { updateWalletBalance } from "./mpesa";
 const CONFIG_KEY = "main";
 
 const CONFIG_DEFAULTS = {
-  minWithdrawal: 5000,
-  withdrawalFeePercent: 15,
+  minWithdrawal: 500,
+  withdrawalFeePercent: 2.5,
 };
 
 // ────────────────────────────────────────────────────────────────────────────

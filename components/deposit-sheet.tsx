@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { ArrowUpRight, Copy, Check } from "lucide-react"
+import { ArrowUpRight, Copy, Check, Loader } from "lucide-react"
 import { MPesaLiveStatus, MPesaFeedback } from "@/components/mpesa-feedback"
 
 const QUICK_AMOUNTS = [100, 250, 500, 1000, 2500, 5000]
@@ -36,7 +36,11 @@ interface TransactionResult {
 
 export function DepositSheet() {
   const wallet = useQuery(api.mpesa.getWallet)
+  const config = useQuery(api.platformConfig.getUserFacingConfig)
   const createTransaction = useMutation(api.mpesa.createTransaction)
+
+  const minDeposit = config?.minDeposit ?? 10
+  const isLoading = config === undefined || wallet === undefined
 
   const [amount, setAmount] = React.useState("")
   const [phone, setPhone] = React.useState("")
@@ -110,6 +114,11 @@ export function DepositSheet() {
     setErrorMessage(null)
     setTransactionResult(null)
 
+    if (isLoading) {
+      setErrorMessage("Loading configuration, please wait...")
+      return
+    }
+
     const parsedAmount = parseFloat(amount)
 
     if (!amount.trim() || isNaN(parsedAmount)) {
@@ -117,8 +126,8 @@ export function DepositSheet() {
       return
     }
 
-    if (parsedAmount < MIN_AMOUNT || parsedAmount > MAX_AMOUNT) {
-      setErrorMessage(`Amount must be KES ${MIN_AMOUNT} - ${MAX_AMOUNT}`)
+    if (parsedAmount < minDeposit || parsedAmount > MAX_AMOUNT) {
+      setErrorMessage(`Amount must be KES ${minDeposit.toLocaleString()} - ${MAX_AMOUNT.toLocaleString()}`)
       return
     }
 
@@ -210,21 +219,29 @@ export function DepositSheet() {
 
         {/* Amount Section */}
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Amount (KES)
-          </label>
+          <div className="flex justify-between items-center">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Amount (KES)
+            </label>
+            {config && (
+              <span className="text-[10px] text-muted-foreground">
+                Min: KES {minDeposit.toLocaleString()}
+              </span>
+            )}
+          </div>
           <Input
             type="number"
-            min={MIN_AMOUNT}
+            min={minDeposit}
             max={MAX_AMOUNT}
-            placeholder="Enter amount"
+            placeholder={`Min KES ${minDeposit.toLocaleString()}`}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="text-sm font-semibold h-10"
+            disabled={isLoading}
             autoFocus
           />
           <div className="grid grid-cols-3 gap-2 pt-2">
-            {QUICK_AMOUNTS.map((amt, idx) => (
+            {QUICK_AMOUNTS.filter((amt) => amt >= minDeposit).map((amt, idx) => (
               <Button
                 key={amt}
                 type="button"
@@ -233,6 +250,7 @@ export function DepositSheet() {
                 className="text-xs h-8 font-medium animate-in fade-in-50"
                 style={{ animationDelay: `${idx * 25}ms` }}
                 onClick={() => setAmount(amt.toString())}
+                disabled={isLoading}
               >
                 +{amt}
               </Button>
@@ -251,6 +269,7 @@ export function DepositSheet() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="text-sm font-semibold h-10"
+            disabled={isLoading}
           />
         </div>
 
@@ -259,10 +278,20 @@ export function DepositSheet() {
           type="submit"
           className="w-full text-sm font-bold gap-2 h-10 animate-in fade-in-50"
           size="default"
+          disabled={isLoading}
         >
-          <ArrowUpRight className="h-4 w-4" />
-          Deposit
-        </Button>
+          {isLoading ? (
+            <>
+              <Loader className="h-4 w-4 animate-spin" />
+              Loading configuration...
+            </>
+          ) : (
+            <>
+              <ArrowUpRight className="h-4 w-4" />
+              Deposit
+            </>
+          )}
+        </Button
       </form>
     )
   }

@@ -58,6 +58,8 @@ export function WithdrawalSheet({ onSuccess }: { onSuccess?: () => void }) {
   const feePercent = config?.withdrawalFeePercent ?? 2.5
   const instantFee = config?.instantProcessingFee ?? 150
 
+  const isLoading = config === undefined || wallet === undefined
+
   const parsedAmount = parseFloat(amount) || 0
   const calculatedFee = Math.ceil((parsedAmount * feePercent) / 100)
 
@@ -111,10 +113,11 @@ export function WithdrawalSheet({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   function validateForm(): string | null {
+    if (isLoading || !config || !wallet) return "Loading configuration, please wait..."
     if (!parsedAmount || parsedAmount <= 0) return "Enter a valid amount"
     if (parsedAmount < minWithdrawal)
       return `Minimum withdrawal is KES ${minWithdrawal.toLocaleString()}`
-    if (!wallet || parsedAmount > wallet.balance)
+    if (parsedAmount > wallet.balance)
       return "Insufficient wallet balance"
     if (!phone.trim()) return "Enter your M-Pesa phone number"
     if (!/^(?:\+254|254|0)?([71]\d{8})$/.test(phone.trim()))
@@ -126,6 +129,11 @@ export function WithdrawalSheet({ onSuccess }: { onSuccess?: () => void }) {
   async function handleSubmitForm(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    if (isLoading) {
+      setError("Loading configuration, please wait...")
+      return
+    }
 
     const validationError = validateForm()
     if (validationError) {
@@ -312,7 +320,7 @@ export function WithdrawalSheet({ onSuccess }: { onSuccess?: () => void }) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="text-sm focus-visible:ring-primary"
-            disabled={step === "fee-paying"}
+            disabled={step === "fee-paying" || isLoading}
           />
           {config && (
             <p className="text-[10px] text-muted-foreground">
@@ -333,7 +341,7 @@ export function WithdrawalSheet({ onSuccess }: { onSuccess?: () => void }) {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="text-sm focus-visible:ring-primary"
-            disabled={step === "fee-paying"}
+            disabled={step === "fee-paying" || isLoading}
           />
         </div>
 
@@ -364,9 +372,14 @@ export function WithdrawalSheet({ onSuccess }: { onSuccess?: () => void }) {
         <Button
           type="submit"
           className="w-full text-sm font-bold gap-1.5 h-9"
-          disabled={step === "fee-paying" || !paystackLoaded || !wallet || wallet.balance === 0}
+          disabled={step === "fee-paying" || !paystackLoaded || isLoading || !wallet || wallet.balance === 0}
         >
-          {step === "fee-paying" ? (
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading configuration…
+            </>
+          ) : step === "fee-paying" ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Awaiting fee payment…
