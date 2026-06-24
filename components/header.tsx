@@ -26,7 +26,8 @@ import {
   ArrowUpFromLine,
   X,
   Settings,
-  ArrowUpRight
+  ArrowUpRight,
+  Menu
 } from "lucide-react"
 import {
   LoginModal,
@@ -36,6 +37,7 @@ import {
 } from "./modals"
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Betslip } from "./betslip"
+import { Sidebar } from "./sidebar"
 
 export function Header() {
   const router = useRouter()
@@ -54,6 +56,7 @@ export function Header() {
   const [withdrawOpen, setWithdrawOpen] = React.useState(false)
   const [betslipOpen, setBetslipOpen] = React.useState(false)
   const [showMobileSearch, setShowMobileSearch] = React.useState(false)
+  const [menuOpen, setMenuOpen] = React.useState(false)
 
   const handleLogoClick = () => {
     setActiveTab("home")
@@ -71,12 +74,38 @@ export function Header() {
         <div className="flex h-16 items-center justify-between px-4 sm:px-6 md:grid md:grid-cols-3">
 
           {/* Brand/Logo - Increased height to h-12 (mobile) and h-14 (desktop) */}
-          <div className="flex items-center gap-2 cursor-pointer md:justify-self-start" onClick={handleLogoClick}>
-            <img
-              src="/images/logo.png"
-              alt="BetFlexx Logo"
-              className="h-12 sm:h-14 w-auto object-contain transition-transform hover:scale-105"
-            />
+          <div className="flex items-center gap-1.5 md:justify-self-start">
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden text-muted-foreground hover:text-foreground size-8 rounded-full shrink-0"
+                >
+                  <Menu className="size-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-72 h-full flex flex-col border-r border-border bg-card">
+                <SheetHeader className="px-6 pt-6 pb-2 border-b border-border bg-muted/20 flex-shrink-0">
+                  <SheetTitle className="text-left text-sm font-bold flex items-center gap-2">
+                    <img src="/images/logo.png" alt="BetFlexx Logo" className="h-8 w-auto" />
+                    <span>Navigation</span>
+                  </SheetTitle>
+                  <SheetDescription className="hidden">BetFlexx Navigation Drawer</SheetDescription>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  <Sidebar className="w-full border-r-0 h-full" onClose={() => setMenuOpen(false)} />
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            <div className="flex items-center gap-2 cursor-pointer" onClick={handleLogoClick}>
+              <img
+                src="/images/logo.png"
+                alt="BetFlexx Logo"
+                className="h-12 sm:h-14 w-auto object-contain transition-transform hover:scale-105"
+              />
+            </div>
           </div>
 
           {/* Search bar (Desktop) */}
