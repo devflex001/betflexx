@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
+import { toast } from "sonner"
 
 export interface Selection {
   id: string          // unique identifier, e.g., matchId-outcome
@@ -218,6 +219,10 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
     if (exists) {
       next = betslip.filter((item) => item.id !== selection.id)
     } else {
+      if (selection.matchStartTime && Date.now() >= selection.matchStartTime) {
+        toast.info("Live matches cannot be added to the betslip. Bets are closed.")
+        return
+      }
       const matchExists = betslip.find((item) => item.matchId === selection.matchId)
       if (matchExists) {
         next = betslip.map((item) => (item.matchId === selection.matchId ? selection : item))
@@ -242,6 +247,13 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
 
   const placeBet = async (stake: number): Promise<boolean> => {
     if (stake <= 0 || betslip.length === 0) return false
+    const now = Date.now()
+    const liveSelection = betslip.find(
+      (sel) => sel.matchStartTime && now >= sel.matchStartTime
+    )
+    if (liveSelection) {
+      return false
+    }
     const totalRequired = stake * betslip.length
     if (totalRequired > walletBalance) return false
 

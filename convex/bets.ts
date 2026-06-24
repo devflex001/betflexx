@@ -88,6 +88,31 @@ export const placeBet = mutation({
     potentialReturn: v.number(),
   },
   handler: async (ctx, args) => {
+    const now = Date.now();
+    for (const sel of args.selections) {
+      if (sel.matchStartTime && now >= sel.matchStartTime) {
+        throw new Error(`Cannot place bet: "${sel.matchName}" is already live.`);
+      }
+
+      const normalizedCustomId = ctx.db.normalizeId("customEvents", sel.matchId);
+      if (normalizedCustomId) {
+        const customEvent = await ctx.db.get(normalizedCustomId);
+        if (customEvent && now >= customEvent.startTime) {
+          throw new Error(`Cannot place bet: "${sel.matchName}" is already live.`);
+        }
+      }
+
+      const sportsMatch = await ctx.db
+        .query("sportsMatches")
+        .withIndex("by_source_and_sourceMatchId", (q) =>
+          q.eq("source", "kwikbet").eq("sourceMatchId", sel.matchId)
+        )
+        .first();
+      if (sportsMatch && (sportsMatch.isLive || now >= sportsMatch.startTime)) {
+        throw new Error(`Cannot place bet: "${sel.matchName}" is already live.`);
+      }
+    }
+
     let wallet = await ctx.db
       .query("wallets")
       .first();
