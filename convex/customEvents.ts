@@ -937,12 +937,14 @@ export const settleCustomEvent = mutation({
 
     // Settle each bet
     for (const bet of eventBets) {
-      // Check if user's selection matches any of the winning outcomes
-      const userSelected = bet.selections.find(
-        (sel: any) => sel.matchId === args.eventId && winningOutcomeIds.has(sel.outcomeId)
+      // A bet wins only if ALL its selections for this event are in the winning outcomes
+      const eventSelections = bet.selections.filter((sel: any) => sel.matchId === args.eventId)
+
+      const allSelectionsWon = eventSelections.length > 0 && eventSelections.every(
+        (sel: any) => winningOutcomeIds.has(sel.outcomeId)
       )
 
-      const isWon = !!userSelected
+      const isWon = allSelectionsWon
 
       // Update bet status
       await ctx.db.patch(bet._id, {

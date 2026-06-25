@@ -37,7 +37,7 @@ export default function CustomEventDetailPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false)
   const [resolutionDialogOpen, setResolutionDialogOpen] = React.useState(false)
   const [selectedMarketId, setSelectedMarketId] = React.useState<string | null>(null)
-  const [selectedOutcomeId, setSelectedOutcomeId] = React.useState<string | null>(null)
+  const [selectedOutcomeIds, setSelectedOutcomeIds] = React.useState<Set<string>>(new Set())
   const [isSettling, setIsSettling] = React.useState(false)
 
   const event = useQuery(api.customEvents.getCustomEvent, {
@@ -187,18 +187,18 @@ export default function CustomEventDetailPage() {
   }
 
   const handleResolveEvent = async () => {
-    if (!selectedMarketId || !selectedOutcomeId) {
-      toast.error("Please select a market and winning outcome")
+    if (!selectedMarketId || selectedOutcomeIds.size === 0) {
+      toast.error("Please select a market and at least one winning outcome")
       return
     }
 
     setIsSettling(true)
     try {
-      // Build market outcomes array
-      const marketOutcomes = selectedMarketId && selectedOutcomeId ? [{
+      // Build market outcomes array with all selected outcomes
+      const marketOutcomes = [{
         marketId: selectedMarketId as Id<"customMarkets">,
-        winningOutcomeIds: [selectedOutcomeId],
-      }] : []
+        winningOutcomeIds: Array.from(selectedOutcomeIds),
+      }]
 
       await settleEvent({
         eventId: eventId as Id<"customEvents">,
@@ -207,7 +207,7 @@ export default function CustomEventDetailPage() {
       toast.success("Event resolved and bets settled! Users have been notified.")
       setResolutionDialogOpen(false)
       setSelectedMarketId(null)
-      setSelectedOutcomeId(null)
+      setSelectedOutcomeIds(new Set())
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to resolve event")
     } finally {
@@ -373,7 +373,7 @@ export default function CustomEventDetailPage() {
                       key={market._id}
                       onClick={() => {
                         setSelectedMarketId(market._id as any)
-                        setSelectedOutcomeId(null)
+                        setSelectedOutcomeIds(new Set())
                       }}
                       className={cn(
                         "p-3 rounded border text-sm text-left transition-colors",
@@ -392,15 +392,23 @@ export default function CustomEventDetailPage() {
               {/* Outcome Selection */}
               {selectedMarketId && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Select Winning Outcome *</label>
+                  <label className="text-sm font-medium">Select Winning Outcome(s) *</label>
                   <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
                     {(oddsbyMarket[selectedMarketId] || []).map((odd: any) => (
                       <button
                         key={odd._id}
-                        onClick={() => setSelectedOutcomeId(odd.outcomeId)}
+                        onClick={() => {
+                          const newSet = new Set(selectedOutcomeIds)
+                          if (newSet.has(odd.outcomeId)) {
+                            newSet.delete(odd.outcomeId)
+                          } else {
+                            newSet.add(odd.outcomeId)
+                          }
+                          setSelectedOutcomeIds(newSet)
+                        }}
                         className={cn(
                           "p-3 rounded border text-sm text-left transition-colors",
-                          selectedOutcomeId === odd.outcomeId
+                          selectedOutcomeIds.has(odd.outcomeId)
                             ? "border-primary bg-primary/10"
                             : "border-border hover:bg-muted"
                         )}
@@ -424,7 +432,7 @@ export default function CustomEventDetailPage() {
               </Button>
               <Button
                 onClick={handleResolveEvent}
-                disabled={!selectedMarketId || !selectedOutcomeId || isSettling}
+                disabled={!selectedMarketId || selectedOutcomeIds.size === 0 || isSettling}
                 className="h-9"
               >
                 {isSettling ? "Resolving..." : "Resolve Event"}
