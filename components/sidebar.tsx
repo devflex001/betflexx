@@ -13,12 +13,8 @@ import {
   History,
   Trophy,
   Activity,
-  ArrowUpRight,
-  ArrowDownLeft,
   ArrowDownToLine,
   ArrowUpFromLine,
-  PanelLeftClose,
-  PanelLeftOpen,
   CircleDashed,
   Circle,
   Swords,
@@ -67,9 +63,6 @@ export function Sidebar({ className, onClose }: SidebarProps) {
   const { user } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-
-  // State to manage collapse/expand
-  const [isCollapsed, setIsCollapsed] = React.useState(false)
 
   const allMatches = useQuery(api.sportsData.listMatches, { limit: 300 }) as
     | MatchRecord[]
@@ -152,24 +145,12 @@ export function Sidebar({ className, onClose }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex flex-col gap-6 shrink-0 border-r border-border bg-card text-card-foreground transition-all duration-300 ease-in-out",
-        isCollapsed ? "w-16 items-center overflow-y-auto" : "w-64 overflow-y-auto",
+        "flex flex-col gap-6 shrink-0 border-r border-border bg-card text-card-foreground overflow-y-auto w-64",
         className
       )}
     >
-      <div className={cn("pt-4", isCollapsed ? "px-2" : "px-4")}>
-        {/* Toggle Button & Header */}
-        <div className={cn("flex items-center mb-3", isCollapsed ? "justify-center" : "justify-between px-2")}>
+      <div className="pt-4 px-4">
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground hidden lg:flex"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-          >
-            {isCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
-          </Button>
-        </div>
 
         <div className="space-y-1 w-full">
           {mainNavItems.map((item) => {
@@ -179,21 +160,19 @@ export function Sidebar({ className, onClose }: SidebarProps) {
               <Button
                 key={item.id}
                 variant="ghost"
-                title={isCollapsed ? item.label : undefined}
                 className={cn(
-                  "h-9 w-full text-sm font-normal",
-                  isCollapsed ? "justify-center px-0" : "justify-between px-3",
+                  "h-9 w-full text-sm font-normal justify-between px-3",
                   isActive
                     ? "bg-[#4b9f71]/10 font-semibold text-[#4b9f71] hover:bg-[#4b9f71]/15 hover:text-[#4b9f71]"
                     : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                 )}
                 onClick={() => handleTabClick(item.id)}
               >
-                <span className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-2.5")}>
+                <span className="flex items-center gap-2.5">
                   <Icon className={cn("size-4 shrink-0", isActive ? "text-[#4b9f71]" : "text-muted-foreground")} />
-                  {!isCollapsed && <span>{item.label}</span>}
+                  <span>{item.label}</span>
                 </span>
-                {!isCollapsed && "count" in item && (
+                {"count" in item && (
                   <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                     {item.count}
                   </span>
