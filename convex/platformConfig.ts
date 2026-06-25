@@ -9,6 +9,7 @@ const DEFAULTS = {
   minWithdrawal: 500,
   withdrawalFeePercent: 2.5,
   instantProcessingFee: 150,
+  referralReward: 1000,
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ export const getUserFacingConfig = query({
         config?.withdrawalFeePercent ?? DEFAULTS.withdrawalFeePercent,
       instantProcessingFee:
         config?.instantProcessingFee ?? DEFAULTS.instantProcessingFee,
+      referralReward: config?.referralReward ?? DEFAULTS.referralReward,
     };
   },
 });
@@ -80,6 +82,7 @@ export const saveConfig = mutation({
     minWithdrawal: v.optional(v.number()),
     withdrawalFeePercent: v.optional(v.number()),
     instantProcessingFee: v.optional(v.number()),
+    referralReward: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx, args.userId);
@@ -101,6 +104,7 @@ export const saveConfig = mutation({
           args.withdrawalFeePercent ?? DEFAULTS.withdrawalFeePercent,
         instantProcessingFee:
           args.instantProcessingFee ?? DEFAULTS.instantProcessingFee,
+        referralReward: args.referralReward ?? DEFAULTS.referralReward,
         updatedAt: now,
         updatedBy,
       });
@@ -115,6 +119,9 @@ export const saveConfig = mutation({
         }),
         ...(args.instantProcessingFee !== undefined && {
           instantProcessingFee: args.instantProcessingFee,
+        }),
+        ...(args.referralReward !== undefined && {
+          referralReward: args.referralReward,
         }),
         updatedAt: now,
         updatedBy,

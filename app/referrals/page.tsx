@@ -153,7 +153,7 @@ export default function ReferralsPage() {
                 Refer & Earn
               </h1>
               <p className="text-sm text-muted-foreground mb-2 mt-1">
-                Earn <span className="font-semibold text-[#4b9f71]">KES 1,000</span> for every friend you refer who signs up on BetFlexx.
+                Earn <span className="font-semibold text-[#4b9f71]">KES {referralReward.toLocaleString()}</span> for every friend you refer who signs up on BetFlexx.
               </p>
             </div>
 
@@ -197,7 +197,7 @@ export default function ReferralsPage() {
               <div className="px-5 py-4 border-b border-border">
                 <h2 className="text-sm font-semibold text-foreground">Your Referral Link</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Share this link — you earn KES 1,000 when they sign up.
+                  Share this link — you earn KES {referralReward.toLocaleString()} when they sign up.
                 </p>
               </div>
 
@@ -309,10 +309,10 @@ export default function ReferralsPage() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">
-                      You earn KES 1,000
+                      You earn KES {referralReward.toLocaleString()}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      KES 1,000 is credited to your wallet instantly when their registration completes.
+                      KES {referralReward.toLocaleString()} is credited to your wallet instantly when their registration completes.
                     </p>
                   </div>
                 </div>
@@ -389,7 +389,7 @@ export default function ReferralsPage() {
                         <div className="flex items-center gap-2.5 flex-shrink-0">
                           {isCompleted && (
                             <span className="text-sm font-semibold text-[#4b9f71]">
-                              +KES 1,000
+                              +KES {referralReward.toLocaleString()}
                             </span>
                           )}
                           <Badge
