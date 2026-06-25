@@ -59,6 +59,7 @@ export default function CustomEventDetailPage() {
   const unpublishEvent = useMutation(api.customEvents.unpublishCustomEvent)
   const deleteEvent = useMutation(api.customEvents.deleteCustomEvent)
   const settleEvent = useMutation(api.customEvents.settleCustomEvent)
+  const markAsFinished = useMutation(api.customEvents.markEventAsFinished)
 
   // Form state
   const [formData, setFormData] = React.useState({
@@ -242,7 +243,7 @@ export default function CustomEventDetailPage() {
     {} as Record<string, any[]>
   )
 
-  const isSettled = event.eventStatus === "finished"
+  const isSettled = event.eventStatus === "finished" && event.winningOutcomeId
 
   return (
     <AdminLayout pageTitle="Edit Event">
@@ -280,6 +281,24 @@ export default function CustomEventDetailPage() {
               >
                 <CheckCircle className="size-3" />
                 <span className="hidden sm:inline">Resolve</span>
+              </Button>
+            )}
+
+            {event.eventStatus !== "finished" && event.status === "published" && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 px-2.5 gap-1.5 text-xs"
+                onClick={async () => {
+                  try {
+                    await markAsFinished({ eventId: eventId as Id<"customEvents"> })
+                    toast.success("Event marked as finished")
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Failed to mark as finished")
+                  }
+                }}
+              >
+                <span className="text-xs">Mark Finished</span>
               </Button>
             )}
 

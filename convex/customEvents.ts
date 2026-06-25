@@ -518,6 +518,25 @@ export const updateCustomEventScore = mutation({
   },
 })
 
+export const markEventAsFinished = mutation({
+  args: {
+    eventId: v.id("customEvents"),
+  },
+  handler: async (ctx, args) => {
+    const event = await ctx.db.get(args.eventId)
+    if (!event) throw new Error("Event not found")
+    if (event.eventStatus === "finished") throw new Error("Event already finished")
+
+    const now = Date.now()
+    await ctx.db.patch(args.eventId, {
+      eventStatus: "finished",
+      updatedAt: now,
+    })
+
+    return args.eventId
+  },
+})
+
 export const updateCustomMarket = mutation({
   args: {
     marketId: v.id("customMarkets"),
