@@ -94,7 +94,7 @@ export default function MatchMarketsPage() {
     limit: 80,
   }) as SportsMatch[] | { items: SportsMatch[] } | undefined
 
-  const liveCount = React.useMemo(() => {
+  const liveCount = useMemo(() => {
     if (!liveMatches) return 0
     if (Array.isArray(liveMatches)) return liveMatches.filter((m) => m.isLive).length
     if (liveMatches && typeof liveMatches === "object" && Array.isArray((liveMatches as { items?: unknown }).items)) {
