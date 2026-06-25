@@ -24,6 +24,7 @@ import type * as crons from "../crons.js";
 import type * as customEvents from "../customEvents.js";
 import type * as daraja from "../daraja.js";
 import type * as ipTracking from "../ipTracking.js";
+import type * as migrations_walletIsolationMigration from "../migrations/walletIsolationMigration.js";
 import type * as mpesa from "../mpesa.js";
 import type * as notifications from "../notifications.js";
 import type * as paymentMode from "../paymentMode.js";
@@ -35,6 +36,7 @@ import type * as scraperValidators from "../scraperValidators.js";
 import type * as scrapers_kwikbet from "../scrapers/kwikbet.js";
 import type * as scrapers_types from "../scrapers/types.js";
 import type * as sportsData from "../sportsData.js";
+import type * as tests_walletIsolationTest from "../tests/walletIsolationTest.js";
 import type * as withdrawals from "../withdrawals.js";
 
 import type {
@@ -60,6 +62,7 @@ declare const fullApi: ApiFromModules<{
   customEvents: typeof customEvents;
   daraja: typeof daraja;
   ipTracking: typeof ipTracking;
+  "migrations/walletIsolationMigration": typeof migrations_walletIsolationMigration;
   mpesa: typeof mpesa;
   notifications: typeof notifications;
   paymentMode: typeof paymentMode;
@@ -71,6 +74,7 @@ declare const fullApi: ApiFromModules<{
   "scrapers/kwikbet": typeof scrapers_kwikbet;
   "scrapers/types": typeof scrapers_types;
   sportsData: typeof sportsData;
+  "tests/walletIsolationTest": typeof tests_walletIsolationTest;
   withdrawals: typeof withdrawals;
 }>;
 
