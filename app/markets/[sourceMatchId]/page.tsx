@@ -18,10 +18,8 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  MarketsBrowser,
-  type SportsMatchWithOdds,
-} from "@/components/markets-panel"
+import { MatchEventDetail } from "@/components/match-event-detail"
+import type { SportsMatchWithOdds } from "@/components/markets-panel"
 
 export default function MatchMarketsPage() {
   const params = useParams<{ sourceMatchId: string }>()
@@ -50,13 +48,7 @@ export default function MatchMarketsPage() {
   const competition = match?.competitionName || ""
 
   const content = match && (
-    <div className="flex-1 overflow-hidden flex flex-col">
-      <MarketsBrowser
-        match={match}
-        queryEnabled
-        mode="sheet"
-      />
-    </div>
+    <MatchEventDetail match={match} onBack={() => router.back()} />
   )
 
   if (isMobile) {
