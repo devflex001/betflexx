@@ -9,7 +9,7 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { compareFormattedOdds, formatOddOutcome } from "@/lib/odds-format"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Share2, ListPlus, Radio } from "lucide-react"
+import { Share2, Radio, ListPlus } from "lucide-react"
 import { ShareModal } from "./modals"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { MarketsPanel, type SportsMatch, type SportsMatchWithOdds } from "./markets-panel"
@@ -108,10 +108,6 @@ export function MatchCard({ match }: MatchCardProps) {
         <div className="flex items-center justify-between text-[11px] bg-muted/40 px-4 py-2.5 rounded-t-lg border-b border-border/60 gap-3">
           <div className="flex items-center gap-1.5 font-semibold text-muted-foreground min-w-0">
             <span className="truncate">{match.competitionName}</span>
-            <span className="shrink-0">•</span>
-            <span className="text-[10px] font-medium text-muted-foreground/80 shrink-0">
-              {match.totalMarkets} markets
-            </span>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
@@ -125,6 +121,12 @@ export function MatchCard({ match }: MatchCardProps) {
                 {formatStartTime(match.startTime)}
               </span>
             )}
+            <button
+              onClick={openMarkets}
+              className="text-[10px] font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer"
+            >
+              +{match.totalMarkets} markets
+            </button>
           </div>
         </div>
 
