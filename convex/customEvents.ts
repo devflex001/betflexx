@@ -1,6 +1,7 @@
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
 import { Id } from "./_generated/dataModel"
+import { notifyAdmins, notifyUser } from "./notifications"
 
 function formatKes(amount: number) {
   return `KES ${amount.toLocaleString("en-KE", {
@@ -972,7 +973,6 @@ export const settleCustomEvent = mutation({
         }
 
         // Notify user they won
-        const { notifyUser } = await import("./notifications")
         const betLabel = bet.selections.length === 1
           ? bet.selections[0]?.matchName ?? "your selection"
           : `${bet.selections.length} selections`
@@ -992,7 +992,6 @@ export const settleCustomEvent = mutation({
         })
       } else if (!isWon && bet.userId) {
         // Notify user they lost
-        const { notifyUser } = await import("./notifications")
         const userId = bet.userId as Id<"users">
         const betLabel = bet.selections.length === 1
           ? bet.selections[0]?.matchName ?? "your selection"
@@ -1015,7 +1014,6 @@ export const settleCustomEvent = mutation({
     }
 
     // Notify admins
-    const { notifyAdmins } = await import("./notifications")
     await notifyAdmins(ctx, {
       type: "match",
       title: "Custom event settled",
