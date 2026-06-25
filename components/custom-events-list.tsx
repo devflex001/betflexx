@@ -113,8 +113,7 @@ export function CustomEventsList({
   // Resolve modal state
   const [resolveModalOpen, setResolveModalOpen] = React.useState(false)
   const [eventToResolve, setEventToResolve] = React.useState<any>(null)
-  const [selectedMarketId, setSelectedMarketId] = React.useState<string | null>(null)
-  const [selectedOutcomeId, setSelectedOutcomeId] = React.useState<string | null>(null)
+  const [selectedOutcomesByMarket, setSelectedOutcomesByMarket] = React.useState<Map<string, Set<string>>>(new Map()) // marketId -> Set of outcomeIds
   const [isResolving, setIsResolving] = React.useState(false)
   const [marketSearch, setMarketSearch] = React.useState("")
 
@@ -153,23 +152,29 @@ export function CustomEventsList({
   const settleEvent = useMutation(api.customEvents.settleCustomEvent)
 
   const handleResolveEvent = async () => {
-    if (!selectedMarketId || !selectedOutcomeId || !eventToResolve) {
-      toast.error("Please select a market and winning outcome")
+    if (selectedOutcomesByMarket.size === 0 || !eventToResolve) {
+      toast.error("Please select at least one outcome in a market")
       return
     }
 
     setIsResolving(true)
     try {
+      // Build market outcomes array for the mutation
+      const marketOutcomes = Array.from(selectedOutcomesByMarket.entries()).map(([marketId, outcomeIds]) => ({
+        marketId: marketId as any,
+        winningOutcomeIds: Array.from(outcomeIds),
+      }))
+
       await settleEvent({
         eventId: eventToResolve._id,
-        winningOutcomeId: selectedOutcomeId,
-        marketId: selectedMarketId as any,
+        marketOutcomes,
       })
-      toast.success("Event resolved! Bets settled and users notified.")
+
+      const totalOutcomes = Array.from(selectedOutcomesByMarket.values()).reduce((sum, set) => sum + set.size, 0)
+      toast.success(`Event resolved! ${selectedOutcomesByMarket.size} market(s) with ${totalOutcomes} outcome(s) settled.`)
       setResolveModalOpen(false)
       setEventToResolve(null)
-      setSelectedMarketId(null)
-      setSelectedOutcomeId(null)
+      setSelectedOutcomesByMarket(new Map())
       setMarketSearch("")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to resolve event")
@@ -830,12 +835,18 @@ export function CustomEventsList({
         onOpenChange={setResolveModalOpen}
         event={eventToResolve}
         isResolving={isResolving}
-        selectedMarketId={selectedMarketId}
-        selectedOutcomeId={selectedOutcomeId}
+        selectedOutcomes={selectedOutcomes}
         marketSearch={marketSearch}
         onMarketSearchChange={setMarketSearch}
-        onMarketSelect={setSelectedMarketId}
-        onOutcomeSelect={setSelectedOutcomeId}
+        onOutcomeToggle={(marketId, outcomeId) => {
+          const newSelected = new Map(selectedOutcomes)
+          if (newSelected.get(marketId) === outcomeId) {
+            newSelected.delete(marketId)
+          } else {
+            newSelected.set(marketId, outcomeId)
+          }
+          setSelectedOutcomes(newSelected)
+        }}
         onResolve={handleResolveEvent}
       />
     </div>
@@ -848,12 +859,10 @@ interface ResolveModalProps {
   onOpenChange: (open: boolean) => void
   event: any | null
   isResolving: boolean
-  selectedMarketId: string | null
-  selectedOutcomeId: string | null
+  selectedOutcomes: Map<string, string> // marketId -> outcomeId
   marketSearch: string
   onMarketSearchChange: (search: string) => void
-  onMarketSelect: (marketId: string) => void
-  onOutcomeSelect: (outcomeId: string) => void
+  onOutcomeToggle: (marketId: string, outcomeId: string) => void
   onResolve: () => Promise<void>
 }
 
@@ -862,16 +871,13 @@ function ResolveModal({
   onOpenChange,
   event,
   isResolving,
-  selectedMarketId,
-  selectedOutcomeId,
+  selectedOutcomes,
   marketSearch,
   onMarketSearchChange,
-  onMarketSelect,
-  onOutcomeSelect,
+  onOutcomeToggle,
   onResolve,
 }: ResolveModalProps) {
   const isMobile = useMediaQuery("(max-width: 768px)")
-  const [activeCategory, setActiveCategory] = React.useState("All")
 
   // Fetch markets and odds for the event
   const markets = useQuery(
@@ -901,7 +907,7 @@ function ResolveModal({
     return groups
   }, [allOdds])
 
-  // Filter markets based on search
+  // Filter and sort markets
   const filteredMarkets = React.useMemo(() => {
     if (!markets) return []
     const query = marketSearch.trim().toLowerCase()
@@ -913,15 +919,18 @@ function ResolveModal({
       .sort((a: any, b: any) => a.priority - b.priority || a.name.localeCompare(b.name))
   }, [markets, marketSearch])
 
-  // Get selected market and outcomes
-  const selectedMarket = markets?.find((m: any) => m._id === selectedMarketId)
-  const selectedOutcomes = selectedMarketId ? oddsByMarket.get(selectedMarketId) || [] : []
-
   const content = (
     <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
-      {/* Search & Title */}
+      {/* Header */}
       <div className="shrink-0 space-y-3 border-b border-border p-4">
-        <h3 className="font-semibold text-sm">Select Market & Outcome</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-sm">Select Winning Outcomes</h3>
+          {selectedOutcomes.size > 0 && (
+            <Badge className="text-[10px] font-bold bg-primary/10 text-primary border-primary/30">
+              {selectedOutcomes.size} selected
+            </Badge>
+          )}
+        </div>
         <div className="relative">
           <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -933,100 +942,85 @@ function ResolveModal({
         </div>
       </div>
 
-      {/* Markets & Outcomes Grid */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)]">
-        {/* Markets List */}
-        <ScrollArea className="min-h-0 border-b border-border lg:h-full lg:border-b-0 lg:border-r">
+      {/* Markets & Outcomes */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="space-y-3 p-4">
           {!markets && (
-            <div className="space-y-2 p-3">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
             </div>
           )}
 
           {markets && filteredMarkets.length === 0 && (
-            <div className="p-4 text-center text-xs text-muted-foreground">
+            <div className="text-center text-xs text-muted-foreground py-8">
               No markets found
             </div>
           )}
 
-          {filteredMarkets.map((market: any) => (
-            <button
-              key={market._id}
-              onClick={() => onMarketSelect(market._id)}
-              className={cn(
-                "w-full text-left border-b border-border/50 px-3 py-2.5 hover:bg-muted/50 transition-colors",
-                selectedMarketId === market._id && "bg-primary/10 border-primary"
-              )}
-            >
-              <div className="space-y-0.5">
-                <p className="text-xs font-semibold text-foreground line-clamp-2">
-                  {market.name}
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  {market.marketTypes?.join(", ") || market.marketType}
-                </p>
-              </div>
-            </button>
-          ))}
-        </ScrollArea>
+          {filteredMarkets.map((market: any) => {
+            const marketOutcomes = oddsByMarket.get(market._id) || []
+            const isSelected = selectedOutcomes.has(market._id)
+            const selectedOutcomeId = selectedOutcomes.get(market._id)
 
-        {/* Outcomes Grid */}
-        <ScrollArea className="min-h-0 lg:h-full">
-          {!allOdds && (
-            <div className="space-y-2 p-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          )}
+            return (
+              <section key={market._id} className="rounded-lg border border-border bg-card">
+                <div className={cn(
+                  "flex items-center justify-between gap-3 border-b border-border px-4 py-2.5 transition-colors",
+                  isSelected && "bg-primary/5"
+                )}>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-semibold text-foreground truncate">
+                      {market.name}
+                    </h4>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {market.marketTypes?.join(", ") || market.marketType}
+                    </p>
+                  </div>
+                  {isSelected && (
+                    <Badge className="shrink-0 text-[9px] font-bold bg-primary text-primary-foreground border-none">
+                      ✓
+                    </Badge>
+                  )}
+                </div>
 
-          {selectedMarket && selectedOutcomes.length === 0 && (
-            <div className="p-4 text-center text-xs text-muted-foreground">
-              No outcomes available
-            </div>
-          )}
+                {marketOutcomes.length === 0 && (
+                  <div className="px-4 py-3 text-center text-[10px] text-muted-foreground">
+                    No outcomes available
+                  </div>
+                )}
 
-          {selectedMarket && selectedOutcomes.length > 0 && (
-            <div className="space-y-3 p-4">
-              <div className="space-y-1">
-                <h4 className="text-xs font-semibold text-foreground">
-                  {selectedMarket.name}
-                </h4>
-                <p className="text-[10px] text-muted-foreground">
-                  {selectedMarket.marketTypes?.join(", ") || selectedMarket.marketType}
-                </p>
-              </div>
-
-              <div className={cn(
-                "grid gap-2",
-                selectedOutcomes.length === 2 || selectedOutcomes.length === 4 ? "grid-cols-2" : "grid-cols-3"
-              )}>
-                {selectedOutcomes.map((outcome: any) => (
-                  <button
-                    key={outcome._id}
-                    onClick={() => onOutcomeSelect(outcome.outcomeId)}
-                    className={cn(
-                      "flex flex-col items-center justify-center gap-1 h-12 py-1 px-2 rounded-md border transition-all text-center min-w-0",
-                      selectedOutcomeId === outcome.outcomeId
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card border-border hover:border-muted-foreground/30 text-foreground"
-                    )}
-                  >
-                    <span className="truncate text-[9px] font-semibold leading-none">
-                      {outcome.outcomeName}
-                    </span>
-                    <span className="font-mono text-[10px] font-bold leading-none">
-                      {outcome.oddValue.toFixed(2)}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </ScrollArea>
-      </div>
+                {marketOutcomes.length > 0 && (
+                  <div className={cn(
+                    "grid gap-2 p-3",
+                    marketOutcomes.length === 2 || marketOutcomes.length === 4 ? "grid-cols-2" : "grid-cols-3"
+                  )}>
+                    {marketOutcomes.map((outcome: any) => (
+                      <button
+                        key={outcome._id}
+                        onClick={() => onOutcomeToggle(market._id, outcome.outcomeId)}
+                        className={cn(
+                          "flex flex-col items-center justify-center gap-1 h-12 py-1 px-2 rounded-md border transition-all text-center min-w-0",
+                          selectedOutcomeId === outcome.outcomeId
+                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                            : "bg-card border-border hover:border-muted-foreground/30 text-foreground"
+                        )}
+                      >
+                        <span className="truncate text-[9px] font-semibold leading-none">
+                          {outcome.outcomeName}
+                        </span>
+                        <span className="font-mono text-[10px] font-bold leading-none">
+                          {outcome.oddValue.toFixed(2)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )
+          })}
+        </div>
+      </ScrollArea>
 
       {/* Action Buttons */}
       <div className="shrink-0 border-t border-border bg-muted/30 p-4 flex gap-2 justify-end">
@@ -1043,9 +1037,9 @@ function ResolveModal({
           size="sm"
           className="text-xs h-8 font-semibold"
           onClick={onResolve}
-          disabled={isResolving || !selectedMarketId || !selectedOutcomeId}
+          disabled={isResolving || selectedOutcomes.size === 0}
         >
-          {isResolving ? "Resolving..." : "Resolve Event"}
+          {isResolving ? "Resolving..." : `Resolve ${selectedOutcomes.size > 0 ? `(${selectedOutcomes.size})` : ""}`}
         </Button>
       </div>
     </div>
@@ -1054,13 +1048,13 @@ function ResolveModal({
   if (isMobile) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md bg-card flex flex-col h-[80vh] p-0 gap-0">
+        <DialogContent className="max-w-md bg-card flex flex-col h-[85vh] p-0 gap-0">
           <DialogHeader className="shrink-0 border-b border-border px-4 py-3 text-left">
             <DialogTitle className="text-sm font-semibold">
-              {event ? `${event.homeTeam} vs ${event.awayTeam}` : "Resolve Event"}
+              {event ? `Resolve: ${event.homeTeam} vs ${event.awayTeam}` : "Resolve Event"}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Select the winning market and outcome
+              Select winning outcomes for each market
             </DialogDescription>
           </DialogHeader>
           {content}
@@ -1080,7 +1074,7 @@ function ResolveModal({
             {event ? `Resolve: ${event.homeTeam} vs ${event.awayTeam}` : "Resolve Event"}
           </SheetTitle>
           <p className="truncate text-xs text-muted-foreground">
-            Select the winning market and outcome
+            Select winning outcomes for each market
           </p>
         </SheetHeader>
         {content}
