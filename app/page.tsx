@@ -132,21 +132,23 @@ export default function Page() {
 
   // State for signup modal triggered by referral link
   const [showSignupFromReferral, setShowSignupFromReferral] = React.useState(false)
-  const [hasCheckedReferral, setHasCheckedReferral] = React.useState(false)
 
   // Check for referral code on mount and open signup modal
   React.useEffect(() => {
-    if (typeof window !== "undefined" && !hasCheckedReferral) {
+    if (typeof window !== "undefined") {
       const searchParams = new URLSearchParams(window.location.search)
       const ref = searchParams.get("ref")
 
+      console.log('[Referral] URL ref param:', ref)
+      console.log('[Referral] User logged in:', !!user)
+      console.log('[Referral] Auth loading:', authLoading)
+
       if (ref && !user && !authLoading) {
-        // User has a referral code and is not logged in
+        console.log('[Referral] Opening signup modal with ref:', ref)
         setShowSignupFromReferral(true)
       }
-      setHasCheckedReferral(true)
     }
-  }, [user, authLoading, hasCheckedReferral])
+  }, [user, authLoading])
 
   const matchStatus =
     activeTab === "live" ? "live" : activeTab === "home" || activeTab === "featured" ? "upcoming" : undefined
@@ -667,7 +669,15 @@ export default function Page() {
       </div>
 
       {/* Signup modal for referral links */}
-      <RegisterModal open={showSignupFromReferral} onOpenChange={setShowSignupFromReferral} />
+      {showSignupFromReferral && (
+        <RegisterModal
+          open={showSignupFromReferral}
+          onOpenChange={(open) => {
+            console.log('[Referral Modal] onOpenChange called with:', open)
+            setShowSignupFromReferral(open)
+          }}
+        />
+      )}
     </>
   )
 }
