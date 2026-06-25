@@ -90,10 +90,19 @@ export function BetStoreProvider({ children }: { children: React.ReactNode }) {
   const [localBets, setLocalBets] = React.useState<PlacedBet[]>([])
   const [localTransactions, setLocalTransactions] = React.useState<Transaction[]>([])
 
-  // Convex reactive queries - use undefined to skip
-  const dbBalance = useQuery(api.bets.getWalletBalance)
-  const dbBets = useQuery(api.bets.getMyBets)
-  const dbTransactions = useQuery(api.bets.getTransactions)
+  // Convex reactive queries - pass userId when available
+  const dbBalance = useQuery(
+    api.bets.getWalletBalance,
+    authUser?._id ? { userId: authUser._id } : "skip"
+  )
+  const dbBets = useQuery(
+    api.bets.getMyBets,
+    authUser?._id ? { userId: authUser._id } : "skip"
+  )
+  const dbTransactions = useQuery(
+    api.bets.getTransactions,
+    authUser?._id ? { userId: authUser._id } : "skip"
+  )
   const dbAdminStats = useQuery(api.bets.getAdminStats)
 
   // Convex mutations
