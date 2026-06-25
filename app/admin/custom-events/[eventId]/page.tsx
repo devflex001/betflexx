@@ -272,7 +272,7 @@ export default function CustomEventDetailPage() {
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {event.eventStatus === "finished" && !isSettled && event.status === "published" && (
+            {event.eventStatus === "finished" && !event.winningOutcomeId && event.status === "published" && (
               <Button
                 size="sm"
                 variant="default"
