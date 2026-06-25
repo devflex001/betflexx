@@ -49,9 +49,10 @@ export default function ReferralsPage() {
   )
 
   // Get configurable reward amount
-  const platformConfig = useQuery(api.platformConfig.getConfig, {
-    userId: user?._id,
-  })
+  const platformConfig = useQuery(
+    api.platformConfig.getUserFacingConfig,
+    user?._id ? {} : "skip"
+  )
   const referralReward = platformConfig?.referralReward ?? 1000
 
   React.useEffect(() => {
