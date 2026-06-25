@@ -155,27 +155,27 @@ export function PublishedCustomEventsSection() {
     return (
       <div
         key={event._id}
-        className="group relative overflow-hidden rounded-lg border border-border/60 bg-card hover:border-primary/40 hover:shadow-md transition-all"
+        className="group relative overflow-hidden rounded-xl border border-amber-500/20 bg-card hover:border-amber-300/60 hover:shadow-[0_0_20px_rgba(251,191,36,0.2)] transition-all duration-300 shadow-lg"
       >
         {/* Header: Sport | Competition | Markets & Status (top right) */}
-        <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border/30 bg-muted/20">
+        <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-amber-400/20 bg-slate-900/30">
           <div className="flex items-center gap-2 min-w-0">
-            <Badge variant="outline" className="text-[8px] font-bold uppercase bg-muted/50 shrink-0">
+            <Badge variant="outline" className="text-[8px] font-bold uppercase bg-amber-500/20 text-amber-300 border-amber-400/40 shrink-0">
               {event.sport}
             </Badge>
-            <span className="text-[9px] text-muted-foreground font-medium truncate">{event.competition}</span>
+            <span className="text-[9px] text-amber-200/80 font-semibold truncate">{event.competition}</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => handleOpenDetail(event)}
-              className="text-[8px] font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer"
+              className="text-[8px] font-semibold text-amber-300 hover:text-amber-200 transition-colors cursor-pointer"
             >
               +{event.totalMarkets} markets
             </button>
             <Badge
               variant={badgeConfig.variant}
               className={cn(
-                "text-[8px] font-bold whitespace-nowrap",
+                "text-[8px] font-bold whitespace-nowrap bg-amber-400/30 text-amber-100 border-amber-400/50",
                 badgeConfig.animate && "animate-pulse"
               )}
             >
@@ -185,13 +185,13 @@ export function PublishedCustomEventsSection() {
         </div>
 
         {/* Main content - TIGHT SPACING */}
-        <div className="px-3 py-2.5 space-y-1.5">
+        <div className="px-4 py-3 space-y-2 bg-slate-900/20">
           {/* Countdown / Score - CENTERED */}
           <div className="space-y-0.5 text-center">
-            <p className="text-[8px] text-muted-foreground font-semibold uppercase tracking-wider">
+            <p className="text-[8px] text-amber-300/70 font-bold uppercase tracking-wider">
               {timer.lifecycle === "not_started" ? "Starts In" : "Score"}
             </p>
-            <p className="text-2xl font-black text-primary tabular-nums leading-tight">
+            <p className="text-2xl font-black text-amber-100 tabular-nums leading-tight drop-shadow-lg">
               {timer.lifecycle === "not_started"
                 ? formatCountdownToStart(timer.remainingMs)
                 : `${event.homeScore ?? 0} - ${event.awayScore ?? 0}`}
@@ -200,14 +200,14 @@ export function PublishedCustomEventsSection() {
 
           {/* Teams - Compact with better spacing */}
           <div className="flex items-center justify-center gap-2">
-            <p className="font-bold text-sm text-foreground truncate text-center flex-1">{event.homeTeam}</p>
-            <p className="text-xs font-semibold text-muted-foreground shrink-0">vs</p>
-            <p className="font-bold text-sm text-foreground truncate text-center flex-1">{event.awayTeam}</p>
+            <p className="font-semibold text-sm text-amber-100 truncate text-center flex-1">{event.homeTeam}</p>
+            <p className="text-xs font-medium text-amber-300/70 shrink-0">vs</p>
+            <p className="font-semibold text-sm text-amber-100 truncate text-center flex-1">{event.awayTeam}</p>
           </div>
 
           {/* Odds Display - Top 3 outcomes - ADD TO BETSLIP */}
           <div className={cn(
-            "grid grid-cols-3 gap-1.5 pt-0.5",
+            "grid grid-cols-3 gap-2 pt-1",
             isEventFinished && "opacity-50 pointer-events-none"
           )}>
             {[
@@ -218,14 +218,15 @@ export function PublishedCustomEventsSection() {
               <button
                 key={odd.label}
                 disabled={isEventFinished}
+
                 onClick={() => !isEventFinished && handleAddToSlip(event, odd)}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 p-1.5 rounded border border-border/40 bg-muted/30 hover:bg-primary/10 hover:border-primary/40 transition-all group/odd",
+                  "flex flex-col items-center justify-center gap-1 p-2 rounded-lg border bg-card border-amber-500/40  hover:from-amber-800/60 hover:to-amber-900/40 hover:border-amber-300/60 transition-all duration-200 group/odd",
                   isEventFinished && "opacity-50 cursor-not-allowed"
                 )}
               >
-                <span className="text-[9px] font-bold text-foreground">{odd.label}</span>
-                <span className="text-xs font-semibold text-primary">{odd.odds.toFixed(2)}</span>
+                <span className="text-[9px] font-semibold text-amber-300">{odd.label}</span>
+                <span className="text-xs font-bold text-amber-200">{odd.odds.toFixed(2)}</span>
               </button>
             ))}
           </div>
