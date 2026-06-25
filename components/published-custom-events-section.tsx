@@ -155,27 +155,27 @@ export function PublishedCustomEventsSection() {
     return (
       <div
         key={event._id}
-        className="group relative overflow-hidden rounded-lg border border-border/60 bg-card hover:border-primary/40 hover:shadow-md transition-all"
+        className="group relative overflow-hidden rounded-lg border-2 border-[#d4a574] bg-[#1a1f2e] hover:border-[#e6b800] hover:shadow-xl transition-all shadow-lg"
       >
         {/* Header: Sport | Competition | Markets & Status (top right) */}
-        <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border/30 bg-muted/20">
+        <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b-2 border-[#d4a574]/50 bg-[#151b28]">
           <div className="flex items-center gap-2 min-w-0">
-            <Badge variant="outline" className="text-[8px] font-bold uppercase bg-muted/50 shrink-0">
+            <Badge variant="outline" className="text-[8px] font-bold uppercase bg-[#d4a574]/30 text-[#ffd700] border-[#d4a574]/60 shrink-0">
               {event.sport}
             </Badge>
-            <span className="text-[9px] text-muted-foreground font-medium truncate">{event.competition}</span>
+            <span className="text-[9px] text-[#d4a574] font-semibold truncate">{event.competition}</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => handleOpenDetail(event)}
-              className="text-[8px] font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer"
+              className="text-[8px] font-bold text-[#ffd700] hover:text-[#ffed4e] transition-colors cursor-pointer"
             >
               +{event.totalMarkets} markets
             </button>
             <Badge
               variant={badgeConfig.variant}
               className={cn(
-                "text-[8px] font-bold whitespace-nowrap",
+                "text-[8px] font-bold whitespace-nowrap bg-[#d4a574] text-[#1a1f2e] border-[#d4a574]",
                 badgeConfig.animate && "animate-pulse"
               )}
             >
@@ -185,13 +185,13 @@ export function PublishedCustomEventsSection() {
         </div>
 
         {/* Main content - TIGHT SPACING */}
-        <div className="px-3 py-2.5 space-y-1.5">
+        <div className="px-3 py-2.5 space-y-1.5 bg-[#1a1f2e]">
           {/* Countdown / Score - CENTERED */}
           <div className="space-y-0.5 text-center">
-            <p className="text-[8px] text-muted-foreground font-semibold uppercase tracking-wider">
+            <p className="text-[8px] text-[#d4a574] font-bold uppercase tracking-wider">
               {timer.lifecycle === "not_started" ? "Starts In" : "Score"}
             </p>
-            <p className="text-2xl font-black text-primary tabular-nums leading-tight">
+            <p className="text-2xl font-black text-[#ffd700] tabular-nums leading-tight drop-shadow-lg">
               {timer.lifecycle === "not_started"
                 ? formatCountdownToStart(timer.remainingMs)
                 : `${event.homeScore ?? 0} - ${event.awayScore ?? 0}`}
@@ -200,9 +200,9 @@ export function PublishedCustomEventsSection() {
 
           {/* Teams - Compact with better spacing */}
           <div className="flex items-center justify-center gap-2">
-            <p className="font-bold text-sm text-foreground truncate text-center flex-1">{event.homeTeam}</p>
-            <p className="text-xs font-semibold text-muted-foreground shrink-0">vs</p>
-            <p className="font-bold text-sm text-foreground truncate text-center flex-1">{event.awayTeam}</p>
+            <p className="font-bold text-sm text-[#ffffff] truncate text-center flex-1">{event.homeTeam}</p>
+            <p className="text-xs font-semibold text-[#d4a574] shrink-0">vs</p>
+            <p className="font-bold text-sm text-[#ffffff] truncate text-center flex-1">{event.awayTeam}</p>
           </div>
 
           {/* Odds Display - Top 3 outcomes - ADD TO BETSLIP */}
@@ -220,12 +220,12 @@ export function PublishedCustomEventsSection() {
                 disabled={isEventFinished}
                 onClick={() => !isEventFinished && handleAddToSlip(event, odd)}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 p-1.5 rounded border border-border/40 bg-muted/30 hover:bg-[#d4a574]/10 hover:border-[#d4a574]/40 transition-all group/odd",
+                  "flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-md border-2 border-[#d4a574] bg-[#0f1419] hover:bg-[#1a2335] hover:border-[#ffd700] transition-all group/odd",
                   isEventFinished && "opacity-50 cursor-not-allowed"
                 )}
               >
-                <span className="text-[9px] font-bold text-foreground">{odd.label}</span>
-                <span className="text-xs font-semibold text-[#d4a574]">{odd.odds.toFixed(2)}</span>
+                <span className="text-[9px] font-bold text-[#d4a574]">{odd.label}</span>
+                <span className="text-xs font-extrabold text-[#ffd700] drop-shadow-sm">{odd.odds.toFixed(2)}</span>
               </button>
             ))}
           </div>

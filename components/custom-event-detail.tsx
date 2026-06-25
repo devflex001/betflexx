@@ -217,7 +217,7 @@ export function CustomEventDetail({
   const isEventFinished = timer.isFinished
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col bg-[#1a1f2e]">
       {/* Header */}
       {!hideHeader && (
         <div className="shrink-0 border-b border-border p-3 space-y-2">
@@ -267,43 +267,43 @@ export function CustomEventDetail({
       )}
 
       {/* Search */}
-      <div className="shrink-0 border-b border-border p-3">
+      <div className="shrink-0 border-b border-[#d4a574]/40 p-3 bg-[#151b28]">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#d4a574]/70" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search markets..."
-            className="h-8 text-xs pl-9"
+            className="h-8 text-xs pl-9 border-[#d4a574]/50 focus-visible:ring-[#ffd700] focus-visible:border-[#d4a574] bg-[#0f1419] text-white placeholder:text-[#666]"
           />
         </div>
       </div>
 
       {/* Closed Markets Banner */}
       {isEventFinished && (
-        <div className="shrink-0 bg-muted/60 border-b border-muted-foreground/30 px-3 py-2">
-          <p className="text-xs font-semibold text-muted-foreground">
+        <div className="shrink-0 bg-[#d4a574]/20 border-b border-[#d4a574]/30 px-3 py-2">
+          <p className="text-xs font-semibold text-[#ffd700]">
             This event has finished. Betting is no longer available.
           </p>
         </div>
       )}
 
       {/* Markets List */}
-      <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin bg-[#1a1f2e]">
         <div className="p-3 space-y-4">
           {filteredMarkets.length === 0 ? (
-            <div className="text-center py-8 text-xs text-muted-foreground">No markets found</div>
+            <div className="text-center py-8 text-[#d4a574] font-medium">No markets found</div>
           ) : (
             filteredMarkets.map((market) => {
               const odds = groupedOdds.get(market._id) || []
               if (odds.length === 0) return null
 
               return (
-                <div key={market._id} className="space-y-2 border-b border-border/20 pb-4 last:border-0 last:pb-0">
+                <div key={market._id} className="space-y-2 border-b border-[#d4a574]/20 pb-4 last:border-0 last:pb-0">
                   {/* Market Title */}
                   <div className="flex items-center justify-between px-2">
-                    <p className="text-xs font-bold text-foreground">{market.name}</p>
-                    <p className="text-[9px] text-muted-foreground">{odds.length} options</p>
+                    <p className="text-xs font-bold text-[#ffffff]">{market.name}</p>
+                    <p className="text-[9px] text-[#d4a574] font-semibold bg-[#d4a574]/15 px-2 py-1 rounded">{odds.length} options</p>
                   </div>
 
                   {/* Odds Grid */}
@@ -334,25 +334,25 @@ export function CustomEventDetail({
                           disabled={isEventFinished}
                           onClick={() => !isEventFinished && handleAddOdd(odd, market)}
                           className={cn(
-                            "group flex flex-col items-center justify-center gap-0.5 h-10 py-1 px-1.5 rounded border transition-all w-full text-center min-w-0",
+                            "group flex flex-col items-center justify-center gap-0.5 h-11 py-1.5 px-1.5 rounded-lg border-2 transition-all w-full text-center min-w-0",
                             isEventFinished && "opacity-50 cursor-not-allowed",
                             isSelected
-                              ? "bg-[#d4a574] border-[#d4a574] text-white hover:bg-[#c29660]"
-                              : "border-border/50 bg-muted/30 hover:bg-[#d4a574]/10 hover:border-[#d4a574]/40 text-foreground"
+                              ? "bg-[#ffd700] border-[#ffd700] text-[#1a1f2e] hover:bg-[#ffed4e] shadow-lg"
+                              : "border-[#d4a574]/60 bg-[#0f1419] hover:bg-[#1a2335] hover:border-[#ffd700] text-[#d4a574]"
                           )}
                         >
                           <span
                             className={cn(
-                              "text-[9px] font-semibold truncate min-w-0 w-full",
-                              isSelected ? "text-white/90" : "text-muted-foreground group-hover:text-foreground"
+                              "text-[9px] font-bold truncate min-w-0 w-full drop-shadow-sm",
+                              isSelected ? "text-[#1a1f2e]" : "text-[#d4a574]"
                             )}
                           >
                             {outcome.code}
                           </span>
                           <span
                             className={cn(
-                              "font-bold text-[11px] font-mono",
-                              isSelected ? "text-white" : "text-foreground group-hover:text-[#d4a574]"
+                              "font-bold text-[12px] font-mono drop-shadow-sm",
+                              isSelected ? "text-[#1a1f2e]" : "text-[#ffd700]"
                             )}
                           >
                             {odd.oddValue.toFixed(2)}
