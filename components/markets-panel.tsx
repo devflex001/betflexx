@@ -199,18 +199,18 @@ export function MarketsBrowser({
         variant="outline"
         disabled={isMatchFinished}
         className={cn(
-          "flex flex-col items-center justify-center gap-0.5 h-10 py-1 px-1.5 border-border transition-all hover:bg-accent/40 text-center min-w-0 w-full",
+          "flex flex-col items-center justify-center gap-0.5 h-12 py-1.5 px-2 transition-all text-center min-w-0 w-full rounded-md",
           isMatchFinished && "opacity-50 cursor-not-allowed",
-          readOnly && !isMatchFinished && "cursor-default hover:bg-background",
+          readOnly && !isMatchFinished && "cursor-default",
           selected
-            ? "bg-primary text-primary-foreground border-primary hover:bg-primary/95 hover:border-primary"
-            : "bg-card hover:border-muted-foreground/30 text-foreground"
+            ? "bg-[#4b9f71] text-white border border-[#4b9f71] hover:bg-[#3e865f] hover:border-[#3e865f] shadow-sm"
+            : "bg-card border border-border hover:border-[#4b9f71]/50 hover:bg-accent text-foreground"
         )}
         onClick={() => !isMatchFinished && handleOdd(odd)}
       >
         <span className={cn(
           "min-w-0 w-full truncate text-[9px] font-semibold leading-none",
-          selected ? "text-primary-foreground/90" : "text-muted-foreground"
+          selected ? "text-white" : "text-muted-foreground"
         )}>
           {outcome.code}
         </span>
@@ -218,15 +218,15 @@ export function MarketsBrowser({
           <span
             className={cn(
               "block w-full truncate text-[8px] font-medium leading-none",
-              selected ? "text-primary-foreground/80" : "text-muted-foreground"
+              selected ? "text-white/90" : "text-muted-foreground/80"
             )}
           >
             {odd.specifiers}
           </span>
         )}
         <span className={cn(
-          "font-mono text-[11px] font-bold leading-none",
-          selected ? "text-primary-foreground" : "text-foreground"
+          "font-mono text-[12px] font-bold leading-none",
+          selected ? "text-white" : "text-foreground"
         )}>
           {odd.oddValue.toFixed(2)}
         </span>
@@ -248,7 +248,12 @@ export function MarketsBrowser({
         <Button
           key={market.marketKey}
           variant={effectiveMarketKey === market.marketKey ? "secondary" : "ghost"}
-          className="h-auto min-h-9 w-full justify-between gap-3 px-3 py-1.5 text-left"
+          className={cn(
+            "h-auto min-h-10 w-full justify-between gap-3 px-3 py-2 text-left rounded-md transition-all border",
+            effectiveMarketKey === market.marketKey
+              ? "bg-[#4b9f71]/10 text-foreground border-[#4b9f71]/50 hover:bg-[#4b9f71]/15"
+              : "border-transparent hover:bg-accent/50"
+          )}
           onClick={() => setSelectedMarketKey(market.marketKey)}
         >
           <span className="min-w-0 flex-1">
@@ -314,8 +319,55 @@ export function MarketsBrowser({
     </div>
   )
 
+  const sheetContent = (
+    <div className="space-y-4 p-4">
+      {selectedMarket && (
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold leading-tight">{formatMarketName(selectedMarket, match)}</h3>
+          <p className="text-xs text-muted-foreground">
+            {selectedMarket.marketTypes.length > 0
+              ? selectedMarket.marketTypes.join(", ")
+              : selectedMarket.marketType || "Other"}
+            {" "}- {selectedMarket.oddsCount} odds
+          </p>
+        </div>
+      )}
+
+      {selectedMarket && !odds && (
+        <div className="space-y-2 p-3">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      )}
+
+      {odds && odds.length > 0 && (
+        <div className={cn(
+          "grid gap-2",
+          odds.length === 2 || odds.length === 4 ? "grid-cols-2" : "grid-cols-3"
+        )}>
+          {[...odds]
+            .sort((a, b) => compareFormattedOdds(a, b, match) || sortOdds(a, b))
+            .map(renderOddButton)}
+        </div>
+      )}
+
+      {markets && filteredMarkets.length === 0 && (
+        <div className="py-10 text-center text-xs text-muted-foreground">
+          No markets match your search.
+        </div>
+      )}
+
+      {selectedMarket && odds && odds.length === 0 && (
+        <div className="py-10 text-center text-xs text-muted-foreground">
+          No odds found for this market.
+        </div>
+      )}
+    </div>
+  )
+
   const pageContent = (
-    <div className="space-y-3 p-3 sm:p-4 pb-24">
+    <div className="space-y-3 px-3 sm:px-4 py-3 pb-32">
       {(!markets || !allOdds) && (
         <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
@@ -403,7 +455,7 @@ export function MarketsBrowser({
           <ScrollArea className="min-h-0 border-b border-border lg:h-full lg:border-b-0 lg:border-r">
             {marketList}
           </ScrollArea>
-          <ScrollArea className="min-h-0 lg:h-full">{oddsContent}</ScrollArea>
+          <ScrollArea className="min-h-0 lg:h-full">{sheetContent}</ScrollArea>
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto">{pageContent}</div>
