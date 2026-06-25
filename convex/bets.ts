@@ -21,6 +21,7 @@ function getBetLabel(selections: { matchName: string }[]) {
 export const getWalletBalance = query({
   args: {},
   handler: async (ctx) => {
+    // Get first wallet (deprecated - ideally pass userId from client)
     const wallet = await ctx.db
       .query("wallets")
       .first();

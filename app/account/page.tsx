@@ -18,6 +18,7 @@ import {
   ArrowUpFromLine,
   Loader2,
   Bug,
+  Users,
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 
@@ -159,6 +160,16 @@ export default function AccountPage() {
                   <ArrowUpFromLine className="size-4 mr-2" /> Withdraw
                 </Button>
               </div>
+
+              {/* Referrals Card */}
+              <Button
+                onClick={() => router.push("/referrals")}
+                variant="outline"
+                className="w-full h-12 font-semibold border-border hover:bg-muted/50"
+              >
+                <Users className="size-4 mr-2" />
+                Earn with Referrals
+              </Button>
 
               {/* Account Details */}
               <div className="space-y-3">

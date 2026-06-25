@@ -23,7 +23,8 @@ import {
   Circle,
   Swords,
   CircleDot,
-  LayoutGrid
+  LayoutGrid,
+  Users,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { useRouter, usePathname } from "next/navigation"
@@ -159,7 +160,7 @@ export function Sidebar({ className, onClose }: SidebarProps) {
       <div className={cn("pt-4", isCollapsed ? "px-2" : "px-4")}>
         {/* Toggle Button & Header */}
         <div className={cn("flex items-center mb-3", isCollapsed ? "justify-center" : "justify-between px-2")}>
-    
+
           <Button
             variant="ghost"
             size="icon"
@@ -241,6 +242,21 @@ export function Sidebar({ className, onClose }: SidebarProps) {
               >
                 <ArrowUpFromLine className="size-4 shrink-0 text-amber-500" />
                 {!isCollapsed && <span>Withdraw</span>}
+              </Button>
+              <Button
+                variant="ghost"
+                title={isCollapsed ? "Referrals" : undefined}
+                className={cn(
+                  "h-9 w-full text-sm font-normal text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                  isCollapsed ? "justify-center px-0" : "justify-start gap-2.5 px-3"
+                )}
+                onClick={() => {
+                  onClose?.()
+                  router.push("/referrals")
+                }}
+              >
+                <Users className="size-4 shrink-0 text-cyan-500" />
+                {!isCollapsed && <span>Referrals</span>}
               </Button>
             </>
           )}
