@@ -5,29 +5,42 @@ import type { Id } from "../_generated/dataModel";
 /**
  * Migration: Assign existing wallets to users
  * 
- * Strategy: For each user that doesn't have a wallet, create one with 0 balance
- * For existing wallets without userId, consolidate all their balances into the first user's wallet
- * 
- * This ensures every user has their own isolated wallet going forward
+ * Strategy: 
+ * 1. For each user that doesn't have a wallet, create one with 0 balance
+ * 2. For existing wallets without userId, assign them to the first user 
+ *    (this handles the legacy shared wallet scenario)
  */
 export const migrateWalletsToPerUser = mutation({
   args: {},
   handler: async (ctx) => {
     // Get all users
     const allUsers = await ctx.db.query("users").collect();
-    
+
     // Get all wallets
     const allWallets = await ctx.db.query("wallets").collect();
-    
-    const migratedCount = { created: 0, existing: 0, deleted: 0 };
-    
-    // For each user, ensure they have a wallet
+
+    const migratedCount = { created: 0, existing: 0, updated: 0 };
+
+    // First, handle wallets without userId (legacy shared wallet)
+    const walletsWithoutUserId = allWallets.filter((w) => !w.userId);
+    if (walletsWithoutUserId.length > 0 && allUsers.length > 0) {
+      // Assign the shared wallet balance to the first user
+      const firstUser = allUsers[0];
+      for (const wallet of walletsWithoutUserId) {
+        await ctx.db.patch(wallet._id, {
+          userId: firstUser._id,
+        });
+        migratedCount.updated++;
+      }
+    }
+
+    // Then, for each user, ensure they have a wallet
     for (const user of allUsers) {
       const userWallet = await ctx.db
         .query("wallets")
         .withIndex("by_userId", (q) => q.eq("userId", user._id))
         .unique();
-      
+
       if (!userWallet) {
         // User doesn't have a wallet yet, create one with 0 balance
         await ctx.db.insert("wallets", {
@@ -39,15 +52,16 @@ export const migrateWalletsToPerUser = mutation({
         migratedCount.existing++;
       }
     }
-    
+
     console.log(`[Migration] Wallet isolation migration completed:
       - Created new wallets: ${migratedCount.created}
-      - Existing wallets: ${migratedCount.existing}
+      - Updated legacy wallets: ${migratedCount.updated}
+      - Existing user wallets: ${migratedCount.existing}
       - Total users: ${allUsers.length}`);
-    
+
     return {
       success: true,
-      message: `Migration completed. Created ${migratedCount.created} wallets for users without wallets.`,
+      message: `Migration completed. Created ${migratedCount.created} wallets and updated ${migratedCount.updated} legacy wallets.`,
       ...migratedCount,
     };
   },
@@ -63,9 +77,9 @@ export const cleanupOrphanedWallets = mutation({
     const allWallets = await ctx.db.query("wallets").collect();
     const allUsers = await ctx.db.query("users").collect();
     const userIds = new Set(allUsers.map((u) => u._id));
-    
+
     let deletedCount = 0;
-    
+
     for (const wallet of allWallets) {
       // If wallet userId is not in user list, delete it
       if (!userIds.has(wallet.userId)) {
@@ -73,9 +87,9 @@ export const cleanupOrphanedWallets = mutation({
         deletedCount++;
       }
     }
-    
+
     console.log(`[Migration] Cleanup completed: Deleted ${deletedCount} orphaned wallets`);
-    
+
     return {
       success: true,
       deletedCount,
@@ -92,12 +106,12 @@ export const validateWalletIsolation = mutation({
   args: {},
   handler: async (ctx) => {
     const issues: string[] = [];
-    
+
     // Get all users and wallets
     const allUsers = await ctx.db.query("users").collect();
     const allWallets = await ctx.db.query("wallets").collect();
     const userIds = new Set(allUsers.map((u) => u._id));
-    
+
     // Check 1: Each user should have exactly one wallet
     for (const user of allUsers) {
       const userWallets = allWallets.filter((w) => w.userId === user._id);
@@ -107,28 +121,28 @@ export const validateWalletIsolation = mutation({
         issues.push(`User ${user._id} (${user.phone}) has ${userWallets.length} wallets`);
       }
     }
-    
+
     // Check 2: No orphaned wallets
     for (const wallet of allWallets) {
       if (!userIds.has(wallet.userId)) {
         issues.push(`Orphaned wallet ${wallet._id} with userId ${wallet.userId}`);
       }
     }
-    
+
     // Check 3: All bets have userId
     const allBets = await ctx.db.query("bets").collect();
     const betsWithoutUserId = allBets.filter((b) => !b.userId);
     if (betsWithoutUserId.length > 0) {
       issues.push(`${betsWithoutUserId.length} bets without userId`);
     }
-    
+
     // Check 4: All transactions have userId
     const allTransactions = await ctx.db.query("transactions").collect();
     const txsWithoutUserId = allTransactions.filter((t) => !t.userId);
     if (txsWithoutUserId.length > 0) {
       issues.push(`${txsWithoutUserId.length} transactions without userId`);
     }
-    
+
     return {
       healthy: issues.length === 0,
       issues,

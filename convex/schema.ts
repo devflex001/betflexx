@@ -136,7 +136,7 @@ const schema = defineSchema({
 
   wallets: defineTable({
     balance: v.number(),
-    userId: v.id("users"), // Each user has their own wallet
+    userId: v.optional(v.id("users")), // Optional for backward compatibility during migration
   })
     .index("by_userId", ["userId"]),
 
