@@ -31,9 +31,7 @@ export function ReferralSignupModal({
     setMounted(true)
   }, [])
 
-  const platformConfig = useQuery(api.platformConfig.getConfig, {
-    userId: "skip" as any,
-  })
+  const platformConfig = useQuery(api.platformConfig.getConfig, {})
 
   const referralReward = platformConfig?.referralReward ?? 1000
 
