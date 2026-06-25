@@ -319,6 +319,53 @@ export function MarketsBrowser({
     </div>
   )
 
+  const sheetContent = (
+    <div className="space-y-4 p-4">
+      {selectedMarket && (
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold leading-tight">{formatMarketName(selectedMarket, match)}</h3>
+          <p className="text-xs text-muted-foreground">
+            {selectedMarket.marketTypes.length > 0
+              ? selectedMarket.marketTypes.join(", ")
+              : selectedMarket.marketType || "Other"}
+            {" "}- {selectedMarket.oddsCount} odds
+          </p>
+        </div>
+      )}
+
+      {selectedMarket && !odds && (
+        <div className="space-y-2 p-3">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      )}
+
+      {odds && odds.length > 0 && (
+        <div className={cn(
+          "grid gap-2",
+          odds.length === 2 || odds.length === 4 ? "grid-cols-2" : "grid-cols-3"
+        )}>
+          {[...odds]
+            .sort((a, b) => compareFormattedOdds(a, b, match) || sortOdds(a, b))
+            .map(renderOddButton)}
+        </div>
+      )}
+
+      {markets && filteredMarkets.length === 0 && (
+        <div className="py-10 text-center text-xs text-muted-foreground">
+          No markets match your search.
+        </div>
+      )}
+
+      {selectedMarket && odds && odds.length === 0 && (
+        <div className="py-10 text-center text-xs text-muted-foreground">
+          No odds found for this market.
+        </div>
+      )}
+    </div>
+  )
+
   const pageContent = (
     <div className="space-y-3 px-3 sm:px-4 py-3 pb-32">
       {(!markets || !allOdds) && (
@@ -408,7 +455,7 @@ export function MarketsBrowser({
           <ScrollArea className="min-h-0 border-b border-border lg:h-full lg:border-b-0 lg:border-r">
             {marketList}
           </ScrollArea>
-          <ScrollArea className="min-h-0 lg:h-full">{oddsContent}</ScrollArea>
+          <ScrollArea className="min-h-0 lg:h-full">{sheetContent}</ScrollArea>
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto">{pageContent}</div>
