@@ -952,9 +952,10 @@ export const settleCustomEvent = mutation({
 
       // If bet won, credit user's wallet with potential return
       if (isWon && bet.userId) {
+        const userId = bet.userId as Id<"users">
         let wallet = await ctx.db
           .query("wallets")
-          .withIndex("by_userId", (q) => q.eq("userId", bet.userId))
+          .withIndex("by_userId", (q) => q.eq("userId", userId))
           .unique()
 
         const currentBalance = wallet ? wallet.balance : 0
@@ -965,7 +966,7 @@ export const settleCustomEvent = mutation({
           })
         } else {
           await ctx.db.insert("wallets", {
-            userId: bet.userId,
+            userId: userId,
             balance: 0 + bet.potentialReturn,
           })
         }
@@ -977,7 +978,7 @@ export const settleCustomEvent = mutation({
           : `${bet.selections.length} selections`
 
         await notifyUser(ctx, {
-          recipientUserId: bet.userId,
+          recipientUserId: userId,
           type: "bet",
           title: "Bet won",
           message: `Your bet on ${betLabel} won! ${formatKes(bet.potentialReturn)} has been credited to your wallet.`,
@@ -992,12 +993,13 @@ export const settleCustomEvent = mutation({
       } else if (!isWon && bet.userId) {
         // Notify user they lost
         const { notifyUser } = await import("./notifications")
+        const userId = bet.userId as Id<"users">
         const betLabel = bet.selections.length === 1
           ? bet.selections[0]?.matchName ?? "your selection"
           : `${bet.selections.length} selections`
 
         await notifyUser(ctx, {
-          recipientUserId: bet.userId,
+          recipientUserId: userId,
           type: "bet",
           title: "Bet lost",
           message: `Your bet on ${betLabel} did not win. Better luck next time!`,
@@ -1024,23 +1026,4 @@ export const settleCustomEvent = mutation({
 
     return args.eventId
   },
-})gs.eventId}`,
-      dedupeKey: `custom - event - settled:${ args.eventId } `,
-      metadata: {
-        sourceMatchId: args.eventId,
-        amount: eventBets.length,
-      },
-    })
-
-    return { success: true, betCount: eventBets.length }
-  },
 })
-
-function formatKes(amount: number) {
-  return `KES ${
-  amount.toLocaleString("en-KE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-} `
-}
