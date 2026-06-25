@@ -21,6 +21,13 @@ import {
   AlertDialogDescription,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 
 export default function CustomEventDetailPage() {
   const router = useRouter()
@@ -264,7 +271,7 @@ export default function CustomEventDetailPage() {
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {!isSettled && event.status === "published" && (
+            {event.eventStatus === "finished" && !isSettled && event.status === "published" && (
               <Button
                 size="sm"
                 variant="default"
@@ -337,19 +344,21 @@ export default function CustomEventDetailPage() {
           </div>
         </div>
 
-        {/* Resolution Dialog */}
-        <AlertDialog open={resolutionDialogOpen} onOpenChange={setResolutionDialogOpen}>
-          <AlertDialogContent className="max-w-2xl">
-            <AlertDialogTitle>Resolve Event</AlertDialogTitle>
-            <AlertDialogDescription>
-              Select the market and winning outcome. All related bets will be automatically settled and users will be notified.
-            </AlertDialogDescription>
+        {/* Resolution Sheet - Side Modal on Desktop */}
+        <Sheet open={resolutionDialogOpen} onOpenChange={setResolutionDialogOpen}>
+          <SheetContent side="right" className="w-full sm:w-[500px] flex flex-col">
+            <SheetHeader>
+              <SheetTitle>Resolve Event</SheetTitle>
+              <SheetDescription>
+                Select the market and winning outcome. All related bets will be automatically settled and users will be notified.
+              </SheetDescription>
+            </SheetHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="flex-1 overflow-y-auto space-y-4 py-4">
               {/* Market Selection */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Select Market *</label>
-                <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
                   {markets.map((market: any) => (
                     <button
                       key={market._id}
@@ -358,13 +367,13 @@ export default function CustomEventDetailPage() {
                         setSelectedOutcomeId(null)
                       }}
                       className={cn(
-                        "p-2 rounded border text-sm text-left transition-colors",
+                        "p-3 rounded border text-sm text-left transition-colors",
                         selectedMarketId === market._id
                           ? "border-primary bg-primary/10"
                           : "border-border hover:bg-muted"
                       )}
                     >
-                      <p className="font-medium text-xs">{market.name}</p>
+                      <p className="font-medium">{market.name}</p>
                       <p className="text-xs text-muted-foreground">{market.marketType}</p>
                     </button>
                   ))}
@@ -375,7 +384,7 @@ export default function CustomEventDetailPage() {
               {selectedMarketId && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Select Winning Outcome *</label>
-                  <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
                     {(oddsbyMarket[selectedMarketId] || []).map((odd: any) => (
                       <button
                         key={odd._id}
@@ -396,18 +405,24 @@ export default function CustomEventDetailPage() {
               )}
             </div>
 
-            <div className="flex gap-2 justify-end">
-              <AlertDialogCancel className="h-8">Cancel</AlertDialogCancel>
-              <AlertDialogAction
+            <div className="flex gap-2 justify-end border-t pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setResolutionDialogOpen(false)}
+                className="h-9"
+              >
+                Cancel
+              </Button>
+              <Button
                 onClick={handleResolveEvent}
                 disabled={!selectedMarketId || !selectedOutcomeId || isSettling}
-                className="h-8"
+                className="h-9"
               >
                 {isSettling ? "Resolving..." : "Resolve Event"}
-              </AlertDialogAction>
+              </Button>
             </div>
-          </AlertDialogContent>
-        </AlertDialog>
+          </SheetContent>
+        </Sheet>
 
         {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto pr-4 space-y-4">
