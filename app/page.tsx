@@ -132,6 +132,7 @@ export default function Page() {
 
   // State for signup modal triggered by referral link
   const [showSignupFromReferral, setShowSignupFromReferral] = React.useState(false)
+  const [forceShowModal, setForceShowModal] = React.useState(false) // Debug: force show modal
 
   // Check for referral code on mount and open signup modal
   React.useEffect(() => {
@@ -669,14 +670,27 @@ export default function Page() {
       </div>
 
       {/* Signup modal for referral links */}
-      {showSignupFromReferral && (
+      {(showSignupFromReferral || forceShowModal) && (
         <RegisterModal
-          open={showSignupFromReferral}
+          open={showSignupFromReferral || forceShowModal}
           onOpenChange={(open) => {
             console.log('[Referral Modal] onOpenChange called with:', open)
-            setShowSignupFromReferral(open)
+            if (!open) {
+              setShowSignupFromReferral(false)
+              setForceShowModal(false)
+            }
           }}
         />
+      )}
+
+      {/* Debug button - remove after testing */}
+      {typeof window !== "undefined" && process.env.NODE_ENV === "development" && (
+        <button
+          onClick={() => setForceShowModal(!forceShowModal)}
+          className="fixed bottom-4 right-4 bg-red-500 text-white px-3 py-2 text-xs rounded z-40 font-semibold"
+        >
+          Toggle Modal Debug
+        </button>
       )}
     </>
   )
