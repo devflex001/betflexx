@@ -1,56 +1,37 @@
 "use client"
 
-import React, { useState } from "react"
+import * as React from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useAuthClient } from "@/lib/auth-client"
 import { AdminLayout } from "@/components/admin-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Separator } from "@/components/ui/separator"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Search,
+  MoreHorizontal,
   Users,
   TrendingUp,
   Wallet,
-  ClipboardCheck,
-  Clock,
-  ChevronLeft,
   ChevronRight,
-  Search,
+  Eye,
+  Filter,
 } from "lucide-react"
+import { ResponsiveModal } from "@/components/ui/responsive-modal"
+import { Id } from "@/convex/_generated/dataModel"
 
-interface ReferralData {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type ReferralData = {
   _id: string
   status: "pending" | "completed"
   amountEarned: number
@@ -63,7 +44,7 @@ interface ReferralData {
   referredUserRole?: string
 }
 
-interface ReferrerDetail {
+type ReferrerDetail = {
   referrerId: string
   phone: string
   name: string
@@ -71,15 +52,190 @@ interface ReferrerDetail {
   totalEarnings: number
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function StatusBadge({ status }: { status: "pending" | "completed" }) {
+  if (status === "completed") {
+    return (
+      <Badge
+        variant="outline"
+        className="text-[10px] font-semibold text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
+      >
+        Completed
+      </Badge>
+    )
+  }
+  return (
+    <Badge
+      variant="outline"
+      className="text-[10px] font-semibold text-amber-600 border-amber-500/30 bg-amber-500/10"
+    >
+      Pending
+    </Badge>
+  )
+}
+
+// ─── Referrer Details Modal ───────────────────────────────────────────────────
+
+interface ReferrerDetailsModalProps {
+  referrer: ReferrerDetail | null
+  open: boolean
+  onClose: () => void
+  userId: string
+}
+
+function ReferrerDetailsModal({
+  referrer,
+  open,
+  onClose,
+  userId,
+}: ReferrerDetailsModalProps) {
+  const referrerPerformance = useQuery(
+    api.referrals.getReferrerPerformance,
+    referrer
+      ? {
+        userId: userId as Id<"users">,
+        referrerId: referrer.referrerId as Id<"users">,
+      }
+      : "skip"
+  )
+
+  if (!referrer) return null
+
+  return (
+    <ResponsiveModal
+      open={open}
+      onOpenChange={(v) => !v && onClose()}
+      title="Referrer Performance"
+      description={`${referrer.name} (${referrer.phone})`}
+    >
+      <div className="space-y-4 py-2 text-xs">
+        {!referrerPerformance ? (
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-6 w-full" />
+          </div>
+        ) : (
+          <>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="border border-border rounded-lg p-2.5 space-y-1 bg-muted/30">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground">
+                  Total Referrals
+                </span>
+                <p className="text-lg font-bold tracking-tight font-mono">
+                  {referrerPerformance.totalReferrals}
+                </p>
+              </div>
+
+              <div className="border border-border rounded-lg p-2.5 space-y-1 bg-muted/30">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground">
+                  Completed
+                </span>
+                <p className="text-lg font-bold tracking-tight font-mono text-emerald-600">
+                  {referrerPerformance.completedCount}
+                </p>
+              </div>
+
+              <div className="border border-border rounded-lg p-2.5 space-y-1 bg-muted/30">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground">
+                  Conversion Rate
+                </span>
+                <p className="text-lg font-bold tracking-tight font-mono">
+                  {referrerPerformance.conversionRate}%
+                </p>
+              </div>
+
+              <div className="border border-border rounded-lg p-2.5 space-y-1 bg-muted/30">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground">
+                  Total Earnings
+                </span>
+                <p className="text-lg font-bold tracking-tight font-mono text-emerald-600">
+                  KES {referrerPerformance.totalEarnings.toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Referral Details Table */}
+            <div className="rounded-lg border border-border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse min-w-[360px]">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40 text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+                      <th className="py-2.5 px-3">Referred User</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3">Amount</th>
+                      <th className="py-2.5 px-3">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {referrerPerformance.referralDetails.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-8 text-center text-muted-foreground">
+                          No referrals
+                        </td>
+                      </tr>
+                    ) : (
+                      referrerPerformance.referralDetails.map((referral) => (
+                        <tr
+                          key={referral._id}
+                          className="hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="py-2.5 px-3 font-semibold font-mono text-foreground max-w-[140px] truncate">
+                            {referral.referredUserPhone}
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <StatusBadge status={referral.status} />
+                          </td>
+                          <td className="py-2.5 px-3 font-semibold text-foreground">
+                            KES {referral.amountEarned.toLocaleString()}
+                          </td>
+                          <td className="py-2.5 px-3 text-muted-foreground">
+                            <div className="flex flex-col gap-0.5">
+                              <p>{referral.createdDate}</p>
+                              {referral.completedDate && (
+                                <p className="text-[9px]">
+                                  Completed: {referral.completedDate}
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </ResponsiveModal>
+  )
+}
+
+// ─── Main Referrals Panel ─────────────────────────────────────────────────────
+
+const PAGE_SIZE = 15
+
 export default function AdminReferralsPage() {
   const { user } = useAuthClient()
-  const [currentPage, setCurrentPage] = useState(0)
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "completed">("all")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedReferrer, setSelectedReferrer] = useState<ReferrerDetail | null>(null)
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
+  const [search, setSearch] = React.useState("")
+  const [debouncedSearch, setDebouncedSearch] = React.useState("")
+  const [statusFilter, setStatusFilter] = React.useState<"all" | "pending" | "completed">(
+    "all"
+  )
+  const [currentPage, setCurrentPage] = React.useState(0)
+  const [selectedReferrer, setSelectedReferrer] = React.useState<ReferrerDetail | null>(null)
+  const [isDetailOpen, setIsDetailOpen] = React.useState(false)
 
-  const PAGE_SIZE = 25
+  React.useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 350)
+    return () => clearTimeout(t)
+  }, [search])
 
   // Queries
   const referralSummary = useQuery(
@@ -87,29 +243,24 @@ export default function AdminReferralsPage() {
     user?._id ? { userId: user._id } : "skip"
   )
 
-  const referralTrends = useQuery(
-    api.referrals.getReferralTrends,
-    user?._id ? { userId: user._id } : "skip"
-  )
-
   const allReferrals = useQuery(
     api.referrals.getAllReferrals,
     user?._id
       ? {
-          userId: user._id,
-          status: statusFilter,
-          limit: PAGE_SIZE,
-          offset: currentPage * PAGE_SIZE,
-        }
+        userId: user._id,
+        status: statusFilter,
+        limit: PAGE_SIZE,
+        offset: currentPage * PAGE_SIZE,
+      }
       : "skip"
   )
 
   // Filter displayed referrals based on search
   const filteredReferrals = React.useMemo(() => {
     if (!allReferrals?.referrals) return []
-    if (!searchQuery) return allReferrals.referrals
+    if (!debouncedSearch) return allReferrals.referrals
 
-    const query = searchQuery.toLowerCase()
+    const query = debouncedSearch.toLowerCase()
     return allReferrals.referrals.filter(
       (r) =>
         r.referrerPhone?.toLowerCase().includes(query) ||
@@ -117,18 +268,18 @@ export default function AdminReferralsPage() {
         r.referredUserPhone?.toLowerCase().includes(query) ||
         r.referredUserName?.toLowerCase().includes(query)
     )
-  }, [allReferrals?.referrals, searchQuery])
+  }, [allReferrals?.referrals, debouncedSearch])
 
   const handleViewDetails = (referrer: ReferrerDetail) => {
     setSelectedReferrer(referrer)
-    setIsDetailDialogOpen(true)
+    setIsDetailOpen(true)
   }
 
   if (!user) {
     return (
-      <AdminLayout pageTitle="Referrals">
+      <AdminLayout>
         <div className="flex items-center justify-center h-full">
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground text-sm">Loading...</p>
         </div>
       </AdminLayout>
     )
@@ -138,516 +289,389 @@ export default function AdminReferralsPage() {
 
   return (
     <AdminLayout pageTitle="Referrals">
-      <div className="flex-1 flex flex-col gap-6 p-6 overflow-y-auto bg-background">
-        {/* Page header */}
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold">Referral Program</h1>
-          <p className="text-xs text-muted-foreground">
-            Track all referrals, earnings, and referrer performance
-          </p>
+      <div className="space-y-4 w-full">
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="space-y-0.5">
+            <h1 className="text-lg font-bold tracking-tight flex items-center gap-2">
+              <Users className="size-5 text-primary" />
+              Referral Program
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Track all referrals and referrer performance.
+            </p>
+          </div>
+
+          {/* Search */}
+          <div className="relative flex-1 sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <Input
+              id="referrals-search"
+              placeholder="Search by phone or name..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setCurrentPage(0)
+              }}
+              className="pl-8 h-9 text-xs focus-visible:ring-primary"
+            />
+          </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Total Referrals */}
-          <Card className="border border-border">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">Total Referrals</CardTitle>
-                <Users className="size-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-12" />
-              ) : (
-                <p className="text-2xl font-bold">{referralSummary?.totalReferrals ?? 0}</p>
-              )}
-              {referralSummary && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {referralSummary.completedReferrals} completed
-                </p>
-              )}
-            </CardContent>
-          </Card>
+        <Separator />
 
-          {/* Completed Referrals */}
-          <Card className="border border-border">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">Completed</CardTitle>
-                <ClipboardCheck className="size-4 text-green-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-12" />
-              ) : (
-                <p className="text-2xl font-bold text-green-600">
-                  {referralSummary?.completedReferrals ?? 0}
-                </p>
-              )}
-              {referralSummary && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {(
-                    ((referralSummary.completedReferrals ?? 0) / (referralSummary.totalReferrals || 1)) *
-                    100
-                  ).toFixed(1)}
-                  % conversion
-                </p>
-              )}
-            </CardContent>
-          </Card>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="border border-border rounded-lg p-3.5 space-y-1 bg-card">
+            <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
+              <Users className="size-3.5 text-primary" /> Total Referrals
+            </span>
+            {isLoading ? (
+              <Skeleton className="h-6 w-16" />
+            ) : (
+              <p className="text-lg font-bold tracking-tight font-mono">
+                {referralSummary?.totalReferrals ?? 0}
+              </p>
+            )}
+          </div>
 
-          {/* Pending Referrals */}
-          <Card className="border border-border">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                <Clock className="size-4 text-amber-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-12" />
-              ) : (
-                <p className="text-2xl font-bold text-amber-600">
-                  {referralSummary?.pendingReferrals ?? 0}
-                </p>
-              )}
-              {referralSummary && (
-                <p className="text-xs text-muted-foreground mt-1">Awaiting signup</p>
-              )}
-            </CardContent>
-          </Card>
+          <div className="border border-border rounded-lg p-3.5 space-y-1 bg-card">
+            <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
+              <TrendingUp className="size-3.5 text-emerald-500" /> Completed
+            </span>
+            {isLoading ? (
+              <Skeleton className="h-6 w-16" />
+            ) : (
+              <p className="text-lg font-bold tracking-tight font-mono text-emerald-600">
+                {referralSummary?.completedReferrals ?? 0}
+              </p>
+            )}
+          </div>
 
-          {/* Total Earnings Awarded */}
-          <Card className="border border-border">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">Total Awarded</CardTitle>
-                <Wallet className="size-4 text-emerald-600" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <p className="text-2xl font-bold text-emerald-600">
-                  KES {(referralSummary?.totalEarningsAwarded ?? 0).toLocaleString()}
-                </p>
-              )}
-              {referralSummary?.completedReferrals && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Avg: KES {Math.round(referralSummary.averageReward).toLocaleString()}
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <div className="border border-border rounded-lg p-3.5 space-y-1 bg-card">
+            <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
+              <Wallet className="size-3.5 text-blue-500" /> Total Awarded
+            </span>
+            {isLoading ? (
+              <Skeleton className="h-6 w-24" />
+            ) : (
+              <p className="text-lg font-bold tracking-tight font-mono text-blue-600">
+                KES {(referralSummary?.totalEarningsAwarded ?? 0).toLocaleString()}
+              </p>
+            )}
+          </div>
+
+          <div className="border border-border rounded-lg p-3.5 space-y-1 bg-card">
+            <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
+              <TrendingUp className="size-3.5 text-amber-500" /> Avg Reward
+            </span>
+            {isLoading ? (
+              <Skeleton className="h-6 w-24" />
+            ) : (
+              <p className="text-lg font-bold tracking-tight font-mono text-amber-600">
+                KES {Math.round(referralSummary?.averageReward ?? 0).toLocaleString()}
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* Tabs for different views */}
-        <Tabs defaultValue="all-referrals" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="all-referrals">All Referrals</TabsTrigger>
-            <TabsTrigger value="top-referrers">Top Referrers</TabsTrigger>
-          </TabsList>
+        <Separator />
 
-          {/* All Referrals Tab */}
-          <TabsContent value="all-referrals" className="space-y-4">
-            <Card className="border border-border">
-              <CardHeader className="pb-4 border-b border-border">
-                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">All Referrals</CardTitle>
-                    <CardDescription className="text-xs">
-                      View and manage all referral activities
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2 w-full sm:w-auto">
-                    <div className="relative flex-1 sm:flex-none">
-                      <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search phone..."
-                        className="pl-8 h-9 text-sm w-full sm:w-48"
-                        value={searchQuery}
-                        onChange={(e) => {
-                          setSearchQuery(e.target.value)
-                          setCurrentPage(0)
-                        }}
-                      />
-                    </div>
-                    <Select
-                      value={statusFilter}
-                      onValueChange={(value) => {
-                        setStatusFilter(value as "all" | "pending" | "completed")
-                        setCurrentPage(0)
-                      }}
-                    >
-                      <SelectTrigger className="h-9 w-32 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardHeader>
+        {/* All Referrals Section */}
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h2 className="text-sm font-bold tracking-tight">All Referrals</h2>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs font-semibold"
+                >
+                  <Filter className="size-3" />
+                  Status: {statusFilter === "all" ? "All" : statusFilter}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40 text-xs">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setStatusFilter("all")
+                    setCurrentPage(0)
+                  }}
+                  className={
+                    statusFilter === "all" ? "bg-primary/10 text-primary" : ""
+                  }
+                >
+                  All Status
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setStatusFilter("completed")
+                    setCurrentPage(0)
+                  }}
+                  className={
+                    statusFilter === "completed"
+                      ? "bg-primary/10 text-primary"
+                      : ""
+                  }
+                >
+                  Completed
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setStatusFilter("pending")
+                    setCurrentPage(0)
+                  }}
+                  className={
+                    statusFilter === "pending" ? "bg-primary/10 text-primary" : ""
+                  }
+                >
+                  Pending
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-              <CardContent className="pt-4">
-                {isLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} className="h-12 w-full rounded-md" />
-                    ))}
-                  </div>
-                ) : filteredReferrals.length === 0 ? (
-                  <div className="py-12 text-center">
-                    <Users className="size-8 text-muted-foreground/40 mx-auto mb-2" />
-                    <p className="text-sm font-medium text-muted-foreground">No referrals found</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {searchQuery ? "Try adjusting your search" : "Referrals will appear here"}
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="border-border hover:bg-transparent">
-                            <TableHead className="text-xs font-semibold">Referrer</TableHead>
-                            <TableHead className="text-xs font-semibold">Referred User</TableHead>
-                            <TableHead className="text-xs font-semibold">Status</TableHead>
-                            <TableHead className="text-xs font-semibold text-right">Reward</TableHead>
-                            <TableHead className="text-xs font-semibold">Date</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredReferrals.map((referral) => (
-                            <TableRow key={referral._id} className="border-border hover:bg-muted/40">
-                              <TableCell className="text-xs">
-                                <div className="flex flex-col gap-0.5">
-                                  <p className="font-medium text-foreground">{referral.referrerName}</p>
-                                  <p className="text-muted-foreground font-mono text-[11px]">
-                                    {referral.referrerPhone}
-                                  </p>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-xs">
-                                <div className="flex flex-col gap-0.5">
-                                  <p className="font-medium text-foreground">{referral.referredUserName}</p>
-                                  <p className="text-muted-foreground font-mono text-[11px]">
-                                    {referral.referredUserPhone}
-                                  </p>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={referral.status === "completed" ? "default" : "secondary"}
-                                  className={
-                                    referral.status === "completed"
-                                      ? "bg-green-100 text-green-700 hover:bg-green-100 border-green-200"
-                                      : "bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200"
-                                  }
-                                >
-                                  {referral.status === "completed" ? "Completed" : "Pending"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-xs text-right font-semibold text-foreground">
-                                KES {referral.amountEarned.toLocaleString()}
-                              </TableCell>
-                              <TableCell className="text-xs text-muted-foreground">
-                                <div className="flex flex-col gap-0.5">
-                                  <p>{referral.createdDate}</p>
-                                  {referral.completedDate && (
-                                    <p className="text-[10px] text-muted-foreground">
-                                      Completed: {referral.completedDate}
-                                    </p>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-
-                    {/* Pagination */}
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
-                      <p className="text-xs text-muted-foreground">
-                        Showing {currentPage * PAGE_SIZE + 1} to{" "}
-                        {Math.min((currentPage + 1) * PAGE_SIZE, allReferrals?.total ?? 0)} of{" "}
-                        {allReferrals?.total ?? 0}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                          disabled={currentPage === 0}
-                          className="h-8 gap-1"
-                        >
-                          <ChevronLeft className="size-3.5" />
-                          Previous
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            setCurrentPage(
-                              Math.min(
-                                currentPage + 1,
-                                Math.ceil((allReferrals?.total ?? 0) / PAGE_SIZE) - 1
-                              )
-                            )
-                          }
-                          disabled={!allReferrals?.hasMore}
-                          className="h-8 gap-1"
-                        >
-                          Next
-                          <ChevronRight className="size-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Top Referrers Tab */}
-          <TabsContent value="top-referrers" className="space-y-4">
-            <Card className="border border-border">
-              <CardHeader className="pb-4 border-b border-border">
-                <CardTitle className="text-lg">Top Referrers</CardTitle>
-                <CardDescription className="text-xs">
-                  Users with the most successful referrals
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="pt-4">
-                {isLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} className="h-16 w-full rounded-md" />
-                    ))}
-                  </div>
-                ) : !referralSummary?.topReferrers || referralSummary.topReferrers.length === 0 ? (
-                  <div className="py-12 text-center">
-                    <TrendingUp className="size-8 text-muted-foreground/40 mx-auto mb-2" />
-                    <p className="text-sm font-medium text-muted-foreground">No referrers yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {referralSummary.topReferrers.map((referrer, index) => (
-                      <div
-                        key={referrer.referrerId}
-                        className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/40 transition-colors cursor-pointer"
-                        onClick={() => handleViewDetails(referrer)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
-                            #{index + 1}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-foreground">{referrer.name}</p>
-                            <p className="text-xs text-muted-foreground font-mono">{referrer.phone}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 flex-shrink-0">
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">Referrals</p>
-                            <p className="text-lg font-bold text-foreground">
-                              {referrer.referralCount}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">Earnings</p>
-                            <p className="text-lg font-bold text-emerald-600">
-                              KES {referrer.totalEarnings.toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {/* Referral Trends Card */}
-        {referralTrends && referralTrends.length > 0 && (
-          <Card className="border border-border">
-            <CardHeader className="pb-4 border-b border-border">
-              <CardTitle className="text-lg">Referral Trends (30 Days)</CardTitle>
-              <CardDescription className="text-xs">
-                Referrals created and completed over time
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="pt-4">
+          {/* Mobile Card List (< sm) */}
+          <div className="sm:hidden space-y-2">
+            {isLoading && (
               <div className="space-y-2">
-                {referralTrends.map((trend) => {
-                  const maxCount = Math.max(
-                    ...referralTrends.map((t) => Math.max(t.created, t.completed)),
-                    1
-                  )
-                  return (
-                    <div key={trend.date} className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground font-medium">{trend.date}</span>
-                        <span className="text-foreground font-semibold">
-                          Created: {trend.created} | Completed: {trend.completed}
-                        </span>
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            )}
+
+            {!isLoading && filteredReferrals.length === 0 && (
+              <div className="py-12 text-center text-muted-foreground text-xs">
+                No referrals found.
+              </div>
+            )}
+
+            {filteredReferrals.map((referral) => (
+              <div
+                key={referral._id}
+                className="rounded-lg border border-border bg-card p-3 space-y-2.5 cursor-pointer hover:bg-muted/10 transition-colors"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs font-semibold font-mono text-foreground truncate">
+                      {referral.referrerName}
+                    </span>
+                  </div>
+                  <StatusBadge status={referral.status} />
+                </div>
+
+                <div className="space-y-1 text-[11px]">
+                  <p className="text-muted-foreground">
+                    Referred: {referral.referredUserPhone}
+                  </p>
+                  <p className="text-muted-foreground">{referral.createdDate}</p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-foreground">
+                    KES {referral.amountEarned.toLocaleString()}
+                  </p>
+                  <ChevronRight className="size-3 text-muted-foreground" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table (≥ sm) */}
+          <div className="hidden sm:block rounded-lg border border-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse min-w-[640px]">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40 text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+                    <th className="py-3 px-4">Referrer</th>
+                    <th className="py-3 px-4">Referred User</th>
+                    <th className="py-3 px-4 hidden lg:table-cell">Date</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Reward</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {isLoading && (
+                    <tr>
+                      <td colSpan={6} className="py-8">
+                        <div className="space-y-2">
+                          <Skeleton className="h-12 w-full" />
+                          <Skeleton className="h-12 w-full" />
+                          <Skeleton className="h-12 w-full" />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+
+                  {!isLoading && filteredReferrals.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-16 text-center text-muted-foreground text-xs"
+                      >
+                        No referrals found.
+                      </td>
+                    </tr>
+                  )}
+
+                  {filteredReferrals.map((referral) => (
+                    <tr key={referral._id} className="hover:bg-muted/30 transition-colors">
+                      <td className="py-3 px-4 font-semibold font-mono text-foreground max-w-[140px] truncate">
+                        {referral.referrerPhone}
+                      </td>
+                      <td className="py-3 px-4 font-mono text-foreground max-w-[140px] truncate">
+                        {referral.referredUserPhone}
+                      </td>
+                      <td className="py-3 px-4 text-muted-foreground hidden lg:table-cell">
+                        {referral.createdDate}
+                      </td>
+                      <td className="py-3 px-4">
+                        <StatusBadge status={referral.status} />
+                      </td>
+                      <td className="py-3 px-4 font-semibold text-right text-foreground">
+                        KES {referral.amountEarned.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-7 hover:bg-muted"
+                            >
+                              <MoreHorizontal className="size-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44 text-xs">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                // View referrer details
+                                if (referralSummary?.topReferrers) {
+                                  const referrer = referralSummary.topReferrers.find(
+                                    (r) => r.phone === referral.referrerPhone
+                                  )
+                                  if (referrer) {
+                                    handleViewDetails(referrer)
+                                  }
+                                }
+                              }}
+                              className="gap-2 cursor-pointer"
+                            >
+                              <Eye className="size-3.5 text-muted-foreground" />
+                              View Referrer Details
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Pagination */}
+          {!isLoading && (
+            <div className="flex items-center justify-between pt-3 border-t border-border">
+              <p className="text-xs text-muted-foreground">
+                Showing {currentPage * PAGE_SIZE + 1} to{" "}
+                {Math.min((currentPage + 1) * PAGE_SIZE, allReferrals?.total ?? 0)} of{" "}
+                {allReferrals?.total ?? 0}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                  disabled={currentPage === 0}
+                  className="h-8 text-xs"
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage(
+                      Math.min(
+                        currentPage + 1,
+                        Math.ceil((allReferrals?.total ?? 0) / PAGE_SIZE) - 1
+                      )
+                    )
+                  }
+                  disabled={!allReferrals?.hasMore}
+                  className="h-8 text-xs"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Top Referrers Section */}
+        {referralSummary?.topReferrers && referralSummary.topReferrers.length > 0 && (
+          <>
+            <Separator />
+
+            <div className="space-y-2.5">
+              <h2 className="text-sm font-bold tracking-tight">Top Referrers</h2>
+
+              <div className="space-y-2">
+                {referralSummary.topReferrers.map((referrer, idx) => (
+                  <div
+                    key={referrer.referrerId}
+                    className="rounded-lg border border-border bg-card p-3 cursor-pointer hover:bg-muted/10 transition-colors"
+                    onClick={() => handleViewDetails(referrer)}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
+                          #{idx + 1}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-foreground">
+                            {referrer.name}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground font-mono">
+                            {referrer.phone}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex gap-1 h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="bg-blue-500 rounded-full"
-                          style={{ width: `${(trend.created / maxCount) * 50}%` }}
-                        />
-                        <div
-                          className="bg-green-500 rounded-full"
-                          style={{ width: `${(trend.completed / maxCount) * 50}%` }}
-                        />
+
+                      <div className="flex items-center gap-4 flex-shrink-0 text-right">
+                        <div className="hidden sm:block">
+                          <p className="text-[10px] text-muted-foreground">Referrals</p>
+                          <p className="text-lg font-bold tracking-tight font-mono">
+                            {referrer.referralCount}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">Earnings</p>
+                          <p className="text-lg font-bold tracking-tight font-mono text-emerald-600">
+                            KES {referrer.totalEarnings.toLocaleString()}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  )
-                })}
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </>
         )}
       </div>
 
-      {/* Referrer Details Dialog */}
-      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Referrer Performance</DialogTitle>
-            <DialogDescription className="text-xs">
-              {selectedReferrer?.name} ({selectedReferrer?.phone})
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedReferrer && (
-            <ReferrerDetailsView
-              referrerId={selectedReferrer.referrerId as any}
-              userId={user._id}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Referrer Details Modal */}
+      <ReferrerDetailsModal
+        referrer={selectedReferrer}
+        open={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        userId={user._id}
+      />
     </AdminLayout>
-  )
-}
-
-// Component to display referrer details
-function ReferrerDetailsView({
-  referrerId,
-  userId,
-}: {
-  referrerId: string
-  userId: string
-}) {
-  const referrerPerformance = useQuery(
-    api.referrals.getReferrerPerformance,
-    {
-      userId: userId as any,
-      referrerId: referrerId as any,
-    }
-  )
-
-  if (!referrerPerformance) {
-    return (
-      <div className="space-y-3">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-12 w-full rounded-md" />
-        ))}
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="p-3 rounded-lg border border-border bg-muted/30">
-          <p className="text-xs text-muted-foreground mb-1">Total Referrals</p>
-          <p className="text-2xl font-bold">{referrerPerformance.totalReferrals}</p>
-        </div>
-        <div className="p-3 rounded-lg border border-border bg-muted/30">
-          <p className="text-xs text-muted-foreground mb-1">Completed</p>
-          <p className="text-2xl font-bold text-green-600">
-            {referrerPerformance.completedCount}
-          </p>
-        </div>
-        <div className="p-3 rounded-lg border border-border bg-muted/30">
-          <p className="text-xs text-muted-foreground mb-1">Conversion Rate</p>
-          <p className="text-2xl font-bold">{referrerPerformance.conversionRate}%</p>
-        </div>
-        <div className="p-3 rounded-lg border border-border bg-muted/30">
-          <p className="text-xs text-muted-foreground mb-1">Total Earnings</p>
-          <p className="text-2xl font-bold text-emerald-600">
-            KES {referrerPerformance.totalEarnings.toLocaleString()}
-          </p>
-        </div>
-      </div>
-
-      {/* Referral Details Table */}
-      <div className="border border-border rounded-lg overflow-hidden">
-        <div className="bg-muted/40 border-b border-border px-4 py-3">
-          <p className="text-sm font-semibold">Referral Details</p>
-        </div>
-        <Table>
-          <TableHeader>
-            <TableRow className="border-border hover:bg-transparent bg-muted/20">
-              <TableHead className="text-xs">Referred User</TableHead>
-              <TableHead className="text-xs">Status</TableHead>
-              <TableHead className="text-xs">Amount</TableHead>
-              <TableHead className="text-xs">Date</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {referrerPerformance.referralDetails.map((referral) => (
-              <TableRow key={referral._id} className="border-border">
-                <TableCell className="text-xs">
-                  <div className="flex flex-col gap-0.5">
-                    <p className="font-medium">{referral.referredUserPhone}</p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={referral.status === "completed" ? "default" : "secondary"}
-                    className={
-                      referral.status === "completed"
-                        ? "bg-green-100 text-green-700 hover:bg-green-100 border-green-200 text-xs"
-                        : "bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-xs"
-                    }
-                  >
-                    {referral.status === "completed" ? "✓ Done" : "Pending"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-xs font-semibold">
-                  KES {referral.amountEarned.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  <div className="flex flex-col gap-0.5">
-                    <p>{referral.createdDate}</p>
-                    {referral.completedDate && (
-                      <p className="text-[10px]">Completed: {referral.completedDate}</p>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
   )
 }
