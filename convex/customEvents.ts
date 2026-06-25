@@ -876,41 +876,48 @@ export const getEventBets = query({
   },
 })
 
-// Settle event: mark which market outcome won
+// Settle event: mark which market outcomes won
 // This will automatically settle all related bets
 export const settleCustomEvent = mutation({
   args: {
     eventId: v.id("customEvents"),
-    winningOutcomeId: v.string(), // The outcomeId that won
-    marketId: v.id("customMarkets"), // The market that was resolved
+    marketOutcomes: v.array(v.object({
+      marketId: v.id("customMarkets"),
+      winningOutcomeIds: v.array(v.string()), // Multiple outcomes can win in same market
+    })),
   },
   handler: async (ctx, args) => {
     const event = await ctx.db.get(args.eventId)
     if (!event) throw new Error("Event not found")
     if (event.eventStatus === "finished") throw new Error("Event already settled")
 
-    const market = await ctx.db.get(args.marketId)
-    if (!market || market.eventId !== args.eventId) throw new Error("Market not found for this event")
+    // Validate all markets and outcomes exist
+    for (const resolution of args.marketOutcomes) {
+      const market = await ctx.db.get(resolution.marketId)
+      if (!market || market.eventId !== args.eventId) {
+        throw new Error(`Market not found for this event`)
+      }
 
-    const winningOutcome = await ctx.db
-      .query("customOdds")
-      .withIndex("by_eventId", (q) => q.eq("eventId", args.eventId))
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("outcomeId"), args.winningOutcomeId),
-          q.eq(q.field("marketId"), args.marketId)
-        )
-      )
-      .first()
+      for (const outcomeId of resolution.winningOutcomeIds) {
+        const outcome = await ctx.db
+          .query("customOdds")
+          .withIndex("by_eventId", (q) => q.eq("eventId", args.eventId))
+          .filter((q) =>
+            q.and(
+              q.eq(q.field("outcomeId"), outcomeId),
+              q.eq(q.field("marketId"), resolution.marketId)
+            )
+          )
+          .first()
 
-    if (!winningOutcome) throw new Error("Winning outcome not found")
+        if (!outcome) throw new Error(`Outcome ${outcomeId} not found in market`)
+      }
+    }
 
-    // Update event status to finished with winning outcome
+    // Update event status to finished
     await ctx.db.patch(args.eventId, {
       eventStatus: "finished",
       settledAt: Date.now(),
-      winningMarketId: args.marketId,
-      winningOutcomeId: args.winningOutcomeId,
     })
 
     // Get all active bets for this event
@@ -919,13 +926,19 @@ export const settleCustomEvent = mutation({
       bet.selections.some((sel: any) => sel.matchId === args.eventId && bet.status === "active")
     )
 
+    // Flatten all winning outcomeIds across markets
+    const winningOutcomeIds = new Set<string>()
+    for (const resolution of args.marketOutcomes) {
+      for (const outcomeId of resolution.winningOutcomeIds) {
+        winningOutcomeIds.add(outcomeId)
+      }
+    }
+
     // Settle each bet
     for (const bet of eventBets) {
-      // Check if user's selection matches the winning outcome
+      // Check if user's selection matches any of the winning outcomes
       const userSelected = bet.selections.find(
-        (sel: any) =>
-          sel.matchId === args.eventId &&
-          sel.outcomeId === args.winningOutcomeId
+        (sel: any) => sel.matchId === args.eventId && winningOutcomeIds.has(sel.outcomeId)
       )
 
       const isWon = !!userSelected
@@ -1007,6 +1020,12 @@ export const settleCustomEvent = mutation({
       message: `Event ${event.homeTeam} vs ${event.awayTeam} has been settled. ${eventBets.length} bets processed.`,
       href: `/admin/custom-events/${args.eventId}`,
       dedupeKey: `custom-event-settled:${args.eventId}`,
+    })
+
+    return args.eventId
+  },
+})gs.eventId}`,
+      dedupeKey: `custom - event - settled:${ args.eventId } `,
       metadata: {
         sourceMatchId: args.eventId,
         amount: eventBets.length,
@@ -1018,8 +1037,10 @@ export const settleCustomEvent = mutation({
 })
 
 function formatKes(amount: number) {
-  return `KES ${amount.toLocaleString("en-KE", {
+  return `KES ${
+  amount.toLocaleString("en-KE", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })}`
+  })
+} `
 }

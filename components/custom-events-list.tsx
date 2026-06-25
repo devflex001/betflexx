@@ -835,17 +835,26 @@ export function CustomEventsList({
         onOpenChange={setResolveModalOpen}
         event={eventToResolve}
         isResolving={isResolving}
-        selectedOutcomes={selectedOutcomes}
+        selectedOutcomesByMarket={selectedOutcomesByMarket}
         marketSearch={marketSearch}
         onMarketSearchChange={setMarketSearch}
         onOutcomeToggle={(marketId, outcomeId) => {
-          const newSelected = new Map(selectedOutcomes)
-          if (newSelected.get(marketId) === outcomeId) {
+          const newSelected = new Map(selectedOutcomesByMarket)
+          const marketOutcomes = newSelected.get(marketId) || new Set()
+
+          if (marketOutcomes.has(outcomeId)) {
+            marketOutcomes.delete(outcomeId)
+          } else {
+            marketOutcomes.add(outcomeId)
+          }
+
+          if (marketOutcomes.size === 0) {
             newSelected.delete(marketId)
           } else {
-            newSelected.set(marketId, outcomeId)
+            newSelected.set(marketId, marketOutcomes)
           }
-          setSelectedOutcomes(newSelected)
+
+          setSelectedOutcomesByMarket(newSelected)
         }}
         onResolve={handleResolveEvent}
       />
@@ -859,7 +868,7 @@ interface ResolveModalProps {
   onOpenChange: (open: boolean) => void
   event: any | null
   isResolving: boolean
-  selectedOutcomes: Map<string, string> // marketId -> outcomeId
+  selectedOutcomesByMarket: Map<string, Set<string>> // marketId -> Set of outcomeIds
   marketSearch: string
   onMarketSearchChange: (search: string) => void
   onOutcomeToggle: (marketId: string, outcomeId: string) => void
@@ -871,7 +880,7 @@ function ResolveModal({
   onOpenChange,
   event,
   isResolving,
-  selectedOutcomes,
+  selectedOutcomesByMarket,
   marketSearch,
   onMarketSearchChange,
   onOutcomeToggle,
@@ -919,15 +928,20 @@ function ResolveModal({
       .sort((a: any, b: any) => a.priority - b.priority || a.name.localeCompare(b.name))
   }, [markets, marketSearch])
 
+  // Count total selected outcomes
+  const totalSelected = React.useMemo(() => {
+    return Array.from(selectedOutcomesByMarket.values()).reduce((sum, set) => sum + set.size, 0)
+  }, [selectedOutcomesByMarket])
+
   const content = (
     <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
       {/* Header */}
       <div className="shrink-0 space-y-3 border-b border-border p-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm">Select Winning Outcomes</h3>
-          {selectedOutcomes.size > 0 && (
+          {totalSelected > 0 && (
             <Badge className="text-[10px] font-bold bg-primary/10 text-primary border-primary/30">
-              {selectedOutcomes.size} selected
+              {totalSelected} selected
             </Badge>
           )}
         </div>
@@ -960,14 +974,14 @@ function ResolveModal({
 
           {filteredMarkets.map((market: any) => {
             const marketOutcomes = oddsByMarket.get(market._id) || []
-            const isSelected = selectedOutcomes.has(market._id)
-            const selectedOutcomeId = selectedOutcomes.get(market._id)
+            const selectedInMarket = selectedOutcomesByMarket.get(market._id) || new Set()
+            const hasSelection = selectedInMarket.size > 0
 
             return (
               <section key={market._id} className="rounded-lg border border-border bg-card">
                 <div className={cn(
                   "flex items-center justify-between gap-3 border-b border-border px-4 py-2.5 transition-colors",
-                  isSelected && "bg-primary/5"
+                  hasSelection && "bg-primary/5"
                 )}>
                   <div className="min-w-0 flex-1">
                     <h4 className="text-xs font-semibold text-foreground truncate">
@@ -977,9 +991,9 @@ function ResolveModal({
                       {market.marketTypes?.join(", ") || market.marketType}
                     </p>
                   </div>
-                  {isSelected && (
+                  {hasSelection && (
                     <Badge className="shrink-0 text-[9px] font-bold bg-primary text-primary-foreground border-none">
-                      ✓
+                      {selectedInMarket.size}
                     </Badge>
                   )}
                 </div>
@@ -995,25 +1009,28 @@ function ResolveModal({
                     "grid gap-2 p-3",
                     marketOutcomes.length === 2 || marketOutcomes.length === 4 ? "grid-cols-2" : "grid-cols-3"
                   )}>
-                    {marketOutcomes.map((outcome: any) => (
-                      <button
-                        key={outcome._id}
-                        onClick={() => onOutcomeToggle(market._id, outcome.outcomeId)}
-                        className={cn(
-                          "flex flex-col items-center justify-center gap-1 h-12 py-1 px-2 rounded-md border transition-all text-center min-w-0",
-                          selectedOutcomeId === outcome.outcomeId
-                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                            : "bg-card border-border hover:border-muted-foreground/30 text-foreground"
-                        )}
-                      >
-                        <span className="truncate text-[9px] font-semibold leading-none">
-                          {outcome.outcomeName}
-                        </span>
-                        <span className="font-mono text-[10px] font-bold leading-none">
-                          {outcome.oddValue.toFixed(2)}
-                        </span>
-                      </button>
-                    ))}
+                    {marketOutcomes.map((outcome: any) => {
+                      const isSelected = selectedInMarket.has(outcome.outcomeId)
+                      return (
+                        <button
+                          key={outcome._id}
+                          onClick={() => onOutcomeToggle(market._id, outcome.outcomeId)}
+                          className={cn(
+                            "flex flex-col items-center justify-center gap-1 h-12 py-1 px-2 rounded-md border transition-all text-center min-w-0",
+                            isSelected
+                              ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                              : "bg-card border-border hover:border-muted-foreground/30 text-foreground"
+                          )}
+                        >
+                          <span className="truncate text-[9px] font-semibold leading-none">
+                            {outcome.outcomeName}
+                          </span>
+                          <span className="font-mono text-[10px] font-bold leading-none">
+                            {outcome.oddValue.toFixed(2)}
+                          </span>
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </section>
@@ -1037,9 +1054,9 @@ function ResolveModal({
           size="sm"
           className="text-xs h-8 font-semibold"
           onClick={onResolve}
-          disabled={isResolving || selectedOutcomes.size === 0}
+          disabled={isResolving || totalSelected === 0}
         >
-          {isResolving ? "Resolving..." : `Resolve ${selectedOutcomes.size > 0 ? `(${selectedOutcomes.size})` : ""}`}
+          {isResolving ? "Resolving..." : `Resolve ${totalSelected > 0 ? `(${totalSelected})` : ""}`}
         </Button>
       </div>
     </div>
