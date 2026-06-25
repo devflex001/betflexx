@@ -397,10 +397,12 @@ export const verifyReferralCode = query({
       return { valid: false };
     }
 
+    const rewardAmount = await getReferralReward(ctx);
+
     return {
       valid: true,
       referrerPhone: referrer.phone,
-      rewardAmount: REFERRAL_REWARD,
+      rewardAmount,
     };
   },
 });
