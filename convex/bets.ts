@@ -19,21 +19,27 @@ function getBetLabel(selections: { matchName: string }[]) {
 }
 
 export const getWalletBalance = query({
-  args: {},
-  handler: async (ctx) => {
-    // Get first wallet (deprecated - ideally pass userId from client)
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // Get wallet for this specific user
     const wallet = await ctx.db
       .query("wallets")
-      .first();
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .unique();
     return wallet ? wallet.balance : 0;
   },
 });
 
 export const getMyBets = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
     const bets = await ctx.db
       .query("bets")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .order("desc")
       .take(100);
 
@@ -56,10 +62,13 @@ export const getMyBets = query({
 });
 
 export const getTransactions = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
     const txs = await ctx.db
       .query("transactions")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .order("desc")
       .take(100);
 
@@ -82,7 +91,7 @@ export const getTransactions = query({
 
 export const placeBet = mutation({
   args: {
-    userId: v.optional(v.id("users")),
+    userId: v.id("users"),
     selections: v.array(
       v.object({
         id: v.string(),
@@ -109,7 +118,8 @@ export const placeBet = mutation({
   handler: async (ctx, args) => {
     let wallet = await ctx.db
       .query("wallets")
-      .first();
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .unique();
 
     const balance = wallet ? wallet.balance : 0;
     if (args.stake > balance) throw new Error("Insufficient balance");
@@ -117,7 +127,7 @@ export const placeBet = mutation({
     if (wallet) {
       await ctx.db.patch(wallet._id, { balance: balance - args.stake });
     } else {
-      await ctx.db.insert("wallets", { balance: 0 - args.stake });
+      await ctx.db.insert("wallets", { userId: args.userId, balance: 0 - args.stake });
     }
 
     const betId = await ctx.db.insert("bets", {
@@ -164,7 +174,7 @@ export const placeBet = mutation({
 
 export const createTransaction = mutation({
   args: {
-    userId: v.optional(v.id("users")),
+    userId: v.id("users"),
     type: v.union(v.literal("deposit"), v.literal("withdrawal")),
     amount: v.number(),
     phone: v.optional(v.string()),
@@ -193,17 +203,18 @@ export const createTransaction = mutation({
     if (args.status === "success") {
       let wallet = await ctx.db
         .query("wallets")
-        .first();
+        .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+        .unique();
       const currentBalance = wallet ? wallet.balance : 0;
       const change = args.type === "deposit" ? args.amount : -args.amount;
 
       if (wallet) {
         await ctx.db.patch(wallet._id, { balance: currentBalance + change });
       } else {
-        await ctx.db.insert("wallets", { balance: 0 + change });
+        await ctx.db.insert("wallets", { userId: args.userId, balance: 0 + change });
       }
 
-      if (args.userId && args.type === "deposit") {
+      if (args.type === "deposit") {
         await notifyUser(ctx, {
           recipientUserId: args.userId,
           type: "payment",
@@ -262,10 +273,11 @@ export const updateTransactionStatus = mutation({
       errorDetail: args.errorDetail,
     });
 
-    if (args.status === "success" && oldStatus !== "success") {
+    if (args.status === "success" && oldStatus !== "success" && transaction.userId) {
       let wallet = await ctx.db
         .query("wallets")
-        .first();
+        .withIndex("by_userId", (q) => q.eq("userId", transaction.userId))
+        .unique();
       const currentBalance = wallet ? wallet.balance : 0;
       const change =
         transaction.type === "deposit"
@@ -276,11 +288,12 @@ export const updateTransactionStatus = mutation({
         await ctx.db.patch(wallet._id, { balance: currentBalance + change });
       } else {
         await ctx.db.insert("wallets", {
+          userId: transaction.userId,
           balance: 0 + change,
         });
       }
 
-      if (transaction.userId && transaction.type === "deposit") {
+      if (transaction.type === "deposit") {
         await notifyUser(ctx, {
           recipientUserId: transaction.userId,
           type: "payment",
@@ -308,10 +321,11 @@ export const updateTransactionStatus = mutation({
           },
         });
       }
-    } else if (args.status !== "success" && oldStatus === "success") {
+    } else if (args.status !== "success" && oldStatus === "success" && transaction.userId) {
       let wallet = await ctx.db
         .query("wallets")
-        .first();
+        .withIndex("by_userId", (q) => q.eq("userId", transaction.userId))
+        .unique();
       if (wallet) {
         const change =
           transaction.type === "deposit"
@@ -337,10 +351,11 @@ export const settleSingleBet = mutation({
 
     await ctx.db.patch(args.betId, { status: args.status });
 
-    if (args.status === "won") {
+    if (args.status === "won" && bet.userId) {
       let wallet = await ctx.db
         .query("wallets")
-        .first();
+        .withIndex("by_userId", (q) => q.eq("userId", bet.userId))
+        .unique();
       const currentBalance = wallet ? wallet.balance : 0;
       if (wallet) {
         await ctx.db.patch(wallet._id, {
@@ -348,6 +363,7 @@ export const settleSingleBet = mutation({
         });
       } else {
         await ctx.db.insert("wallets", {
+          userId: bet.userId,
           balance: 0 + bet.potentialReturn,
         });
       }
@@ -413,18 +429,19 @@ export const cancelBet = mutation({
 
     await ctx.db.patch(args.betId, { status: "cancelled" });
 
-    let wallet = await ctx.db
-      .query("wallets")
-      .first();
-    const currentBalance = wallet ? wallet.balance : 0;
-
-    if (wallet) {
-      await ctx.db.patch(wallet._id, { balance: currentBalance + bet.stake });
-    } else {
-      await ctx.db.insert("wallets", { balance: 0 + bet.stake });
-    }
-
     if (bet.userId) {
+      let wallet = await ctx.db
+        .query("wallets")
+        .withIndex("by_userId", (q) => q.eq("userId", bet.userId))
+        .unique();
+      const currentBalance = wallet ? wallet.balance : 0;
+
+      if (wallet) {
+        await ctx.db.patch(wallet._id, { balance: currentBalance + bet.stake });
+      } else {
+        await ctx.db.insert("wallets", { userId: bet.userId, balance: 0 + bet.stake });
+      }
+
       await notifyUser(ctx, {
         recipientUserId: bet.userId as Id<"users">,
         type: "bet",
@@ -469,10 +486,11 @@ export const settleAllBets = mutation({
       const status = won ? "won" : "lost";
       await ctx.db.patch(bet._id, { status });
 
-      if (won) {
+      if (won && bet.userId) {
         let wallet = await ctx.db
           .query("wallets")
-          .first();
+          .withIndex("by_userId", (q) => q.eq("userId", bet.userId))
+          .unique();
         const currentBalance = wallet ? wallet.balance : 0;
         if (wallet) {
           await ctx.db.patch(wallet._id, {
@@ -480,6 +498,7 @@ export const settleAllBets = mutation({
           });
         } else {
           await ctx.db.insert("wallets", {
+            userId: bet.userId,
             balance: 0 + bet.potentialReturn,
           });
         }

@@ -149,8 +149,10 @@ export const updateTransactionStatus = mutation({
 
     // If successful, update wallet balance
     if (status === "success" && oldStatus !== "success" && args.amount) {
-      await updateWalletBalance(ctx, args.amount, "add");
-      console.log(`[Wallet] Credited with KES ${args.amount}`);
+      if (transaction.userId) {
+        await updateWalletBalance(ctx, transaction.userId, args.amount, "add");
+        console.log(`[Wallet] Credited with KES ${args.amount}`);
+      }
 
       if (transaction.userId && transaction.type === "deposit") {
         await notifyUser(ctx, {
@@ -253,10 +255,11 @@ export const getLatestTransaction = query({
 });
 
 /**
- * Get user's transaction history
+ * Get user's transaction history (per-user)
  */
 export const getTransactionHistory = query({
   args: {
+    userId: v.id("users"),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -264,6 +267,7 @@ export const getTransactionHistory = query({
 
     const transactions = await ctx.db
       .query("transactions")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .order("desc")
       .take(limit);
 
@@ -271,6 +275,69 @@ export const getTransactionHistory = query({
       items: transactions,
       total: transactions.length,
     };
+  },
+});
+
+/**
+ * Get my wallet (authenticated user's wallet)
+ */
+export const getMyWallet = query({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const wallet = await ctx.db
+      .query("wallets")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .unique();
+
+    if (!wallet) {
+      // Return default wallet structure with 0 balance
+      return {
+        balance: 0,
+        userId: args.userId,
+      };
+    }
+
+    return {
+      _id: wallet._id,
+      balance: wallet.balance,
+      userId: wallet.userId,
+    };
+  },
+});
+
+/**
+ * Get my transaction history (authenticated user's transactions)
+ */
+export const getMyTransactions = query({
+  args: {
+    userId: v.id("users"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 20;
+
+    const transactions = await ctx.db
+      .query("transactions")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .take(limit);
+
+    return transactions.map((t) => ({
+      ...t,
+      id: t.txId,
+      time:
+        new Date(t.time).toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+        }) +
+        ", " +
+        new Date(t.time).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+    }));
   },
 });
 
@@ -331,6 +398,7 @@ export async function updateWalletBalance(
  */
 export const withdrawFromWallet = mutation({
   args: {
+    userId: v.id("users"),
     amount: v.number(),
   },
   handler: async (ctx, args) => {
@@ -340,6 +408,7 @@ export const withdrawFromWallet = mutation({
 
     const wallet = await ctx.db
       .query("wallets")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
       .unique();
 
     if (!wallet) {

@@ -2,6 +2,44 @@ import { QueryCtx, MutationCtx } from "../_generated/server";
 import { Id, Doc } from "../_generated/dataModel";
 
 /**
+ * Get userId from session token
+ * Validates the session is valid and not expired
+ * Returns the userId if valid, null otherwise
+ */
+export async function getUserIdFromSessionToken(
+  ctx: QueryCtx | MutationCtx,
+  sessionToken?: string
+): Promise<Id<"users"> | null> {
+  if (!sessionToken) {
+    return null;
+  }
+
+  try {
+    // Find session
+    const session = await ctx.db
+      .query("sessions")
+      .withIndex("by_sessionToken", (q) =>
+        q.eq("sessionToken", sessionToken)
+      )
+      .unique();
+
+    if (!session) {
+      return null;
+    }
+
+    // Check if session is expired
+    if (session.expiresAt < Date.now()) {
+      return null;
+    }
+
+    return session.userId;
+  } catch (error) {
+    console.error("Failed to get userId from session token:", error);
+    return null;
+  }
+}
+
+/**
  * Get authenticated user by ID
  * NOTE: In a production system with proper auth (Auth0, Clerk, etc.),
  * you would use ctx.auth.getUserIdentity() to get the server-verified identity.

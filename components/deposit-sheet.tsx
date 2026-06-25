@@ -37,7 +37,10 @@ interface TransactionResult {
 
 export function DepositSheet() {
   const { user } = useAuth()
-  const wallet = useQuery(api.mpesa.getWallet)
+  const wallet = useQuery(
+    api.mpesa.getWallet,
+    user?._id ? { userId: user._id } : "skip"
+  )
   const config = useQuery(api.platformConfig.getUserFacingConfig)
   const createTransaction = useMutation(api.mpesa.createTransaction)
 
@@ -171,7 +174,7 @@ export function DepositSheet() {
 
       // Step 2: Create transaction record in database
       await createTransaction({
-        userId: user?._id,
+        userId: user?._id as any,
         type: "deposit",
         amount: parsedAmount,
         phone: phone.trim(),
