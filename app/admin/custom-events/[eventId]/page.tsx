@@ -14,6 +14,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -21,13 +28,6 @@ import {
   AlertDialogDescription,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
 
 export default function CustomEventDetailPage() {
   const router = useRouter()
@@ -243,7 +243,10 @@ export default function CustomEventDetailPage() {
     {} as Record<string, any[]>
   )
 
-  const isSettled = event.eventStatus === "finished" && event.winningOutcomeId
+  // Use ONLY eventStatus from database
+  const isSettled = event.winningOutcomeId ? true : false
+  const isFinished = event.eventStatus === "finished"
+  const canResolve = isFinished && !isSettled
 
   return (
     <AdminLayout pageTitle="Edit Event">
@@ -272,7 +275,7 @@ export default function CustomEventDetailPage() {
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {event.eventStatus === "finished" && !event.winningOutcomeId && event.status === "published" && (
+            {canResolve && event.status === "published" && (
               <Button
                 size="sm"
                 variant="default"
@@ -281,24 +284,6 @@ export default function CustomEventDetailPage() {
               >
                 <CheckCircle className="size-3" />
                 <span className="hidden sm:inline">Resolve</span>
-              </Button>
-            )}
-
-            {event.eventStatus !== "finished" && event.status === "published" && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 px-2.5 gap-1.5 text-xs"
-                onClick={async () => {
-                  try {
-                    await markAsFinished({ eventId: eventId as Id<"customEvents"> })
-                    toast.success("Event marked as finished")
-                  } catch (error) {
-                    toast.error(error instanceof Error ? error.message : "Failed to mark as finished")
-                  }
-                }}
-              >
-                <span className="text-xs">Mark Finished</span>
               </Button>
             )}
 

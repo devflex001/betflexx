@@ -537,6 +537,30 @@ export const markEventAsFinished = mutation({
   },
 })
 
+export const autoUpdateFinishedEvents = mutation({
+  args: {
+    eventIds: v.array(v.id("customEvents")),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now()
+    const MATCH_DURATION = 105 * 60 * 1000 // 105 minutes
+
+    for (const eventId of args.eventIds) {
+      const event = await ctx.db.get(eventId)
+      if (!event) continue
+      if (event.eventStatus === "finished") continue // Already finished
+
+      const timeElapsed = now - event.startTime
+      if (timeElapsed >= MATCH_DURATION && event.eventStatus !== "finished") {
+        await ctx.db.patch(eventId, {
+          eventStatus: "finished",
+          updatedAt: now,
+        })
+      }
+    }
+  },
+})
+
 export const updateCustomMarket = mutation({
   args: {
     marketId: v.id("customMarkets"),
