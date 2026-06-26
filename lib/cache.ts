@@ -26,7 +26,8 @@ export type CacheOptions = {
   tag?: string
 }
 
-type Serializable = Record<string, unknown> | unknown[] | string | number | boolean | null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Serializable = any
 
 // ---------------------------------------------------------------------------
 // Internal helpers

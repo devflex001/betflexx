@@ -61,13 +61,14 @@ export async function GET(request: NextRequest) {
     )
 
     // Only cache non-pending responses — pending status changes frequently
+    const responseData = statusResponse as unknown as Record<string, unknown> | undefined
     const isPending =
-      !statusResponse?.ResultCode ||
-      statusResponse.ResultCode === "1032" || // Request cancelled by user
-      statusResponse.ResultCode === "" // Still processing
+      !responseData?.ResultCode ||
+      responseData.ResultCode === "1032" || // Request cancelled by user
+      responseData.ResultCode === "" // Still processing
 
-    if (!isPending && statusResponse) {
-      await cacheSet(cacheKey, statusResponse as Record<string, unknown>, {
+    if (!isPending && responseData) {
+      await cacheSet(cacheKey, responseData, {
         ttl: TTL.MPESA_STATUS,
         tag: "mpesa-status",
       })

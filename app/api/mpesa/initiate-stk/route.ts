@@ -83,12 +83,14 @@ export async function POST(request: NextRequest) {
     )
 
     // Cache successful STK responses to prevent duplicate pushes on retry
-    if (stkResponse?.ResponseCode === "0") {
+    const stkAny = stkResponse as unknown as Record<string, unknown>
+    const stkCode = stkAny?.ResponseCode
+    if (stkCode === "0") {
       const record: IdempotencyRecord = {
-        checkoutRequestID: stkResponse.CheckoutRequestID,
-        merchantRequestID: stkResponse.MerchantRequestID,
-        responseCode: stkResponse.ResponseCode,
-        customerMessage: stkResponse.CustomerMessage,
+        checkoutRequestID: String(stkAny.CheckoutRequestID ?? ""),
+        merchantRequestID: String(stkAny.MerchantRequestID ?? ""),
+        responseCode: String(stkCode),
+        customerMessage: String(stkAny.CustomerMessage ?? ""),
         cachedAt: Date.now(),
       }
       await setIdempotencyKey(idempotencyKey, record, TTL.PAYMENT_IDEMPOTENCY)
