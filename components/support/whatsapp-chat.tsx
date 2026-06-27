@@ -42,25 +42,25 @@ function useSupportAuthArgs() {
 
 function WhatsAppHeader({ onBack }: { onBack: () => void }) {
   return (
-    <header className="flex shrink-0 items-center gap-3 bg-[#075e54] px-2 py-2.5 text-white">
+    <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-2 py-2.5">
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="size-9 shrink-0 text-white hover:bg-white/10 hover:text-white"
+        className="size-9 shrink-0 hover:bg-accent"
         onClick={onBack}
         aria-label="Close chat"
       >
         <ArrowLeft className="size-5" />
       </Button>
-      <Avatar className="size-10 border border-white/20">
-        <AvatarFallback className="bg-[#128c7e] text-sm font-semibold text-white">
+      <Avatar className="size-10 border border-border">
+        <AvatarFallback className="bg-primary/15 text-sm font-semibold text-primary">
           BF
         </AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-base font-medium leading-tight">BetFlexx Support</p>
-        <p className="text-xs text-white/80">online</p>
+        <p className="truncate text-base font-medium leading-tight text-foreground">BetFlexx Support</p>
+        <p className="text-xs text-muted-foreground">online</p>
       </div>
     </header>
   )
@@ -68,19 +68,19 @@ function WhatsAppHeader({ onBack }: { onBack: () => void }) {
 
 function GuestPrompt({ onBack }: { onBack: () => void }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[#e5ddd5]">
+    <div className="flex min-h-0 flex-1 flex-col bg-background">
       <WhatsAppHeader onBack={onBack} />
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center">
-        <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-[#25d366]/15">
-          <MessageCircle className="size-8 text-[#075e54]" />
+        <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-primary/15">
+          <MessageCircle className="size-8 text-primary" />
         </div>
-        <h3 className="text-lg font-semibold text-[#111b21]">Chat with support</h3>
-        <p className="mt-2 max-w-xs text-sm text-[#667781]">
+        <h3 className="text-lg font-semibold text-foreground">Chat with support</h3>
+        <p className="mt-2 max-w-xs text-sm text-muted-foreground">
           Log in to message our support team. We typically reply within a few hours.
         </p>
         <Button
           asChild
-          className="mt-6 bg-[#25d366] text-white hover:bg-[#20bd5a]"
+          className="mt-6"
         >
           <Link href="/login?redirect=/">Log in to continue</Link>
         </Button>
@@ -125,13 +125,13 @@ function NameEntryScreen({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[#e5ddd5]">
+    <div className="flex min-h-0 flex-1 flex-col bg-background">
       <WhatsAppHeader onBack={onBack} />
       <div className="flex flex-1 flex-col items-center justify-center px-6">
         <div className="w-full max-w-sm space-y-6">
           <div className="text-center">
-            <h3 className="text-xl font-normal text-[#111b21]">Enter your name</h3>
-            <p className="mt-2 text-sm text-[#667781]">
+            <h3 className="text-xl font-normal text-foreground">Enter your name</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
               This name will be shown to our support team.
             </p>
           </div>
@@ -143,12 +143,12 @@ function NameEntryScreen({
               disabled={isSubmitting}
               autoFocus
               maxLength={50}
-              className="h-12 rounded-lg border-[#d1d7db] bg-white text-base focus-visible:ring-[#25d366]"
+              className="h-12 rounded-lg border-border bg-card text-base focus-visible:ring-primary"
             />
             <Button
               type="submit"
               disabled={isSubmitting || name.trim().length < 2}
-              className="h-12 w-full rounded-lg bg-[#25d366] text-base font-medium text-white hover:bg-[#20bd5a]"
+              className="h-12 w-full rounded-lg text-base font-medium"
             >
               {isSubmitting ? (
                 <>
@@ -175,15 +175,18 @@ function MessageBubble({ message }: { message: SupportMessage }) {
         className={cn(
           "relative max-w-[78%] px-2.5 py-1.5 pb-1 shadow-sm",
           isOwn
-            ? "rounded-lg rounded-tr-none bg-[#d9fdd3] text-[#111b21]"
-            : "rounded-lg rounded-tl-none bg-white text-[#111b21]",
+            ? "rounded-lg rounded-tr-none bg-primary text-primary-foreground"
+            : "rounded-lg rounded-tl-none bg-muted text-foreground",
           message.pending && "opacity-70"
         )}
       >
         <p className="whitespace-pre-wrap break-words pr-12 text-[15px] leading-snug">
           {message.body}
         </p>
-        <span className="absolute bottom-1 right-2 text-[11px] text-[#667781]">
+        <span className={cn(
+          "absolute bottom-1 right-2 text-[11px]",
+          isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
+        )}>
           {formatMessageTime(message.createdAt)}
         </span>
       </div>
@@ -285,19 +288,13 @@ function ChatThread({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[#e5ddd5]">
+    <div className="flex min-h-0 flex-1 flex-col bg-background">
       <WhatsAppHeader onBack={onBack} />
 
-      <div
-        className="min-h-0 flex-1 overflow-y-auto py-3"
-        style={{
-          backgroundColor: "#e5ddd5",
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8b8a8' fill-opacity='0.18'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      >
+      <div className="min-h-0 flex-1 overflow-y-auto bg-muted/30 py-3">
         {serverMessages === undefined && pendingMessages.length === 0 && (
           <div className="flex justify-center py-8">
-            <Loader2 className="size-5 animate-spin text-[#667781]" />
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
           </div>
         )}
 
@@ -309,7 +306,7 @@ function ChatThread({
         </div>
       </div>
 
-      <div className="shrink-0 bg-[#f0f2f5] px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <div className="shrink-0 border-t border-border bg-card px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-2">
           <Input
             value={draft}
@@ -317,7 +314,7 @@ function ChatThread({
             onKeyDown={handleKeyDown}
             placeholder="Message"
             disabled={isSending}
-            className="h-11 flex-1 rounded-full border-0 bg-white px-4 text-[15px] shadow-sm focus-visible:ring-[#25d366]"
+            className="h-11 flex-1 rounded-full border-0 bg-background px-4 text-[15px] shadow-sm focus-visible:ring-primary"
           />
           <Button
             type="button"
@@ -325,7 +322,7 @@ function ChatThread({
             disabled={!draft.trim() || isSending}
             onClick={handleSend}
             aria-label="Send message"
-            className="size-11 shrink-0 rounded-full bg-[#25d366] text-white hover:bg-[#20bd5a] disabled:bg-[#8696a0]"
+            className="size-11 shrink-0 rounded-full disabled:opacity-50"
           >
             {isSending ? (
               <Loader2 className="size-5 animate-spin" />
@@ -387,8 +384,8 @@ export function WhatsAppChat({
 
   if (isLoading) {
     content = (
-      <div className="flex flex-1 items-center justify-center bg-[#e5ddd5]">
-        <Loader2 className="size-6 animate-spin text-[#667781]" />
+      <div className="flex flex-1 items-center justify-center bg-background">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
       </div>
     )
   } else if (!user) {
@@ -412,8 +409,8 @@ export function WhatsAppChat({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-stretch justify-center bg-black/40">
-      <div className="flex h-[100dvh] w-full max-w-md flex-col bg-[#e5ddd5] shadow-xl md:my-4 md:h-[calc(100dvh-2rem)] md:max-h-[820px] md:rounded-lg md:overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-stretch justify-center bg-black/40 md:items-center">
+      <div className="flex h-[100dvh] w-full flex-col bg-background shadow-xl md:h-[calc(100dvh-2rem)] md:max-w-md md:max-h-[820px] md:rounded-lg md:overflow-hidden">
         {content}
       </div>
     </div>

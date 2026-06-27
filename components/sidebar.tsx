@@ -241,7 +241,7 @@ export function Sidebar({ className, onClose }: SidebarProps) {
               openSupportChat()
             }}
           >
-            <MessageCircle className="size-4 shrink-0 text-[#25d366]" />
+            <MessageCircle className="size-4 shrink-0 text-primary" />
             <span>Support</span>
           </Button>
         </div>

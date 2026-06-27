@@ -191,7 +191,7 @@ export function Header() {
                         openSupportChat()
                       }}
                     >
-                      <MessageCircle className="mr-2 h-4 w-4 text-[#25d366]" />
+                      <MessageCircle className="mr-2 h-4 w-4 text-primary" />
                       <span>Support Chat</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/account")}>

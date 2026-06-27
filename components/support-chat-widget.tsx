@@ -45,13 +45,13 @@ export function SupportChatWidget() {
           <Button
             type="button"
             size="icon"
-            className="relative size-14 rounded-full bg-[#25d366] shadow-lg hover:bg-[#20bd5a]"
+            className="relative size-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
             aria-label="Open support chat"
             onClick={() => setOpen(true)}
           >
-            <MessageCircle className="size-6 text-white" />
+            <MessageCircle className="size-6" />
             {!isLoading && user && typeof unreadCount === "number" && unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-[#ea0038] px-1.5 text-[10px] font-bold text-white">
+              <span className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}

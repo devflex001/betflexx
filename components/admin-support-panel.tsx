@@ -349,9 +349,7 @@ export function AdminSupportPanel() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold tracking-tight">Support Chat</h1>
-          <p className="text-xs text-muted-foreground">
-            Reply to user messages in real time.
-          </p>
+        
         </div>
         {unreadTotal > 0 && (
           <Badge variant="secondary">{unreadTotal} unread</Badge>
