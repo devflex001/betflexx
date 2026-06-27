@@ -355,6 +355,7 @@ export function AdminSupportPanel() {
           <Badge variant="secondary">{unreadTotal} unread</Badge>
         )}
       </div>
+      
 
       <div className="flex min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-card">
         <div
