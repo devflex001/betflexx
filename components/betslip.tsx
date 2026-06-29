@@ -217,7 +217,7 @@ export function Betslip({ onClose }: BetslipProps) {
         <Button
           onClick={handlePlaceBet}
           className="w-full bg-primary text-primary-foreground font-bold hover:opacity-95 text-xs h-10"
-          disabled={isPlacing || (!user && !isPlacing)}
+          disabled={isPlacing}
         >
           {isPlacing ? (
             <span className="flex items-center gap-1.5 justify-center">
