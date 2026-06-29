@@ -203,20 +203,22 @@ export function PaymentModal({
   onReset,
   onClose,
 }: PaymentModalProps) {
-  const config = stageMessages[provider][stage]
+  // Safeguard: default to "initiating" if stage is undefined or not found
+  const safeStage = stage || "initiating"
+  const config = stageMessages[provider]?.[safeStage] || stageMessages[provider]["initiating"]
   const Icon = config.icon
-  const isLoading = ["initiating", "pending_user_action", "processing"].includes(stage)
-  const isComplete = ["success", "failed", "cancelled", "timeout", "error"].includes(stage)
+  const isLoading = ["initiating", "pending_user_action", "processing"].includes(safeStage)
+  const isComplete = ["success", "failed", "cancelled", "timeout", "error"].includes(safeStage)
 
   // Auto-close on success after 3 seconds
   React.useEffect(() => {
-    if (stage === "success" && onClose) {
+    if (safeStage === "success" && onClose) {
       const timer = setTimeout(() => {
         onClose()
       }, 3000)
       return () => clearTimeout(timer)
     }
-  }, [stage, onClose])
+  }, [safeStage, onClose])
 
   const steps: PaymentStep[] = React.useMemo(() => {
     const baseSteps: PaymentStep[] = [
@@ -235,9 +237,9 @@ export function PaymentModal({
           <Lock className="h-4 w-4" />
         ),
         status:
-          stage === "pending_user_action"
+          safeStage === "pending_user_action"
             ? "active"
-            : ["processing", "success"].includes(stage)
+            : ["processing", "success"].includes(safeStage)
               ? "complete"
               : "pending",
       },
@@ -246,9 +248,9 @@ export function PaymentModal({
         label: "Processing",
         icon: <Loader2 className="h-4 w-4" />,
         status:
-          stage === "processing"
+          safeStage === "processing"
             ? "active"
-            : stage === "success"
+            : safeStage === "success"
               ? "complete"
               : "pending",
       },
@@ -256,21 +258,21 @@ export function PaymentModal({
         id: "complete",
         label: "Complete",
         icon: <CheckCircle2 className="h-4 w-4" />,
-        status: stage === "success" ? "complete" : "pending",
+        status: safeStage === "success" ? "complete" : "pending",
       },
     ]
 
-    if (["failed", "cancelled", "timeout"].includes(stage)) {
+    if (["failed", "cancelled", "timeout", "error"].includes(safeStage)) {
       baseSteps[baseSteps.length - 1] = {
         id: "complete",
-        label: stage === "failed" ? "Failed" : stage === "cancelled" ? "Cancelled" : "Timeout",
+        label: safeStage === "failed" ? "Failed" : safeStage === "cancelled" ? "Cancelled" : safeStage === "timeout" ? "Timeout" : "Error",
         icon: <XCircle className="h-4 w-4" />,
         status: "error",
       }
     }
 
     return baseSteps
-  }, [stage, provider])
+  }, [safeStage, provider])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -347,7 +349,7 @@ export function PaymentModal({
             <div className="flex flex-col items-center text-center space-y-4">
               {/* Icon with animation */}
               <div className="relative">
-                {stage === "pending_user_action" && (
+                {safeStage === "pending_user_action" && (
                   <span className="flex h-3 w-3 absolute -top-1 -right-1">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
@@ -394,9 +396,9 @@ export function PaymentModal({
                   <div
                     className={cn(
                       "text-xs rounded-lg p-3 border",
-                      stage === "success"
+                      safeStage === "success"
                         ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-700"
-                        : stage === "failed"
+                        : safeStage === "failed" || safeStage === "error"
                           ? "bg-red-500/5 border-red-500/20 text-red-700"
                           : "bg-amber-500/5 border-amber-500/20 text-amber-700"
                     )}
@@ -422,7 +424,7 @@ export function PaymentModal({
               )}
 
               {/* Loading Tips */}
-              {stage === "pending_user_action" && provider === "mpesa" && (
+              {safeStage === "pending_user_action" && provider === "mpesa" && (
                 <div className="w-full pt-2">
                   <div className="flex items-start gap-2 text-xs text-muted-foreground">
                     <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1.5 animate-pulse" />
@@ -434,7 +436,7 @@ export function PaymentModal({
                 </div>
               )}
 
-              {stage === "processing" && (
+              {safeStage === "processing" && (
                 <div className="w-full pt-2">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -448,7 +450,7 @@ export function PaymentModal({
           {/* Action Buttons */}
           {isComplete && (
             <div className="flex gap-2">
-              {stage === "success" ? (
+              {safeStage === "success" ? (
                 <Button
                   onClick={() => {
                     if (onClose) onClose()

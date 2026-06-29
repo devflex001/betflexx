@@ -224,7 +224,9 @@ export function DepositSheet() {
     }
   }
 
-  const getPaymentStage = (): "initiating" | "pending_user_action" | "processing" | "success" | "failed" | "cancelled" | "timeout" => {
+  const getPaymentStage = (): "initiating" | "pending_user_action" | "processing" | "success" | "failed" | "cancelled" | "timeout" | "error" => {
+    // Map internal stages to payment modal stages
+    if (stage === "idle") return "initiating"
     if (stage === "error") return "failed"
     return stage as any
   }
