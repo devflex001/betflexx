@@ -30,6 +30,7 @@ type PaymentStage =
   | "failed"
   | "cancelled"
   | "timeout"
+  | "error"
 
 interface PaymentStep {
   id: string
@@ -111,6 +112,14 @@ const stageMessages = {
       bgColor: "bg-gray-500/10",
       borderColor: "border-gray-500/20",
     },
+    error: {
+      title: "Error",
+      description: "An error occurred",
+      icon: XCircle,
+      color: "text-red-600",
+      bgColor: "bg-red-500/10",
+      borderColor: "border-red-500/20",
+    },
   },
   paystack: {
     initiating: {
@@ -169,6 +178,14 @@ const stageMessages = {
       bgColor: "bg-gray-500/10",
       borderColor: "border-gray-500/20",
     },
+    error: {
+      title: "Error",
+      description: "An error occurred",
+      icon: XCircle,
+      color: "text-red-600",
+      bgColor: "bg-red-500/10",
+      borderColor: "border-red-500/20",
+    },
   },
 }
 
@@ -189,7 +206,7 @@ export function PaymentModal({
   const config = stageMessages[provider][stage]
   const Icon = config.icon
   const isLoading = ["initiating", "pending_user_action", "processing"].includes(stage)
-  const isComplete = ["success", "failed", "cancelled", "timeout"].includes(stage)
+  const isComplete = ["success", "failed", "cancelled", "timeout", "error"].includes(stage)
 
   // Auto-close on success after 3 seconds
   React.useEffect(() => {
@@ -275,13 +292,13 @@ export function PaymentModal({
                     className={cn(
                       "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300",
                       step.status === "complete" &&
-                        "border-emerald-500 bg-emerald-500/10 text-emerald-600",
+                      "border-emerald-500 bg-emerald-500/10 text-emerald-600",
                       step.status === "active" &&
-                        "border-primary bg-primary/10 text-primary animate-pulse",
+                      "border-primary bg-primary/10 text-primary animate-pulse",
                       step.status === "pending" &&
-                        "border-gray-300 bg-gray-100 text-gray-400",
+                      "border-gray-300 bg-gray-100 text-gray-400",
                       step.status === "error" &&
-                        "border-red-500 bg-red-500/10 text-red-600"
+                      "border-red-500 bg-red-500/10 text-red-600"
                     )}
                   >
                     {step.status === "active" && isLoading ? (
