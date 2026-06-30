@@ -11,8 +11,6 @@ import {
   XCircle,
   AlertTriangle,
   Clock,
-  Smartphone,
-  ArrowRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -35,7 +33,6 @@ interface PaymentModalProps {
   phone?: string
   provider: "mpesa" | "paystack"
   message?: string
-  resultCode?: string
   mpesaReceiptNumber?: string
   paystackReference?: string
   onReset?: () => void
@@ -43,89 +40,45 @@ interface PaymentModalProps {
 }
 
 const stageConfig = {
-  mpesa: {
-    initiating: {
-      title: "Initiating",
-      icon: Loader2,
-      iconClass: "text-blue-600 animate-spin",
-    },
-    pending_user_action: {
-      title: "Enter PIN",
-      icon: Smartphone,
-      iconClass: "text-primary animate-pulse",
-    },
-    processing: {
-      title: "Processing",
-      icon: Loader2,
-      iconClass: "text-amber-600 animate-spin",
-    },
-    success: {
-      title: "Success!",
-      icon: CheckCircle2,
-      iconClass: "text-emerald-600",
-    },
-    failed: {
-      title: "Failed",
-      icon: XCircle,
-      iconClass: "text-red-600",
-    },
-    cancelled: {
-      title: "Cancelled",
-      icon: AlertTriangle,
-      iconClass: "text-amber-600",
-    },
-    timeout: {
-      title: "Timeout",
-      icon: Clock,
-      iconClass: "text-gray-600",
-    },
-    error: {
-      title: "Error",
-      icon: XCircle,
-      iconClass: "text-red-600",
-    },
+  initiating: {
+    title: "Processing Payment",
+    icon: Loader2,
+    iconClass: "text-primary animate-spin",
   },
-  paystack: {
-    initiating: {
-      title: "Initiating",
-      icon: Loader2,
-      iconClass: "text-blue-600 animate-spin",
-    },
-    pending_user_action: {
-      title: "Complete",
-      icon: Loader2,
-      iconClass: "text-primary animate-spin",
-    },
-    processing: {
-      title: "Processing",
-      icon: Loader2,
-      iconClass: "text-amber-600 animate-spin",
-    },
-    success: {
-      title: "Success!",
-      icon: CheckCircle2,
-      iconClass: "text-emerald-600",
-    },
-    failed: {
-      title: "Failed",
-      icon: XCircle,
-      iconClass: "text-red-600",
-    },
-    cancelled: {
-      title: "Cancelled",
-      icon: AlertTriangle,
-      iconClass: "text-amber-600",
-    },
-    timeout: {
-      title: "Timeout",
-      icon: Clock,
-      iconClass: "text-gray-600",
-    },
-    error: {
-      title: "Error",
-      icon: XCircle,
-      iconClass: "text-red-600",
-    },
+  pending_user_action: {
+    title: "Complete Payment",
+    icon: Loader2,
+    iconClass: "text-primary animate-spin",
+  },
+  processing: {
+    title: "Verifying Payment",
+    icon: Loader2,
+    iconClass: "text-primary animate-spin",
+  },
+  success: {
+    title: "Payment Successful",
+    icon: CheckCircle2,
+    iconClass: "text-emerald-600",
+  },
+  failed: {
+    title: "Payment Failed",
+    icon: XCircle,
+    iconClass: "text-red-600",
+  },
+  cancelled: {
+    title: "Payment Cancelled",
+    icon: AlertTriangle,
+    iconClass: "text-amber-600",
+  },
+  timeout: {
+    title: "Payment Timeout",
+    icon: Clock,
+    iconClass: "text-gray-600",
+  },
+  error: {
+    title: "Error",
+    icon: XCircle,
+    iconClass: "text-red-600",
   },
 }
 
@@ -133,84 +86,74 @@ export function PaymentModal({
   open,
   onOpenChange,
   stage,
-  amount,
-  phone,
   provider,
   message,
-  mpesaReceiptNumber,
-  paystackReference,
   onReset,
   onClose,
 }: PaymentModalProps) {
   const safeStage = stage || "initiating"
-  const config = stageConfig[provider]?.[safeStage] || stageConfig[provider]["initiating"]
+  const config = stageConfig[safeStage]
   const Icon = config.icon
-  const isLoading = ["initiating", "pending_user_action", "processing"].includes(safeStage)
   const isComplete = ["success", "failed", "cancelled", "timeout", "error"].includes(safeStage)
 
-  // Auto-close on success after 3 seconds
   React.useEffect(() => {
     if (safeStage === "success" && onClose) {
       const timer = setTimeout(() => {
         onClose()
-      }, 3000)
+      }, 2500)
       return () => clearTimeout(timer)
     }
   }, [safeStage, onClose])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm border-0 bg-transparent shadow-none">
-        <div className="flex flex-col items-center justify-center gap-6 py-8">
-          {/* Icon */}
-          <Icon className={cn("h-16 w-16", config.iconClass)} />
+      <DialogContent className="sm:max-w-sm p-0 border-0">
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-8">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <Icon className={cn("h-14 w-14", config.iconClass)} />
+            <h2 className="text-lg font-semibold text-white">{config.title}</h2>
 
-          {/* Title */}
-          <h2 className="text-2xl font-semibold text-center">{config.title}</h2>
+            {message && safeStage !== "success" && (
+              <p className="text-sm text-slate-300">{message}</p>
+            )}
 
-          {/* Message - Only show if not success */}
-          {message && safeStage !== "success" && (
-            <p className="text-sm text-muted-foreground text-center max-w-xs">{message}</p>
-          )}
-
-          {/* Action Buttons */}
-          {isComplete && (
-            <div className="flex gap-2 w-full pt-4">
-              {safeStage === "success" ? (
-                <Button
-                  onClick={() => {
-                    if (onClose) onClose()
-                    if (onReset) onReset()
-                  }}
-                  className="w-full gap-2"
-                >
-                  Continue
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    onClick={() => {
-                      if (onClose) onClose()
-                    }}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Close
-                  </Button>
+            {isComplete && (
+              <div className="w-full pt-4 space-y-2">
+                {safeStage === "success" ? (
                   <Button
                     onClick={() => {
                       if (onClose) onClose()
                       if (onReset) onReset()
                     }}
-                    className="flex-1"
+                    className="w-full bg-primary hover:bg-primary/90"
                   >
-                    Retry
+                    Close
                   </Button>
-                </>
-              )}
-            </div>
-          )}
+                ) : (
+                  <>
+                    <Button
+                      onClick={() => {
+                        if (onClose) onClose()
+                      }}
+                      variant="outline"
+                      className="w-full border-slate-600 text-white hover:bg-slate-700"
+                    >
+                      Close
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (onClose) onClose()
+                        if (onReset) onReset()
+                      }}
+                      className="w-full bg-primary hover:bg-primary/90"
+                    >
+                      Try Again
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
