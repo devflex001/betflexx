@@ -5,21 +5,16 @@ import { useState } from "react"
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
 import {
   Loader2,
   AlertCircle,
-  CheckCircle2,
-  Shield,
+  Lock,
+  ArrowRight,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 const VALID_ADMIN_NAMES = process.env.NEXT_PUBLIC_ADMIN_NAMES?.split(",") || [
   "dikie",
@@ -49,12 +44,12 @@ export function AdminNameModal({
 
     // Validate
     if (!trimmedName) {
-      setError("Please enter your admin name")
+      setError("Please enter your admin identifier")
       return
     }
 
     if (!VALID_ADMIN_NAMES.includes(trimmedName)) {
-      setError("Invalid admin name. Please check and try again.")
+      setError("Invalid admin identifier")
       return
     }
 
@@ -87,103 +82,74 @@ export function AdminNameModal({
     adminName.trim().length > 0
 
   return (
-    <Dialog open={open} onOpenChange={() => {}} modal={true}>
+    <Dialog open={open} onOpenChange={() => { }} modal={true}>
       <DialogContent
-        className="sm:max-w-md"
+        className="sm:max-w-sm border-2 border-primary/20 shadow-2xl"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <DialogHeader>
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
-            <DialogTitle>Admin Identification</DialogTitle>
+        {/* Header Section */}
+        <div className="flex flex-col items-center gap-4 py-6 px-2">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
+            <Lock className="h-7 w-7 text-primary" />
           </div>
-          <DialogDescription>
-            Welcome to the admin dashboard. Please enter your admin name to continue.
-          </DialogDescription>
-        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Instructions */}
-          <div className="bg-muted/40 rounded-lg p-3.5 space-y-2 border border-border/50">
-            <p className="text-xs font-medium text-muted-foreground">
-              Select your admin identifier:
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-foreground">Admin Access</h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              Enter your admin identifier to continue
             </p>
-            <div className="flex flex-wrap gap-2">
-              {VALID_ADMIN_NAMES.map((name) => (
-                <Badge
-                  key={name}
-                  variant={
-                    adminName.trim().toLowerCase() === name
-                      ? "default"
-                      : "outline"
-                  }
-                  className="cursor-pointer font-mono transition-colors hover:bg-primary/20"
-                  onClick={() => handleInputChange(name)}
-                >
-                  {name}
-                </Badge>
-              ))}
-            </div>
           </div>
+        </div>
 
+        <form onSubmit={handleSubmit} className="space-y-5 px-2">
           {/* Input Field */}
-          <div className="space-y-2">
-            <label htmlFor="admin-name" className="text-sm font-medium">
-              Admin Name
+          <div className="space-y-3">
+            <label htmlFor="admin-name" className="text-sm font-semibold text-foreground">
+              Admin Identifier
             </label>
             <Input
               id="admin-name"
-              placeholder="e.g., dikie"
+              placeholder="Enter your identifier"
               value={adminName}
               onChange={(e) => handleInputChange(e.target.value)}
               disabled={isSubmitting}
               autoComplete="off"
               autoFocus
-              className="font-mono"
+              className="h-11 text-base border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>
 
           {/* Error Message */}
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="border-red-200 bg-red-50">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="text-red-800">{error}</AlertDescription>
             </Alert>
-          )}
-
-          {/* Success Indicator */}
-          {isValid && !error && (
-            <div className="flex items-center gap-2 text-xs text-emerald-600">
-              <CheckCircle2 className="h-4 w-4" />
-              <span>Admin name recognized</span>
-            </div>
           )}
 
           {/* Submit Button */}
           <Button
             type="submit"
             disabled={!isValid || isSubmitting}
-            className="w-full"
-            size="sm"
+            className="w-full h-11 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground transition-all"
+            size="lg"
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Setting up session...
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Authenticating...
               </>
             ) : (
               <>
-                <Shield className="mr-2 h-4 w-4" />
-                Continue to Dashboard
+                <span>Enter Dashboard</span>
+                <ArrowRight className="ml-2 h-5 w-5" />
               </>
             )}
           </Button>
 
-          {/* Security Note */}
-          <p className="text-xs text-center text-muted-foreground">
-            All admin activities are logged and tracked for security.
-          </p>
+          {/* Security Footer */}
+         
         </form>
       </DialogContent>
     </Dialog>
