@@ -325,8 +325,8 @@ export default function WithdrawalsPage() {
         <div className="sm:hidden space-y-2">
           {isLoading && (
             <div className="space-y-2">
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-20 w-full rounded-lg" />
+              <Skeleton className="h-20 w-full rounded-lg" />
             </div>
           )}
           {!isLoading && requests.length === 0 && (
@@ -335,163 +335,150 @@ export default function WithdrawalsPage() {
             </div>
           )}
           {requests.map((req) => (
-            <div
-              key={req._id}
-              className="rounded-lg border border-border bg-card p-3 space-y-2.5"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold font-mono">{req.userPhone}</span>
-                <div className="flex items-center gap-1.5">
-                  {req.isInstant && <Zap className="size-3 text-primary" />}
-                  <StatusBadge status={req.status} />
+            <div key={req._id} className="rounded-lg border border-border bg-card px-4 py-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold font-mono">{req.userPhone}</span>
+                    <div className="flex items-center gap-1">
+                      <StatusBadge status={req.status} />
+                      {req.isInstant && (
+                        <Badge variant="outline" className="text-[10px] gap-1 text-primary border-primary/30 bg-primary/5">
+                          <Zap className="size-2.5" />
+                          Instant
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-semibold text-foreground">KES {req.amount.toLocaleString()}</span>
+                    {" · "}fee KES {req.feeAmount.toLocaleString()}
+                    {" · "}{req.phone}
+                  </p>
+                  {req.rejectionReason && (
+                    <p className="text-[11px] text-rose-500">{req.rejectionReason}</p>
+                  )}
+                  {req.status === "pending" && (
+                    <div className="flex gap-2 pt-0.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1 text-emerald-600 border-emerald-500/30 hover:text-emerald-600 hover:bg-emerald-500/10"
+                        disabled={approvingId === req._id}
+                        onClick={() => handleApprove(req)}
+                      >
+                        {approvingId === req._id ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                        Approve
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1 text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => setRejectTarget(req)}
+                      >
+                        <X className="size-3" />
+                        Reject
+                      </Button>
+                    </div>
+                  )}
                 </div>
+                <span className="shrink-0 text-[11px] text-muted-foreground whitespace-nowrap pt-0.5">
+                  {formatDate(req.requestedAt)}
+                </span>
               </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
-                <span>Amount: <span className="font-semibold text-foreground">KES {req.amount.toLocaleString()}</span></span>
-                <span>Fee paid: <span className="font-semibold text-foreground">KES {req.feeAmount.toLocaleString()}</span></span>
-                <span>Phone: <span className="text-foreground">{req.phone}</span></span>
-                <span>Requested: <span className="text-foreground">{formatDate(req.requestedAt)}</span></span>
-              </div>
-              {req.rejectionReason && (
-                <p className="text-[10px] text-rose-600 bg-rose-500/5 border border-rose-500/10 rounded p-2">
-                  Reason: {req.rejectionReason}
-                </p>
-              )}
-              {req.status === "pending" && (
-                <div className="flex gap-2 pt-0.5">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 h-8 text-xs gap-1 text-emerald-600 border-emerald-500/30 hover:text-emerald-600 hover:bg-emerald-500/10"
-                    disabled={approvingId === req._id}
-                    onClick={() => handleApprove(req)}
-                  >
-                    {approvingId === req._id ? (
-                      <Loader2 className="size-3 animate-spin" />
-                    ) : (
-                      <Check className="size-3" />
-                    )}
-                    Approve
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 h-8 text-xs gap-1 text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => setRejectTarget(req)}
-                  >
-                    <X className="size-3" />
-                    Reject
-                  </Button>
-                </div>
-              )}
             </div>
           ))}
         </div>
 
         {/* ── Desktop table (≥ sm) ── */}
-        <div className="hidden sm:block rounded-lg border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse min-w-[700px]">
-              <thead>
-                <tr className="border-b border-border bg-muted/40 text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-                  <th className="py-3 px-4">User</th>
-                  <th className="py-3 px-4">Amount</th>
-                  <th className="py-3 px-4">Fee Paid</th>
-                  <th className="py-3 px-4">M-Pesa Phone</th>
-                  <th className="py-3 px-4">Requested</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+        <div className="hidden sm:block overflow-hidden rounded-lg border border-border bg-card">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="h-9 px-4 font-semibold text-xs text-foreground">User</th>
+                <th className="h-9 px-4 font-semibold text-xs text-foreground">Amount</th>
+                <th className="h-9 px-4 font-semibold text-xs text-foreground">Fee</th>
+                <th className="h-9 px-4 font-semibold text-xs text-foreground">M-Pesa</th>
+                <th className="h-9 px-4 font-semibold text-xs text-foreground">Requested</th>
+                <th className="h-9 px-4 font-semibold text-xs text-foreground">Status</th>
+                <th className="h-9 px-4 font-semibold text-xs text-foreground text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {isLoading && (
+                <tr>
+                  <td colSpan={7} className="py-8">
+                    <div className="space-y-2 px-4">
+                      <Skeleton className="h-8 w-full" />
+                      <Skeleton className="h-8 w-full" />
+                      <Skeleton className="h-8 w-full" />
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {isLoading && (
-                  <tr>
-                    <td colSpan={7} className="py-8">
-                      <div className="space-y-2 px-4">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                {!isLoading && requests.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="py-16 text-center text-muted-foreground text-xs">
-                      No withdrawal requests found.
-                    </td>
-                  </tr>
-                )}
-                {requests.map((req) => (
-                  <tr key={req._id} className="hover:bg-muted/30 transition-colors">
-                    <td className="py-3 px-4 font-semibold font-mono text-foreground">
-                      {req.userPhone}
-                    </td>
-                    <td className="py-3 px-4 font-mono font-semibold text-foreground">
-                      KES {req.amount.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-muted-foreground">
-                      KES {req.feeAmount.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-muted-foreground">{req.phone}</td>
-                    <td className="py-3 px-4 text-muted-foreground">{formatDate(req.requestedAt)}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1.5">
-                        <StatusBadge status={req.status} />
-                        {req.isInstant && (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] gap-1 text-primary border-primary/30 bg-primary/5"
-                          >
-                            <Zap className="size-2.5" />
-                            Instant
-                          </Badge>
-                        )}
-                      </div>
-                      {req.rejectionReason && (
-                        <p className="text-[10px] text-rose-500 mt-1 max-w-[160px] truncate" title={req.rejectionReason}>
-                          {req.rejectionReason}
-                        </p>
+              )}
+              {!isLoading && requests.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-16 text-center text-muted-foreground text-xs">
+                    No withdrawal requests found.
+                  </td>
+                </tr>
+              )}
+              {requests.map((req) => (
+                <tr key={req._id} className="hover:bg-muted/30 transition-colors">
+                  <td className="py-2 px-4 font-mono text-xs font-semibold">{req.userPhone}</td>
+                  <td className="py-2 px-4 font-mono text-xs font-semibold">KES {req.amount.toLocaleString()}</td>
+                  <td className="py-2 px-4 text-xs text-muted-foreground">KES {req.feeAmount.toLocaleString()}</td>
+                  <td className="py-2 px-4 text-xs text-muted-foreground font-mono">{req.phone}</td>
+                  <td className="py-2 px-4 text-xs text-muted-foreground whitespace-nowrap">{formatDate(req.requestedAt)}</td>
+                  <td className="py-2 px-4">
+                    <div className="flex items-center gap-1.5">
+                      <StatusBadge status={req.status} />
+                      {req.isInstant && (
+                        <Badge variant="outline" className="text-[10px] gap-1 text-primary border-primary/30 bg-primary/5">
+                          <Zap className="size-2.5" />
+                          Instant
+                        </Badge>
                       )}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {req.status === "pending" ? (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 px-2.5 text-[11px] gap-1 text-emerald-600 border-emerald-500/30 hover:text-emerald-600 hover:bg-emerald-500/10"
-                            disabled={approvingId === req._id}
-                            onClick={() => handleApprove(req)}
-                          >
-                            {approvingId === req._id ? (
-                              <Loader2 className="size-3 animate-spin" />
-                            ) : (
-                              <Check className="size-3" />
-                            )}
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 px-2.5 text-[11px] gap-1 text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => setRejectTarget(req)}
-                          >
-                            <Ban className="size-3" />
-                            Reject
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-muted-foreground">
-                          {req.processedAt ? formatDate(req.processedAt) : "—"}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                    {req.rejectionReason && (
+                      <p className="text-[10px] text-rose-500 mt-0.5 max-w-[160px] truncate" title={req.rejectionReason}>
+                        {req.rejectionReason}
+                      </p>
+                    )}
+                  </td>
+                  <td className="py-2 px-4 text-right">
+                    {req.status === "pending" ? (
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2.5 text-[11px] gap-1 text-emerald-600 border-emerald-500/30 hover:text-emerald-600 hover:bg-emerald-500/10"
+                          disabled={approvingId === req._id}
+                          onClick={() => handleApprove(req)}
+                        >
+                          {approvingId === req._id ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2.5 text-[11px] gap-1 text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setRejectTarget(req)}
+                        >
+                          <Ban className="size-3" />
+                          Reject
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">
+                        {req.processedAt ? formatDate(req.processedAt) : "—"}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         {/* Load more */}
