@@ -245,7 +245,7 @@ interface EditModalProps {
 }
 
 function EditModal({ user, open, onClose, adminUserId }: EditModalProps) {
-  const { sessionToken } = useAuth()
+  const { sessionToken } = useAuthClient()
   const editUser = useMutation(api.adminUsers.editUser)
   const [phone, setPhone] = React.useState("")
   const [loading, setLoading] = React.useState(false)
