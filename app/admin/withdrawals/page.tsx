@@ -397,8 +397,6 @@ export default function WithdrawalsPage() {
               <tr className="border-b border-border bg-muted/30">
                 <th className="h-9 px-4 font-semibold text-xs text-foreground">User</th>
                 <th className="h-9 px-4 font-semibold text-xs text-foreground">Amount</th>
-                <th className="h-9 px-4 font-semibold text-xs text-foreground">Fee</th>
-                <th className="h-9 px-4 font-semibold text-xs text-foreground">M-Pesa</th>
                 <th className="h-9 px-4 font-semibold text-xs text-foreground">Requested</th>
                 <th className="h-9 px-4 font-semibold text-xs text-foreground">Status</th>
                 <th className="h-9 px-4 font-semibold text-xs text-foreground text-right">Actions</th>
@@ -407,7 +405,7 @@ export default function WithdrawalsPage() {
             <tbody className="divide-y divide-border">
               {isLoading && (
                 <tr>
-                  <td colSpan={7} className="py-8">
+                  <td colSpan={5} className="py-8">
                     <div className="space-y-2 px-4">
                       <Skeleton className="h-8 w-full" />
                       <Skeleton className="h-8 w-full" />
@@ -418,19 +416,29 @@ export default function WithdrawalsPage() {
               )}
               {!isLoading && requests.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center text-muted-foreground text-xs">
+                  <td colSpan={5} className="py-16 text-center text-muted-foreground text-xs">
                     No withdrawal requests found.
                   </td>
                 </tr>
               )}
               {requests.map((req) => (
                 <tr key={req._id} className="hover:bg-muted/30 transition-colors">
-                  <td className="py-2 px-4 font-mono text-xs font-semibold">{req.userPhone}</td>
-                  <td className="py-2 px-4 font-mono text-xs font-semibold">KES {req.amount.toLocaleString()}</td>
-                  <td className="py-2 px-4 text-xs text-muted-foreground">KES {req.feeAmount.toLocaleString()}</td>
-                  <td className="py-2 px-4 text-xs text-muted-foreground font-mono">{req.phone}</td>
-                  <td className="py-2 px-4 text-xs text-muted-foreground whitespace-nowrap">{formatDate(req.requestedAt)}</td>
-                  <td className="py-2 px-4">
+                  {/* User */}
+                  <td className="py-2.5 px-4">
+                    <p className="text-xs font-semibold font-mono">{req.userPhone}</p>
+                    <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{req.phone}</p>
+                  </td>
+                  {/* Amount + fee */}
+                  <td className="py-2.5 px-4">
+                    <p className="text-xs font-semibold font-mono">KES {req.amount.toLocaleString()}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">fee KES {req.feeAmount.toLocaleString()}</p>
+                  </td>
+                  {/* Requested */}
+                  <td className="py-2.5 px-4 text-xs text-muted-foreground whitespace-nowrap">
+                    {formatDate(req.requestedAt)}
+                  </td>
+                  {/* Status */}
+                  <td className="py-2.5 px-4">
                     <div className="flex items-center gap-1.5">
                       <StatusBadge status={req.status} />
                       {req.isInstant && (
@@ -441,12 +449,13 @@ export default function WithdrawalsPage() {
                       )}
                     </div>
                     {req.rejectionReason && (
-                      <p className="text-[10px] text-rose-500 mt-0.5 max-w-[160px] truncate" title={req.rejectionReason}>
+                      <p className="text-[11px] text-rose-500 mt-0.5 max-w-[200px] truncate" title={req.rejectionReason}>
                         {req.rejectionReason}
                       </p>
                     )}
                   </td>
-                  <td className="py-2 px-4 text-right">
+                  {/* Actions */}
+                  <td className="py-2.5 px-4 text-right">
                     {req.status === "pending" ? (
                       <div className="flex items-center justify-end gap-1.5">
                         <Button
@@ -470,7 +479,7 @@ export default function WithdrawalsPage() {
                         </Button>
                       </div>
                     ) : (
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-[11px] text-muted-foreground">
                         {req.processedAt ? formatDate(req.processedAt) : "—"}
                       </span>
                     )}
