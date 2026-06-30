@@ -10,15 +10,6 @@ interface PaystackConfig {
   production: boolean
 }
 
-// Paystack reference for embedded payment modal
-declare global {
-  interface Window {
-    PaystackPop?: {
-      setup: (options: PaystackSetupOptions) => PaystackPopInstance
-    }
-  }
-}
-
 interface PaystackSetupOptions {
   key: string
   email: string
@@ -26,10 +17,6 @@ interface PaystackSetupOptions {
   ref: string
   onClose?: () => void
   onSuccess?: (response: PaystackSuccessResponse) => void
-}
-
-interface PaystackPopInstance {
-  openIframe: () => void
 }
 
 interface PaystackSuccessResponse {
