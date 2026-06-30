@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useQuery } from "convex/react"
+import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,11 +12,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MarketsPanel, type SportsMatchWithOdds, type SportsMatch } from "@/components/markets-panel"
 import { Pagination } from "@/components/pagination"
 import { usePagination } from "@/hooks/use-pagination"
-import { ListPlus, Search, ChevronDown } from "lucide-react"
+import { ListPlus, Search, ChevronDown, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
 function formatStartTime(startTime: number) {
   if (!startTime) return "TBA"
@@ -57,6 +67,13 @@ export function AdminEventsPanel() {
   const [status, setStatus] = React.useState<"all" | "live" | "upcoming">("all")
   const [selectedMatch, setSelectedMatch] = React.useState<SportsMatch | null>(null)
   const [screenWidth, setScreenWidth] = React.useState(1024)
+  const [showClearDialog, setShowClearDialog] = React.useState(false)
+  const [isClearing, setIsClearing] = React.useState(false)
+
+  const sessionToken = typeof window !== 'undefined'
+    ? localStorage.getItem('adminSessionToken')
+    : null
+  const clearAllEvents = useMutation(api.sportsData.clearAllEvents)
 
   const pagination = usePagination({ pageSize: 10 })
 
@@ -115,6 +132,26 @@ export function AdminEventsPanel() {
       ...sportsList,
     ]
   }, [allMatches])
+
+  const handleClearEvents = async () => {
+    try {
+      setIsClearing(true)
+      const result = await clearAllEvents({
+        sessionToken: sessionToken || undefined,
+      })
+      setShowClearDialog(false)
+      toast.success(
+        `Cleared ${result.matchesDeleted} matches, ${result.marketsDeleted} markets, and ${result.oddsDeleted} odds`
+      )
+      // Refresh the page to show updated data
+      setTimeout(() => window.location.reload(), 1000)
+    } catch (error) {
+      console.error("Failed to clear events:", error)
+      toast.error("Failed to clear events")
+    } finally {
+      setIsClearing(false)
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -216,6 +253,17 @@ export function AdminEventsPanel() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Clear All Events Button */}
+          <Button
+            size="sm"
+            variant="destructive"
+            className="h-8 text-xs gap-1.5"
+            onClick={() => setShowClearDialog(true)}
+          >
+            <Trash2 className="size-3.5" />
+            Clear All
+          </Button>
         </div>
       </div>
 
@@ -374,6 +422,32 @@ export function AdminEventsPanel() {
           readOnly
         />
       )}
+
+      {/* Clear All Events Confirmation Dialog */}
+      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear all events?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will permanently delete all events, markets, and odds from the database.
+              This includes finished events that are not currently visible. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-2 rounded-md bg-destructive/10 p-2 text-xs text-destructive">
+            <strong>Warning:</strong> This will delete all scraped event data. Any bets referencing these events will be unaffected, but you will lose market information.
+          </div>
+          <div className="flex justify-end gap-2">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearEvents}
+              disabled={isClearing}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isClearing ? "Clearing..." : "Clear All Events"}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

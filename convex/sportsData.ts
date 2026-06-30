@@ -1,5 +1,7 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
+import { logAdminActionInternal } from "./audit/logs";
+import { getAdminSessionByTokenInternal } from "./admin/sessions";
 
 const SOURCE = "kwikbet";
 
@@ -284,6 +286,197 @@ export const listOddsByMatch = query({
         q.eq("sourceMatchId", args.sourceMatchId)
       )
       .take(4000);
+  },
+});
+
+// Query to analyze events before clearing
+export const analyzeEventsForClear = query({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    const lowerBound = now - 24 * 60 * 60 * 1000;
+    const upperBound = now + 30 * 24 * 60 * 60 * 1000;
+
+    // Get all matches
+    const allMatches = await ctx.db.query("sportsMatches").take(10000);
+
+    // Get all active bets
+    const allBets = await ctx.db.query("bets").take(50000);
+    const activeBetsMatchIds = new Set<string>();
+
+    for (const bet of allBets) {
+      if (bet.status === "active") {
+        for (const selection of bet.selections) {
+          if (selection.sourceOddId) {
+            // Find the match ID from odds
+            const allOdds = await ctx.db.query("sportsOdds").take(50000);
+            const odd = allOdds.find((o) => o.sourceOddId === selection.sourceOddId);
+            if (odd) {
+              activeBetsMatchIds.add(odd.sourceMatchId);
+            }
+          }
+        }
+      }
+    }
+
+    // Categorize matches
+    let totalMatches = 0;
+    let activeMatches = 0;
+    let matchesWithActiveBets = 0;
+    let deletableMatches = 0;
+
+    for (const match of allMatches) {
+      totalMatches++;
+
+      const isActive =
+        match.status === 1 || // Live
+        (match.startTime >= lowerBound && match.startTime <= upperBound); // Within display range
+
+      const hasActiveBets = activeBetsMatchIds.has(match.sourceMatchId);
+
+      if (isActive) {
+        activeMatches++;
+      } else if (hasActiveBets) {
+        matchesWithActiveBets++;
+      } else {
+        deletableMatches++;
+      }
+    }
+
+    // Count markets and odds to delete
+    const marketIds: string[] = [];
+    for (const match of allMatches) {
+      const isActive =
+        match.status === 1 ||
+        (match.startTime >= lowerBound && match.startTime <= upperBound);
+      const hasActiveBets = activeBetsMatchIds.has(match.sourceMatchId);
+
+      if (!isActive && !hasActiveBets) {
+        const markets = await ctx.db
+          .query("sportsMarkets")
+          .take(1000);
+        const matchMarkets = markets.filter(
+          (m) => m.sourceMatchId === match.sourceMatchId
+        );
+        for (const market of matchMarkets) {
+          marketIds.push(market._id.toString());
+        }
+      }
+    }
+
+    const allOdds = await ctx.db.query("sportsOdds").take(10000);
+    const deletableOdds = allOdds.filter((odd) =>
+      marketIds.includes(odd.marketId?.toString() || "")
+    );
+
+    return {
+      totalMatches,
+      activeMatches,
+      matchesWithActiveBets,
+      deletableMatches,
+      deletableMarkets: marketIds.length,
+      deletableOdds: deletableOdds.length,
+    };
+  },
+});
+
+// Clear junk events (old/finished events without active bets)
+export const clearJunkEvents = mutation({
+  args: {
+    sessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const lowerBound = now - 24 * 60 * 60 * 1000;
+    const upperBound = now + 30 * 24 * 60 * 60 * 1000;
+
+    // Get all matches
+    const allMatches = await ctx.db.query("sportsMatches").take(10000);
+
+    // Get all active bets
+    const allBets = await ctx.db.query("bets").take(50000);
+    const activeBetsMatchIds = new Set<string>();
+
+    for (const bet of allBets) {
+      if (bet.status === "active") {
+        for (const selection of bet.selections) {
+          if (selection.sourceOddId) {
+            const odd = await ctx.db
+              .query("sportsOdds")
+              .filter((q) => q.eq(q.field("sourceOddId"), selection.sourceOddId))
+              .first();
+            if (odd) {
+              activeBetsMatchIds.add(odd.sourceMatchId);
+            }
+          }
+        }
+      }
+    }
+
+    // Find matches to delete
+    const matchesToDelete: string[] = [];
+    for (const match of allMatches) {
+      const isActive =
+        match.status === 1 ||
+        (match.startTime >= lowerBound && match.startTime <= upperBound);
+      const hasActiveBets = activeBetsMatchIds.has(match.sourceMatchId);
+
+      if (!isActive && !hasActiveBets) {
+        matchesToDelete.push(match.sourceMatchId);
+      }
+    }
+
+    // Delete odds for these matches
+    let oddsDeleted = 0;
+    const allOdds = await ctx.db.query("sportsOdds").take(10000);
+    for (const odd of allOdds) {
+      if (matchesToDelete.includes(odd.sourceMatchId)) {
+        await ctx.db.delete(odd._id);
+        oddsDeleted++;
+      }
+    }
+
+    // Delete markets for these matches
+    let marketsDeleted = 0;
+    const allMarkets = await ctx.db.query("sportsMarkets").take(10000);
+    for (const market of allMarkets) {
+      if (matchesToDelete.includes(market.sourceMatchId)) {
+        await ctx.db.delete(market._id);
+        marketsDeleted++;
+      }
+    }
+
+    // Delete matches
+    let matchesDeleted = 0;
+    for (const match of allMatches) {
+      if (matchesToDelete.includes(match.sourceMatchId)) {
+        await ctx.db.delete(match._id);
+        matchesDeleted++;
+      }
+    }
+
+    // Log the action
+    if (args.sessionToken) {
+      const adminSession = await getAdminSessionByTokenInternal(ctx, args.sessionToken);
+      if (adminSession) {
+        await logAdminActionInternal(ctx, {
+          adminName: adminSession.adminName,
+          userId: adminSession.userId,
+          actionType: "other",
+          resourceType: "scraper_data",
+          resourceDescription: "Cleared junk events from database",
+          details: {
+            newValue: `${matchesDeleted} matches, ${marketsDeleted} markets, ${oddsDeleted} odds deleted`,
+          },
+        });
+      }
+    }
+
+    return {
+      matchesDeleted,
+      marketsDeleted,
+      oddsDeleted,
+    };
   },
 });
 
