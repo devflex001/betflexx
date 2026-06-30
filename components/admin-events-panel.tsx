@@ -148,12 +148,12 @@ export function AdminEventsPanel() {
         })
 
         totalDeleted += result.matchesDeleted
-        setClearProgress({ deleted: totalDeleted, total: totalDeleted + (result.hasMore ? 500 : 0) })
+        setClearProgress({ deleted: totalDeleted, total: totalDeleted + (result.hasMore ? 10 : 0) })
         hasMore = result.hasMore
 
         // Small delay between batches
         if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 500))
+          await new Promise(resolve => setTimeout(resolve, 300))
         }
       }
 
@@ -440,7 +440,12 @@ export function AdminEventsPanel() {
       )}
 
       {/* Clear Old Events Confirmation Dialog */}
-      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+      <AlertDialog open={showClearDialog} onOpenChange={(open) => {
+        // Prevent closing while clearing
+        if (!isClearing) {
+          setShowClearDialog(open)
+        }
+      }}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Clear Old Events?</AlertDialogTitle>
@@ -459,11 +464,11 @@ export function AdminEventsPanel() {
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-green-600 transition-all duration-300"
+                    className="h-full bg-green-600 transition-all duration-300 animate-pulse"
                     style={{
                       width: clearProgress.total > 0
                         ? `${(clearProgress.deleted / clearProgress.total) * 100}%`
-                        : "100%",
+                        : "50%",
                     }}
                   />
                 </div>
@@ -484,7 +489,7 @@ export function AdminEventsPanel() {
           </div>
 
           <div className="flex justify-end gap-2">
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isClearing}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleClearEvents}
               disabled={isClearing}
