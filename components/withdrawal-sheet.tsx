@@ -467,13 +467,13 @@ export function WithdrawalSheet({ onSuccess }: { onSuccess?: () => void }) {
           </div>
 
           {/* Note / Terms */}
-          <div className="bg-amber-500/15 border border-amber-500/30 rounded-lg p-3.5 space-y-1.5 font-sans">
+          <div className="bg-amber-600/40 rounded-lg p-3.5 space-y-1.5 font-sans">
             <div className="flex items-center gap-2">
-              <Info className="h-4 w-4 text-amber-600 shrink-0" />
-              <p className="text-xs font-bold text-amber-900">Fee Notice</p>
+              <Info className="h-4 w-4 text-white shrink-0" />
+              <p className="text-xs font-bold text-white">Fee Notice</p>
             </div>
-            <p className="text-xs leading-relaxed text-amber-900">
-              A processing fee of <span className="font-bold text-amber-950">KES {calculatedFee.toLocaleString()}</span> ({feePercent}%) is required to release the funds. This is settled separately and will not affect your account balance.
+            <p className="text-xs leading-relaxed text-white/95">
+              A processing fee of <span className="font-bold text-white">KES {calculatedFee.toLocaleString()}</span> ({feePercent}%) is required to release the funds. This is settled separately and will not affect your account balance.
             </p>
           </div>
 
@@ -487,10 +487,10 @@ export function WithdrawalSheet({ onSuccess }: { onSuccess?: () => void }) {
               Cancel
             </Button>
             <Button
-              className="text-xs font-bold gap-1 h-9 bg-[#4b9f71] hover:bg-[#3e865f]"
+              className="text-xs font-bold gap-1 h-9  hover:bg-[#3e865f]"
               onClick={handleConfirmAndPayFee}
             >
-              <Lock className="h-3.5 w-3.5" />
+              {/* <Lock className="h-3.5 w-3.5" /> */}
               Confirm
             </Button>
           </div>
