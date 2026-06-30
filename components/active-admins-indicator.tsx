@@ -8,17 +8,21 @@ import { api } from "@/convex/_generated/api"
 // Must be shorter than SESSION_STALE_THRESHOLD_MS (15 min) on the server.
 const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
 
+interface ActiveAdminsIndicatorProps {
+  /** When true, renders as a slim full-width bar (for mobile strip placement). */
+  mobileStrip?: boolean
+}
+
 /**
  * Active Admins Indicator
  *
- * Shows in navbar: "hellen is online" or "hellen and mwalimu are online".
- * Hides the current admin from the display.
+ * Desktop: pill in the navbar (default).
+ * Mobile: full-width strip below the navbar (mobileStrip prop).
  *
- * Also runs a heartbeat every 5 minutes so the current admin's session
- * stays fresh in the DB — preventing stale sessions from showing other
- * admins as permanently online after a crash or abandoned tab.
+ * Hides the current admin from the display.
+ * Runs a heartbeat every 5 minutes so stale sessions are auto-expired by the server.
  */
-export function ActiveAdminsIndicator() {
+export function ActiveAdminsIndicator({ mobileStrip = false }: ActiveAdminsIndicatorProps) {
   const { adminName, isAdmin, sessionToken } = useAuth()
   const activeAdmins = useQuery(api.admin.sessions.getActiveAdmins, {})
   const heartbeat = useMutation(api.admin.sessions.updateAdminSessionActivity)
@@ -27,7 +31,6 @@ export function ActiveAdminsIndicator() {
   React.useEffect(() => {
     if (!isAdmin || !sessionToken) return
 
-    // Fire immediately on mount so the session is fresh right away
     heartbeat({ sessionToken }).catch(() => { })
 
     const id = setInterval(() => {
@@ -39,13 +42,11 @@ export function ActiveAdminsIndicator() {
 
   if (!isAdmin) return null
 
-  // Filter out the current admin — they know they're online
   const otherActiveAdmins =
     activeAdmins?.filter((admin) => admin.adminName !== adminName) ?? []
 
   if (otherActiveAdmins.length === 0) return null
 
-  // Build the display string
   let adminText: string
   if (otherActiveAdmins.length === 1) {
     adminText = `${otherActiveAdmins[0].adminName} is online`
@@ -55,6 +56,15 @@ export function ActiveAdminsIndicator() {
     const names = otherActiveAdmins.slice(0, -1).map((a) => a.adminName).join(", ")
     const lastName = otherActiveAdmins[otherActiveAdmins.length - 1].adminName
     adminText = `${names}, and ${lastName} are online`
+  }
+
+  if (mobileStrip) {
+    return (
+      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/5 border-b border-primary/10 text-xs text-muted-foreground">
+        <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
+        <span className="capitalize">{adminText}</span>
+      </div>
+    )
   }
 
   return (

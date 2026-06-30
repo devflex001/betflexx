@@ -250,7 +250,7 @@ export function AdminLayout({ children, pageTitle }: AdminLayoutProps) {
             {/* Top Navbar */}
             <header className="flex h-14 items-center justify-between px-3 sm:px-5 border-b border-border bg-background/95 backdrop-blur-md shrink-0 gap-3">
 
-              {/* Left: Hamburger (mobile) + Active Admins */}
+              {/* Left: Hamburger (mobile) + Page label (mobile) + Active Admins (desktop) */}
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Button
                   variant="ghost"
@@ -295,7 +295,7 @@ export function AdminLayout({ children, pageTitle }: AdminLayoutProps) {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="h-9 gap-2 rounded-full border border-border px-2 hover:bg-muted/50"
+                      className="h-9 gap-2 rounded-full sm:border sm:border-border px-2 hover:bg-muted/50"
                       aria-label="Admin account menu"
                     >
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
@@ -306,7 +306,7 @@ export function AdminLayout({ children, pageTitle }: AdminLayoutProps) {
                           {adminName ?? "Admin"}
                         </span>
                         <span className="text-[9px] font-medium uppercase leading-none tracking-wider text-muted-foreground">
-                          Administrator
+                          Admin
                         </span>
                       </span>
                     </Button>
@@ -334,6 +334,11 @@ export function AdminLayout({ children, pageTitle }: AdminLayoutProps) {
                 </DropdownMenu>
               </div>
             </header>
+
+            {/* Mobile-only: active admins strip — hidden on md+ where it shows in the navbar */}
+            <div className="md:hidden">
+              <ActiveAdminsIndicator mobileStrip />
+            </div>
 
             {/* Scrollable content */}
             <main className="flex-1 p-3 sm:p-5 lg:p-6 overflow-y-auto h-full scrollbar-thin">
