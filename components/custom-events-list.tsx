@@ -154,7 +154,7 @@ export function CustomEventsList({
   const handleResolveEvent = async (passphrase?: string) => {
     if (selectedOutcomesByMarket.size === 0 || !eventToResolve) {
       toast.error("Please select at least one outcome in a market")
-      return
+      throw new Error("Please select at least one outcome in a market")
     }
 
     setIsResolving(true)
@@ -180,16 +180,17 @@ export function CustomEventsList({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Failed to resolve event"
 
-      // If error indicates event is already settled, show override dialog
-      if (errorMsg.includes("Event already settled") || errorMsg.includes("passphrase required")) {
-        toast.error("This event has already been settled. Override confirmation required.")
-        // The dialog will be shown by the modal component
-        return
+      // If error indicates event is already settled and no passphrase was provided, 
+      // rethrow so the modal can handle it
+      if (errorMsg.includes("Event already settled") && !passphrase) {
+        setIsResolving(false)
+        throw error
       }
 
+      // For other errors, show toast and don't rethrow
       toast.error(errorMsg)
-    } finally {
       setIsResolving(false)
+      throw error
     }
   }
 
@@ -897,7 +898,8 @@ function ResolveModal({
   onResolve,
 }: ResolveModalProps) {
   const isMobile = useMediaQuery("(max-width: 768px)")
-  const [showOverrideDialog, setShowOverrideDialog] = React.useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = React.useState(false)
+  const [showPassphraseDialog, setShowPassphraseDialog] = React.useState(false)
   const [passphraseInput, setPassphraseInput] = React.useState("")
   const [passphraseError, setPassphraseError] = React.useState("")
 
@@ -1110,12 +1112,18 @@ function ResolveModal({
           <Button
             size="sm"
             className="text-xs h-8 font-semibold"
-            onClick={() => {
-              // Try to resolve, which may trigger override dialog if already settled
-              onResolve().catch(() => {
-                // Error was handled in handleResolveEvent, show override dialog
-                setShowOverrideDialog(true)
-              })
+            onClick={async () => {
+              try {
+                // Try to resolve without passphrase first
+                await onResolve()
+              } catch (error) {
+                // If event is already settled, show confirmation dialog
+                const errorMsg = error instanceof Error ? error.message : ""
+                if (errorMsg.includes("Event already settled")) {
+                  setShowConfirmDialog(true)
+                }
+                // Don't show toast here - handleResolveEvent already showed it
+              }
             }}
             disabled={isResolving || totalSelected === 0}
           >
