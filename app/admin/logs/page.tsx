@@ -6,22 +6,15 @@ import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { AdminLayout } from "@/components/admin-layout"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Table,
   TableBody,
@@ -30,11 +23,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
-  Loader2,
   Search,
   Download,
+  ChevronDown,
   UserCheck,
   UserX,
   Edit,
@@ -68,51 +61,51 @@ const actionIconMap: Record<
   { icon: React.ReactNode; color: string }
 > = {
   login: {
-    icon: <LogIn className="h-4 w-4" />,
+    icon: <LogIn className="h-3.5 w-3.5" />,
     color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   },
   logout: {
-    icon: <LogOut className="h-4 w-4" />,
+    icon: <LogOut className="h-3.5 w-3.5" />,
     color: "bg-slate-500/10 text-slate-700 dark:text-slate-400",
   },
   ban_user: {
-    icon: <UserX className="h-4 w-4" />,
+    icon: <UserX className="h-3.5 w-3.5" />,
     color: "bg-red-500/10 text-red-700 dark:text-red-400",
   },
   unban_user: {
-    icon: <UserCheck className="h-4 w-4" />,
+    icon: <UserCheck className="h-3.5 w-3.5" />,
     color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   },
   edit_user: {
-    icon: <Edit className="h-4 w-4" />,
+    icon: <Edit className="h-3.5 w-3.5" />,
     color: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
   },
   update_bet_status: {
-    icon: <Zap className="h-4 w-4" />,
+    icon: <Zap className="h-3.5 w-3.5" />,
     color: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
   },
   approve_withdrawal: {
-    icon: <CheckCircle2 className="h-4 w-4" />,
+    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
     color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   },
   reject_withdrawal: {
-    icon: <AlertCircle className="h-4 w-4" />,
+    icon: <AlertCircle className="h-3.5 w-3.5" />,
     color: "bg-red-500/10 text-red-700 dark:text-red-400",
   },
   create_custom_event: {
-    icon: <Edit className="h-4 w-4" />,
+    icon: <Edit className="h-3.5 w-3.5" />,
     color: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
   },
   update_custom_event: {
-    icon: <Edit className="h-4 w-4" />,
+    icon: <Edit className="h-3.5 w-3.5" />,
     color: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
   },
   settle_custom_event: {
-    icon: <CheckCircle2 className="h-4 w-4" />,
+    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
     color: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
   },
   other: {
-    icon: <Eye className="h-4 w-4" />,
+    icon: <Eye className="h-3.5 w-3.5" />,
     color: "bg-gray-500/10 text-gray-700 dark:text-gray-400",
   },
 }
@@ -131,11 +124,12 @@ interface AdminLog {
     amount?: number
   }
 }
+
 function AdminLogsContent() {
   const { isAdmin } = useAuth()
+  const [search, setSearch] = useState<string>("")
   const [selectedAdmin, setSelectedAdmin] = useState<string>("")
   const [selectedActionType, setSelectedActionType] = useState<string>("")
-  const [searchQuery, setSearchQuery] = useState("")
 
   // Fetch all logs
   const logs = useQuery(api.audit.logger.getAdminLogs, {
@@ -158,8 +152,8 @@ function AdminLogsContent() {
       }
 
       // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase()
+      if (search) {
+        const query = search.toLowerCase()
         return (
           log.adminName.toLowerCase().includes(query) ||
           log.actionType.toLowerCase().includes(query) ||
@@ -170,7 +164,7 @@ function AdminLogsContent() {
 
       return true
     })
-  }, [logs, selectedAdmin, selectedActionType, searchQuery])
+  }, [logs, selectedAdmin, selectedActionType, search])
 
   const handleExportCSV = () => {
     if (!filteredLogs || filteredLogs.length === 0) {
@@ -178,7 +172,6 @@ function AdminLogsContent() {
       return
     }
 
-    // Create CSV content
     const headers = [
       "Admin Name",
       "Action Type",
@@ -205,7 +198,6 @@ function AdminLogsContent() {
       ),
     ].join("\n")
 
-    // Download CSV
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
@@ -220,217 +212,232 @@ function AdminLogsContent() {
   if (!isAdmin) {
     return null
   }
+
+  if (!logs) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-10 rounded-lg" />
+        <Skeleton className="h-64 rounded-lg" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      {/* Filters Card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Search */}
-            <div>
-              <label className="text-xs font-medium mb-1.5 block">Search</label>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Search logs..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 h-8 text-xs"
-                />
-              </div>
-            </div>
+      {/* Filters Bar - Same as custom-events */}
+      <div className="flex items-center gap-2">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search logs..."
+            className="h-8 bg-muted/50 pl-8 text-xs focus-visible:ring-primary"
+          />
+        </div>
 
-            {/* Admin Filter */}
-            <div>
-              <label className="text-xs font-medium mb-1.5 block">Admin</label>
-              <Select value={selectedAdmin || "all"} onValueChange={(val) => setSelectedAdmin(val === "all" ? "" : val)}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="All admins" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All admins</SelectItem>
-                  {["dikie", "hellen", "mwalimu"].map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Action Type Filter */}
-            <div>
-              <label className="text-xs font-medium mb-1.5 block">
-                Action Type
-              </label>
-              <Select
-                value={selectedActionType || "all"}
-                onValueChange={(val) => setSelectedActionType(val === "all" ? "" : val)}
+        {/* Admin Filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 border-border text-xs"
+            >
+              {selectedAdmin || "All Admins"}
+              <ChevronDown className="size-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-40">
+            <DropdownMenuItem
+              onClick={() => setSelectedAdmin("")}
+              className={!selectedAdmin ? "bg-accent" : ""}
+            >
+              All Admins
+            </DropdownMenuItem>
+            {["dikie", "hellen", "mwalimu"].map((name) => (
+              <DropdownMenuItem
+                key={name}
+                onClick={() => setSelectedAdmin(name)}
+                className={selectedAdmin === name ? "bg-accent" : ""}
               >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="All actions" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All actions</SelectItem>
-                  {ACTION_TYPES.map((action) => (
-                    <SelectItem key={action.value} value={action.value}>
-                      {action.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                {name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-            {/* Export Button */}
-            <div>
-              <label className="text-xs font-medium mb-1.5 block">Export</label>
-              <Button
-                onClick={handleExportCSV}
-                variant="outline"
-                size="sm"
-                className="w-full h-8 text-xs"
-                disabled={!filteredLogs || filteredLogs.length === 0}
+        {/* Action Type Filter */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 border-border text-xs"
+            >
+              {ACTION_TYPES.find((a) => a.value === selectedActionType)?.label || "All Actions"}
+              <ChevronDown className="size-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem
+              onClick={() => setSelectedActionType("")}
+              className={!selectedActionType ? "bg-accent" : ""}
+            >
+              All Actions
+            </DropdownMenuItem>
+            {ACTION_TYPES.map((action) => (
+              <DropdownMenuItem
+                key={action.value}
+                onClick={() => setSelectedActionType(action.value)}
+                className={selectedActionType === action.value ? "bg-accent" : ""}
               >
-                <Download className="h-3.5 w-3.5 mr-1" />
-                CSV
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                {action.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Export Button */}
+        <Button
+          onClick={handleExportCSV}
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 border-border text-xs"
+          disabled={!filteredLogs || filteredLogs.length === 0}
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export
+        </Button>
+      </div>
+
       {/* Logs Table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-sm">Activity Logs</CardTitle>
-              <CardDescription className="text-xs mt-1">
-                {filteredLogs?.length || 0} of {logs?.logs.length || 0} entries
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {!logs ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredLogs.length === 0 ? (
-            <div className="flex items-center justify-center py-8">
-              <p className="text-xs text-muted-foreground">
-                {logs.logs.length === 0
-                  ? "No logs recorded yet"
-                  : "No logs match your filters"}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="h-8 text-xs font-semibold">Admin</TableHead>
-                    <TableHead className="h-8 text-xs font-semibold">Action</TableHead>
-                    <TableHead className="h-8 text-xs font-semibold">Resource</TableHead>
-                    <TableHead className="h-8 text-xs font-semibold">Description</TableHead>
-                    <TableHead className="h-8 text-xs font-semibold">Time</TableHead>
-                    <TableHead className="h-8 text-xs font-semibold w-16">Details</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLogs.map((log: AdminLog) => {
-                    const action =
-                      actionIconMap[log.actionType] || actionIconMap.other
-                    return (
-                      <TableRow key={log._id} className="h-9">
-                        {/* Admin Name */}
-                        <TableCell className="py-1.5">
-                          <Badge variant="secondary" className="text-xs font-mono">
-                            {log.adminName}
-                          </Badge>
-                        </TableCell>
+      {filteredLogs.length === 0 ? (
+        <div className="rounded-lg border border-border bg-card p-8 flex items-center justify-center">
+          <p className="text-xs text-muted-foreground">
+            {logs.logs.length === 0
+              ? "No logs recorded yet"
+              : "No logs match your filters"}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <Table>
+            <TableHeader className="bg-muted/30">
+              <TableRow className="border-border hover:bg-transparent">
+                <TableHead className="h-9 font-semibold text-xs text-foreground">
+                  Admin
+                </TableHead>
+                <TableHead className="h-9 font-semibold text-xs text-foreground">
+                  Action
+                </TableHead>
+                <TableHead className="h-9 font-semibold text-xs text-foreground">
+                  Resource
+                </TableHead>
+                <TableHead className="h-9 font-semibold text-xs text-foreground">
+                  Description
+                </TableHead>
+                <TableHead className="h-9 font-semibold text-xs text-foreground">
+                  Time
+                </TableHead>
+                <TableHead className="h-9 text-right font-semibold text-xs text-foreground w-16">
+                  Details
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredLogs.map((log: AdminLog) => {
+                const action = actionIconMap[log.actionType] || actionIconMap.other
+                return (
+                  <TableRow
+                    key={log._id}
+                    className="border-border hover:bg-muted/30 transition-colors h-9"
+                  >
+                    {/* Admin Name */}
+                    <TableCell className="py-1.5 text-xs font-mono font-semibold">
+                      <Badge variant="secondary" className="text-xs">
+                        {log.adminName}
+                      </Badge>
+                    </TableCell>
 
-                        {/* Action */}
-                        <TableCell className="py-1.5">
-                          <div className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs", action.color)}>
-                            {action.icon}
-                            <span className="font-medium">
-                              {ACTION_TYPES.find(
-                                (a) => a.value === log.actionType
-                              )?.label || log.actionType}
-                            </span>
-                          </div>
-                        </TableCell>
+                    {/* Action */}
+                    <TableCell className="py-1.5">
+                      <div className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium", action.color)}>
+                        {action.icon}
+                        <span>
+                          {ACTION_TYPES.find(
+                            (a) => a.value === log.actionType
+                          )?.label || log.actionType}
+                        </span>
+                      </div>
+                    </TableCell>
 
-                        {/* Resource Type */}
-                        <TableCell className="py-1.5">
-                          <span className="text-xs text-muted-foreground capitalize">
-                            {log.resourceType}
-                          </span>
-                        </TableCell>
+                    {/* Resource Type */}
+                    <TableCell className="py-1.5">
+                      <span className="text-xs text-muted-foreground capitalize">
+                        {log.resourceType}
+                      </span>
+                    </TableCell>
 
-                        {/* Description */}
-                        <TableCell className="py-1.5">
-                          <span className="text-xs truncate max-w-xs">
-                            {log.resourceDescription}
-                          </span>
-                        </TableCell>
+                    {/* Description */}
+                    <TableCell className="py-1.5">
+                      <span className="text-xs truncate max-w-sm">
+                        {log.resourceDescription}
+                      </span>
+                    </TableCell>
 
-                        {/* Timestamp */}
-                        <TableCell className="py-1.5">
-                          <span className="text-xs text-muted-foreground">
-                            {format(
-                              new Date(log.timestamp),
-                              "MMM dd, HH:mm"
-                            )}
-                          </span>
-                        </TableCell>
+                    {/* Timestamp */}
+                    <TableCell className="py-1.5">
+                      <span className="text-xs text-muted-foreground">
+                        {format(
+                          new Date(log.timestamp),
+                          "MMM dd, HH:mm"
+                        )}
+                      </span>
+                    </TableCell>
 
-                        {/* Details Button */}
-                        <TableCell className="py-1.5">
-                          {log.details && (
-                            <details className="cursor-pointer group">
-                              <summary className="text-xs font-medium text-primary hover:underline">
-                                View
-                              </summary>
-                              <div className="absolute right-2 z-10 mt-1 bg-popover border rounded shadow-lg p-2 text-xs space-y-1 w-48">
-                                {log.details.reason && (
-                                  <div>
-                                    <strong>Reason:</strong> {log.details.reason}
-                                  </div>
-                                )}
-                                {log.details.previousValue && (
-                                  <div>
-                                    <strong>Previous:</strong>{" "}
-                                    {log.details.previousValue}
-                                  </div>
-                                )}
-                                {log.details.newValue && (
-                                  <div>
-                                    <strong>New:</strong> {log.details.newValue}
-                                  </div>
-                                )}
-                                {log.details.amount !== undefined && (
-                                  <div>
-                                    <strong>Amount:</strong> KES{" "}
-                                    {log.details.amount.toLocaleString()}
-                                  </div>
-                                )}
+                    {/* Details */}
+                    <TableCell className="py-1.5 text-right">
+                      {log.details && (
+                        <details className="cursor-pointer group inline-block">
+                          <summary className="text-xs font-medium text-primary hover:underline">
+                            View
+                          </summary>
+                          <div className="absolute right-2 z-10 mt-1 bg-popover border rounded shadow-lg p-2 text-xs space-y-1 w-48">
+                            {log.details.reason && (
+                              <div>
+                                <strong>Reason:</strong> {log.details.reason}
                               </div>
-                            </details>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                            )}
+                            {log.details.previousValue && (
+                              <div>
+                                <strong>Previous:</strong>{" "}
+                                {log.details.previousValue}
+                              </div>
+                            )}
+                            {log.details.newValue && (
+                              <div>
+                                <strong>New:</strong> {log.details.newValue}
+                              </div>
+                            )}
+                            {log.details.amount !== undefined && (
+                              <div>
+                                <strong>Amount:</strong> KES{" "}
+                                {log.details.amount.toLocaleString()}
+                              </div>
+                            )}
+                          </div>
+                        </details>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   )
 }

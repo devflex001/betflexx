@@ -54,6 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const startAdminSessionMutation = useMutation(
     api.admin.sessions.startAdminSession
   );
+  const endAdminSessionMutation = useMutation(
+    api.admin.sessions.endAdminSession
+  );
 
   // Get session token on mount (only once)
   useEffect(() => {
@@ -210,11 +213,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       // End admin session if admin is logged out
-      if (user?.role === "admin" && sessionToken) {
+      if (user?.role === "admin" && sessionToken && adminName) {
         try {
-          await startAdminSessionMutation({
-            userId: user._id,
-            adminName: adminName || "unknown",
+          await endAdminSessionMutation({
             sessionToken,
           });
         } catch (err) {
