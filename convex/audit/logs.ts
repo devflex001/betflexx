@@ -98,16 +98,24 @@ export const getAdminLogs = query({
   },
   handler: async (ctx, args) => {
     const limit = Math.min(args.limit ?? 100, 500);
-    let query = ctx.db.query("admin_logs");
 
-    // Apply filters
+    let logs;
+
+    // Apply filters based on provided arguments
     if (args.adminNameFilter) {
-      query = query.withIndex("by_adminName", (q) =>
-        q.eq("adminName", args.adminNameFilter!)
-      );
+      logs = await ctx.db
+        .query("admin_logs")
+        .withIndex("by_adminName", (q) =>
+          q.eq("adminName", args.adminNameFilter!)
+        )
+        .order("desc")
+        .take(limit);
+    } else {
+      logs = await ctx.db
+        .query("admin_logs")
+        .order("desc")
+        .take(limit);
     }
-
-    const logs = await query.order("desc").take(limit);
 
     // Filter further if needed (for multiple filters)
     return {
