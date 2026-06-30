@@ -332,12 +332,12 @@ export default function AdminLogsPage() {
             {/* Admin Filter */}
             <div>
               <label className="text-sm font-medium mb-2 block">Admin</label>
-              <Select value={selectedAdmin} onValueChange={setSelectedAdmin}>
+              <Select value={selectedAdmin || "all"} onValueChange={(val) => setSelectedAdmin(val === "all" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All admins" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All admins</SelectItem>
+                  <SelectItem value="all">All admins</SelectItem>
                   {["dikie", "hellen", "mwalimu"].map((name) => (
                     <SelectItem key={name} value={name}>
                       {name}
@@ -353,14 +353,14 @@ export default function AdminLogsPage() {
                 Action Type
               </label>
               <Select
-                value={selectedActionType}
-                onValueChange={setSelectedActionType}
+                value={selectedActionType || "all"}
+                onValueChange={(val) => setSelectedActionType(val === "all" ? "" : val)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All actions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All actions</SelectItem>
+                  <SelectItem value="all">All actions</SelectItem>
                   {ACTION_TYPES.map((action) => (
                     <SelectItem key={action.value} value={action.value}>
                       {action.label}
