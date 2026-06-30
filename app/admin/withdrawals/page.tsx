@@ -24,12 +24,12 @@ import {
   ArrowDownLeft,
   Check,
   X,
-  Clock,
   Zap,
-  CheckCircle2,
   XCircle,
   Loader2,
   Ban,
+  Clock,
+  CheckCircle2,
 } from "lucide-react"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -240,13 +240,10 @@ export default function WithdrawalsPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="space-y-0.5">
-            <h1 className="text-lg font-bold tracking-tight flex items-center gap-2">
-              <ArrowDownLeft className="size-5 text-primary" />
+            <h1 className="text-lg font-bold tracking-tight flex items-center">
               Withdrawal Requests
             </h1>
-            <p className="text-xs text-muted-foreground">
-              Review and process user withdrawal requests.
-            </p>
+        
           </div>
 
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
@@ -262,10 +259,9 @@ export default function WithdrawalsPage() {
           </Select>
         </div>
 
-        <Separator />
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div className="border border-border rounded-lg p-3.5 space-y-1 bg-card">
             <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
               <ArrowDownLeft className="size-3.5 text-primary" />
@@ -275,34 +271,6 @@ export default function WithdrawalsPage() {
               <Skeleton className="h-6 w-16" />
             ) : (
               <p className="text-lg font-bold tracking-tight font-mono">{stats.total}</p>
-            )}
-          </div>
-
-          <div className="border border-border rounded-lg p-3.5 space-y-1 bg-card">
-            <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
-              <Clock className="size-3.5 text-amber-500" />
-              Pending
-            </span>
-            {stats === undefined ? (
-              <Skeleton className="h-6 w-16" />
-            ) : (
-              <p className="text-lg font-bold tracking-tight font-mono text-amber-600 dark:text-amber-400">
-                {stats.pending}
-              </p>
-            )}
-          </div>
-
-          <div className="border border-border rounded-lg p-3.5 space-y-1 bg-card">
-            <span className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
-              <CheckCircle2 className="size-3.5 text-emerald-500" />
-              Approved
-            </span>
-            {stats === undefined ? (
-              <Skeleton className="h-6 w-16" />
-            ) : (
-              <p className="text-lg font-bold tracking-tight font-mono text-emerald-600 dark:text-emerald-400">
-                {stats.approved}
-              </p>
             )}
           </div>
 

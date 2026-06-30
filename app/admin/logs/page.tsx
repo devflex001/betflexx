@@ -125,18 +125,20 @@ function AdminBadge({ name }: { name: string }) {
     </Badge>
   )
 }
-_id: string
-adminName: string
-actionType: string
-resourceType: string
-resourceDescription: string
-timestamp: number
-details ?: {
-  previousValue?: string
+
+interface AdminLog {
+  _id: string
+  adminName: string
+  actionType: string
+  resourceType: string
+  resourceDescription: string
+  timestamp: number
+  details?: {
+    previousValue?: string
     newValue?: string
     reason?: string
     amount?: number
-}
+  }
 }
 
 function AdminLogsContent() {
