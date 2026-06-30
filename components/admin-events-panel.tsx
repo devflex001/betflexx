@@ -69,11 +69,11 @@ export function AdminEventsPanel() {
   const [screenWidth, setScreenWidth] = React.useState(1024)
   const [showClearDialog, setShowClearDialog] = React.useState(false)
   const [isClearing, setIsClearing] = React.useState(false)
+  const [clearProgress, setClearProgress] = React.useState({ deleted: 0, total: 0 })
 
   const sessionToken =
     typeof window !== "undefined" ? localStorage.getItem("adminSessionToken") : null
   const clearJunkEventsM = useMutation(api.sportsData.clearJunkEvents)
-  const analyzeEventsQuery = useQuery(api.sportsData.analyzeEventsForClear, {})
 
   const pagination = usePagination({ pageSize: 10 })
 
@@ -136,20 +136,36 @@ export function AdminEventsPanel() {
   const handleClearEvents = async () => {
     try {
       setIsClearing(true)
-      const result = await clearJunkEventsM({
-        sessionToken: sessionToken || undefined,
-      })
+      setClearProgress({ deleted: 0, total: 0 })
+
+      let totalDeleted = 0
+      let hasMore = true
+
+      // Keep calling until no more events to delete
+      while (hasMore) {
+        const result = await clearJunkEventsM({
+          sessionToken: sessionToken || undefined,
+        })
+
+        totalDeleted += result.matchesDeleted
+        setClearProgress({ deleted: totalDeleted, total: totalDeleted + (result.hasMore ? 500 : 0) })
+        hasMore = result.hasMore
+
+        // Small delay between batches
+        if (hasMore) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      }
+
       setShowClearDialog(false)
-      toast.success(
-        `Successfully cleared ${result.matchesDeleted} old events from the database.`
-      )
-      // Refresh to show updated data
+      toast.success(`Cleared ${totalDeleted} old events from database!`)
       setTimeout(() => window.location.reload(), 1000)
     } catch (error) {
       console.error("Failed to clear events:", error)
       toast.error("Failed to clear events")
     } finally {
       setIsClearing(false)
+      setClearProgress({ deleted: 0, total: 0 })
     }
   }
 
@@ -427,114 +443,32 @@ export function AdminEventsPanel() {
       <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Clear Old Events</AlertDialogTitle>
+            <AlertDialogTitle>Clear Old Events?</AlertDialogTitle>
             <AlertDialogDescription>
-              Analysis of events in database
+              This will delete finished events that are no longer displayed.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          {analyzeEventsQuery === undefined ? (
-            <div className="space-y-3 py-4">
-              <div className="h-4 bg-muted rounded animate-pulse" />
-              <div className="h-4 bg-muted rounded animate-pulse" />
-              <div className="h-4 bg-muted rounded animate-pulse" />
+          <div className="space-y-3 py-4">
+            {/* Protection Notice */}
+            <div className="rounded-lg bg-blue-500/10 p-3 border border-blue-500/20 space-y-1">
+              <div className="text-xs font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+                <span>ℹ️</span> Protected
+              </div>
+              <div className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
+                <div>• Live events will NOT be deleted</div>
+                <div>• Recent events (24h) will NOT be deleted</div>
+                <div>• Only old finished events are cleared</div>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-4 py-4">
-              {/* Summary Stats */}
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-lg bg-muted p-3">
-                  <div className="text-xs text-muted-foreground mb-1">Total Events</div>
-                  <div className="text-xl font-bold">{analyzeEventsQuery.totalMatches}</div>
-                </div>
-                <div className="rounded-lg bg-green-500/10 p-3 border border-green-500/20">
-                  <div className="text-xs text-green-700 dark:text-green-400 mb-1">
-                    Can Delete
-                  </div>
-                  <div className="text-xl font-bold text-green-700 dark:text-green-400">
-                    {analyzeEventsQuery.deletableMatches}
-                  </div>
-                </div>
-              </div>
-
-              {/* Breakdown */}
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between p-2 rounded bg-yellow-500/10 border border-yellow-500/20">
-                  <span className="text-yellow-700 dark:text-yellow-400">
-                    🔴 Active/Live Events
-                  </span>
-                  <span className="font-semibold text-yellow-700 dark:text-yellow-400">
-                    {analyzeEventsQuery.activeMatches}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-2 rounded bg-orange-500/10 border border-orange-500/20">
-                  <span className="text-orange-700 dark:text-orange-400">
-                    ⏳ Events with Active Bets
-                  </span>
-                  <span className="font-semibold text-orange-700 dark:text-orange-400">
-                    {analyzeEventsQuery.matchesWithActiveBets}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-2 rounded bg-green-500/10 border border-green-500/20">
-                  <span className="text-green-700 dark:text-green-400">
-                    ✓ Old/Finished Events
-                  </span>
-                  <span className="font-semibold text-green-700 dark:text-green-400">
-                    {analyzeEventsQuery.deletableMatches}
-                  </span>
-                </div>
-              </div>
-
-              {/* Items to be deleted */}
-              <div className="rounded-lg bg-muted p-3 space-y-1 text-xs">
-                <div className="font-semibold text-foreground mb-2">Will be deleted:</div>
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span>Old Events</span>
-                  <span className="font-mono font-semibold">
-                    {analyzeEventsQuery.deletableMatches}
-                  </span>
-                </div>
-              </div>
-
-              {/* Protection Notice */}
-              <div className="rounded-lg bg-blue-500/10 p-3 border border-blue-500/20 space-y-1">
-                <div className="text-xs font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
-                  <span>ℹ️</span> Protected Data
-                </div>
-                <div className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
-                  <div>• Active/Live events will NOT be deleted</div>
-                  <div>• Events with active bets will NOT be deleted</div>
-                  <div>• Only old/finished events without bets are cleared</div>
-                </div>
-              </div>
-
-              {/* Warning if nothing to delete */}
-              {analyzeEventsQuery.deletableMatches === 0 && (
-                <div className="rounded-lg bg-yellow-500/10 p-3 border border-yellow-500/20">
-                  <div className="text-xs text-yellow-700 dark:text-yellow-400">
-                    ⚠️ No events to delete. All events are either active or have active bets.
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          </div>
 
           <div className="flex justify-end gap-2">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleClearEvents}
-              disabled={
-                isClearing ||
-                analyzeEventsQuery === undefined ||
-                analyzeEventsQuery.deletableMatches === 0
-              }
-              className={
-                analyzeEventsQuery && analyzeEventsQuery.deletableMatches > 0
-                  ? "bg-green-600 hover:bg-green-700 text-white"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
-              }
+              disabled={isClearing}
+              className="bg-green-600 hover:bg-green-700 text-white"
             >
               {isClearing ? "Clearing..." : "Clear Old Events"}
             </AlertDialogAction>

@@ -289,134 +289,60 @@ export const listOddsByMatch = query({
   },
 });
 
-// Query to analyze events before clearing - SIMPLE, only count events
-export const analyzeEventsForClear = query({
-  args: {},
-  handler: async (ctx) => {
-    const now = Date.now();
-    const lowerBound = now - 24 * 60 * 60 * 1000;
-    const upperBound = now + 30 * 24 * 60 * 60 * 1000;
-
-    // Get all matches only
-    const allMatches = await ctx.db.query("sportsMatches").take(10000);
-
-    // Get active bet match IDs only
-    const allBets = await ctx.db.query("bets").take(10000);
-    const activeBetsMatchIds = new Set<string>();
-
-    for (const bet of allBets) {
-      if (bet.status === "active") {
-        for (const selection of bet.selections) {
-          if (selection.sourceOddId) {
-            activeBetsMatchIds.add(selection.sourceOddId);
-          }
-        }
-      }
-    }
-
-    // Categorize matches ONLY
-    let totalMatches = 0;
-    let activeMatches = 0;
-    let matchesWithActiveBets = 0;
-    let deletableMatches = 0;
-
-    for (const match of allMatches) {
-      totalMatches++;
-
-      const isActive =
-        match.status === 1 ||
-        (match.startTime >= lowerBound && match.startTime <= upperBound);
-
-      const hasActiveBets = activeBetsMatchIds.has(match.sourceMatchId);
-
-      if (isActive) {
-        activeMatches++;
-      } else if (hasActiveBets) {
-        matchesWithActiveBets++;
-      } else {
-        deletableMatches++;
-      }
-    }
-
-    return {
-      totalMatches,
-      activeMatches,
-      matchesWithActiveBets,
-      deletableMatches,
-    };
-  },
-});
-
-// Clear junk events (old/finished events without active bets)
+// Clear old events - ULTRA LEAN with indexed queries
 export const clearJunkEvents = mutation({
   args: {
     sessionToken: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const now = Date.now();
-    const lowerBound = now - 24 * 60 * 60 * 1000;
-    const upperBound = now + 30 * 24 * 60 * 60 * 1000;
+    const cutoffTime = Date.now() - 24 * 60 * 60 * 1000; // 24 hours ago
 
-    // Get all matches
-    const allMatches = await ctx.db.query("sportsMatches").take(10000);
+    // Get old matches using index (500 at a time)
+    const oldMatches = await ctx.db
+      .query("sportsMatches")
+      .withIndex("by_source_and_startTime", (q) =>
+        q.eq("source", SOURCE).lt("startTime", cutoffTime)
+      )
+      .take(500);
 
-    // Get active bet match IDs
-    const allBets = await ctx.db.query("bets").take(10000);
-    const activeBetsMatchIds = new Set<string>();
-
-    for (const bet of allBets) {
-      if (bet.status === "active") {
-        for (const selection of bet.selections) {
-          if (selection.sourceOddId) {
-            activeBetsMatchIds.add(selection.sourceOddId);
-          }
-        }
-      }
-    }
-
-    // Find matches to delete
-    const matchesToDelete: string[] = [];
-    for (const match of allMatches) {
-      const isActive =
-        match.status === 1 ||
-        (match.startTime >= lowerBound && match.startTime <= upperBound);
-      const hasActiveBets = activeBetsMatchIds.has(match.sourceMatchId);
-
-      if (!isActive && !hasActiveBets) {
-        matchesToDelete.push(match.sourceMatchId);
-      }
-    }
-
-    // Delete odds for these matches
-    let oddsDeleted = 0;
-    const allOdds = await ctx.db.query("sportsOdds").take(10000);
-    for (const odd of allOdds) {
-      if (matchesToDelete.includes(odd.sourceMatchId)) {
-        await ctx.db.delete(odd._id);
-        oddsDeleted++;
-      }
-    }
-
-    // Delete markets for these matches
+    let matchesDeleted = 0;
     let marketsDeleted = 0;
-    const allMarkets = await ctx.db.query("sportsMarkets").take(10000);
-    for (const market of allMarkets) {
-      if (matchesToDelete.includes(market.sourceMatchId)) {
+    let oddsDeleted = 0;
+
+    for (const match of oldMatches) {
+      // Skip live matches
+      if (match.status === 1) continue;
+
+      // Delete markets using index
+      const markets = await ctx.db
+        .query("sportsMarkets")
+        .withIndex("by_sourceMatchId_and_marketPriority", (q) =>
+          q.eq("sourceMatchId", match.sourceMatchId)
+        )
+        .take(100);
+
+      for (const market of markets) {
         await ctx.db.delete(market._id);
         marketsDeleted++;
       }
-    }
 
-    // Delete matches
-    let matchesDeleted = 0;
-    for (const match of allMatches) {
-      if (matchesToDelete.includes(match.sourceMatchId)) {
-        await ctx.db.delete(match._id);
-        matchesDeleted++;
+      // Delete odds using index
+      const odds = await ctx.db
+        .query("sportsOdds")
+        .withIndex("by_sourceMatchId", (q) => q.eq("sourceMatchId", match.sourceMatchId))
+        .take(200);
+
+      for (const odd of odds) {
+        await ctx.db.delete(odd._id);
+        oddsDeleted++;
       }
+
+      // Delete the match
+      await ctx.db.delete(match._id);
+      matchesDeleted++;
     }
 
-    // Log the action
+    // Log
     if (args.sessionToken) {
       const adminSession = await getAdminSessionByTokenInternal(ctx, args.sessionToken);
       if (adminSession) {
@@ -425,9 +351,9 @@ export const clearJunkEvents = mutation({
           userId: adminSession.userId,
           actionType: "other",
           resourceType: "scraper_data",
-          resourceDescription: "Cleared junk events from database",
+          resourceDescription: "Cleared old events",
           details: {
-            newValue: `${matchesDeleted} matches deleted`,
+            newValue: `${matchesDeleted} events deleted`,
           },
         });
       }
@@ -437,8 +363,7 @@ export const clearJunkEvents = mutation({
       matchesDeleted,
       marketsDeleted,
       oddsDeleted,
+      hasMore: oldMatches.length === 500,
     };
   },
 });
-
-
