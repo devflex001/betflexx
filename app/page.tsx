@@ -289,16 +289,16 @@ export default function Page() {
         <div className="flex flex-1 overflow-hidden">
           <Sidebar className="hidden lg:flex w-60 shrink-0 overflow-y-auto border-r border-border" />
 
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-6 scrollbar-thin">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-2 scrollbar-thin">
             {((activeTab === "home" || activeTab === "live" || activeTab === "featured" || activeTab === "how-it-works" || activeTab === "faqs" || activeTab === "contact" || activeTab === "custom" || activeTab === "mybets") || !activeTab) && (
 
-              <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-2 border-b border-border scrollbar-none shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto pb-2 mb-0 border-b border-border scrollbar-none shrink-0">
 
                 <div className="flex items-center gap-2 shrink-0">
                   <Button
                     variant="ghost"
                     className={cn(
-                      "h-9 px-4 rounded-md text-sm font-semibold shrink-0 gap-2 border transition-all",
+                      "h-9 px-3 rounded-md text-sm font-semibold shrink-0 gap-1.5 border transition-all",
                       activeTab === "home"
                         ? "bg-[#4b9f71]/10 text-[#4b9f71] border-[#4b9f71]/50"
                         : "bg-card text-muted-foreground border-transparent hover:bg-accent hover:text-foreground"
@@ -312,7 +312,7 @@ export default function Page() {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "h-9 px-4 rounded-md text-sm font-semibold shrink-0 gap-2 border transition-all",
+                      "h-9 px-3 rounded-md text-sm font-semibold shrink-0 gap-1.5 border transition-all",
                       "bg-card text-muted-foreground border-transparent hover:bg-accent hover:text-foreground"
                     )}
                     onClick={() => { router.push("/live") }}
@@ -325,7 +325,7 @@ export default function Page() {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "h-9 px-4 rounded-md text-sm font-semibold shrink-0 gap-2 border transition-all",
+                      "h-9 px-3 rounded-md text-sm font-semibold shrink-0 gap-1.5 border transition-all",
                       activeTab === "featured"
                         ? "bg-[#4b9f71]/10 text-[#4b9f71] border-[#4b9f71]/50"
                         : "bg-card text-muted-foreground border-transparent hover:bg-accent hover:text-foreground"
@@ -337,7 +337,7 @@ export default function Page() {
                   </Button>
                 </div>
 
-                <div className="w-px h-6 bg-border mx-1 shrink-0" />
+                <div className="w-px h-6 bg-border mx-0.5 shrink-0" />
 
                 <div className="flex items-center gap-2 shrink-0">
                   {!sportCounts ? (
@@ -354,7 +354,7 @@ export default function Page() {
                           key={sport.id}
                           variant="ghost"
                           className={cn(
-                            "h-9 px-4 rounded-md text-sm font-semibold shrink-0 gap-2 border transition-all",
+                            "h-9 px-3 rounded-md text-sm font-semibold shrink-0 gap-1.5 border transition-all",
                             isActive
                               ? "bg-[#4b9f71]/10 text-[#4b9f71] border-[#4b9f71]/50"
                               : "bg-card text-muted-foreground border-transparent hover:bg-accent hover:text-foreground"
@@ -368,7 +368,7 @@ export default function Page() {
                           <SportIcon className="size-4" />
                           <span>{sport.label}</span>
                           <span className={cn(
-                            "rounded-full px-1.5 py-0.5 text-[10px] font-bold ml-1 transition-colors",
+                            "rounded-full px-1.5 py-0.5 text-[10px] font-bold ml-0.5 transition-colors",
                             isActive ? "bg-[#4b9f71]/20 text-[#4b9f71]" : "bg-muted text-muted-foreground"
                           )}>
                             {sport.count}
@@ -379,7 +379,7 @@ export default function Page() {
                   )}
                 </div>
 
-                <div className="w-px h-6 bg-border mx-1 shrink-0" />
+                <div className="w-px h-6 bg-border mx-0.5 shrink-0" />
 
                 <div className="flex items-center gap-2 shrink-0">
                   {!leagues ? (
@@ -395,7 +395,7 @@ export default function Page() {
                           key={league}
                           variant="ghost"
                           className={cn(
-                            "h-9 px-4 rounded-md text-sm font-medium shrink-0 transition-all border",
+                            "h-9 px-3 rounded-md text-sm font-medium shrink-0 transition-all border",
                             isActive
                               ? "bg-[#4b9f71]/10 text-[#4b9f71] border-[#4b9f71]/50"
                               : "bg-transparent text-muted-foreground border-transparent hover:bg-accent hover:text-foreground"

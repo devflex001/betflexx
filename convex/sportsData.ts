@@ -28,6 +28,7 @@ export const listMatches = query({
     // Look back 24 hours and forward 30 days to catch recently scraped matches
     const lowerBound = Date.now() - 24 * 60 * 60 * 1000;
     const upperBound = Date.now() + 30 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
 
     const base =
       args.status === "live"
@@ -56,6 +57,8 @@ export const listMatches = query({
         if (competition && match.competitionName !== competition) return false;
         // Filter out matches too far in the future
         if (match.startTime > upperBound) return false;
+        // Filter out ended matches (status = 2 means finished)
+        if (match.status === 2) return false;
         if (!search) return true;
 
         const text = `${match.homeTeam} ${match.awayTeam} ${match.competitionName} ${match.sourceMatchId}`.toLowerCase();
@@ -252,7 +255,7 @@ export const getSportCounts = query({
       .withIndex("by_source_and_startTime", (q) =>
         q.eq("source", SOURCE).gte("startTime", lowerBound)
       )
-      .take(500); 
+      .take(500);
 
     const counts = new Map<string, number>();
     let totalCount = 0;
