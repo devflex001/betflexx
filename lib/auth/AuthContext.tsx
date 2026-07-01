@@ -236,11 +236,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setAdminName(null);
       setShowAdminNameModal(false);
-
-      // Redirect to home page
-      if (typeof window !== "undefined") {
-        window.location.href = "/";
-      }
+      // Navigation is handled by the caller (admin-layout, header, etc.)
+      // so we avoid window.location.href which triggers the browser's
+      // "Reload site? Changes you made may not be saved." dialog.
     }
   };
 
