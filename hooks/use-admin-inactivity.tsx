@@ -1,164 +1,183 @@
 "use client"
 
-import { useEffect, useRef, useCallback, useState } from "react"
+import { api } from "@/convex/_generated/api"
 import { useAuth } from "@/lib/auth/AuthContext"
+import { useMutation } from "convex/react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 interface UseAdminInactivityProps {
-  warningTime?: number // Time in ms to show warning (default: 9 minutes)
-  logoutTime?: number // Time in ms to logout (default: 10 minutes)
+  warningTime?: number // ms of inactivity before showing warning (default: 9 min)
+  logoutTime?: number  // ms after warning appears before auto-logout (default: 60 s)
   onWarning?: () => void
   onLogout?: () => void
 }
 
 export function useAdminInactivity(props: UseAdminInactivityProps = {}) {
   const {
-    warningTime = 9 * 60 * 1000, // 9 minutes
-    logoutTime = 10 * 60 * 1000, // 10 minutes
+    warningTime = 9 * 60 * 1000,
+    logoutTime = 60 * 1000,
     onWarning,
     onLogout,
   } = props
+
   const { isAdmin, logout } = useAuth()
+  const logInactivityLogoutMutation = useMutation(api.admin.sessions.logInactivityLogout)
+
   const [showWarning, setShowWarning] = useState(false)
-  const [countdown, setCountdown] = useState(60) // 60 seconds countdown
-  const [isActive, setIsActive] = useState(true)
+  const [countdown, setCountdown] = useState(60)
 
-  const warningTimerRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const logoutTimerRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const countdownIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const lastActivityRef = useRef<number>(Date.now())
+  // Keep latest values accessible inside stable callbacks without recreating them
+  const isAdminRef = useRef(isAdmin)
+  const logoutRef = useRef(logout)
+  const onWarningRef = useRef(onWarning)
+  const onLogoutRef = useRef(onLogout)
+  const warningTimeRef = useRef(warningTime)
+  const logoutTimeRef = useRef(logoutTime)
 
-  // Reset all timers
-  const resetTimers = useCallback(() => {
-    if (warningTimerRef.current) {
+  useEffect(() => { isAdminRef.current = isAdmin }, [isAdmin])
+  useEffect(() => { logoutRef.current = logout }, [logout])
+  useEffect(() => { onWarningRef.current = onWarning }, [onWarning])
+  useEffect(() => { onLogoutRef.current = onLogout }, [onLogout])
+  useEffect(() => { warningTimeRef.current = warningTime }, [warningTime])
+  useEffect(() => { logoutTimeRef.current = logoutTime }, [logoutTime])
+
+  const warningTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
+  const showWarningRef = useRef(false)
+
+  // Keep showWarningRef in sync with state so stable callbacks can read it
+  useEffect(() => {
+    showWarningRef.current = showWarning
+  }, [showWarning])
+
+  const clearAllTimers = useCallback(() => {
+    if (warningTimerRef.current !== undefined) {
       clearTimeout(warningTimerRef.current)
+      warningTimerRef.current = undefined
     }
-    if (logoutTimerRef.current) {
-      clearTimeout(logoutTimerRef.current)
-    }
-    if (countdownIntervalRef.current) {
+    if (countdownIntervalRef.current !== undefined) {
       clearInterval(countdownIntervalRef.current)
+      countdownIntervalRef.current = undefined
     }
-
-    setShowWarning(false)
-    setCountdown(60)
-    lastActivityRef.current = Date.now()
   }, [])
 
-  // Start warning countdown
+  const doLogout = useCallback(async (reason: "manual" | "inactivity_timeout" = "manual") => {
+    clearAllTimers()
+    setShowWarning(false)
+    showWarningRef.current = false
+
+    // Log inactivity logout if applicable
+    if (reason === "inactivity_timeout" && logInactivityLogoutMutation) {
+      try {
+        // Get the session token from localStorage
+        const sessionToken = localStorage.getItem("session_token")
+        if (sessionToken) {
+          await logInactivityLogoutMutation({ sessionToken })
+        }
+      } catch (err) {
+        console.error("Error logging inactivity logout:", err)
+      }
+    }
+
+    logoutRef.current()
+    onLogoutRef.current?.()
+  }, [clearAllTimers, logInactivityLogoutMutation])
+
   const startWarningCountdown = useCallback(() => {
     setShowWarning(true)
-    setCountdown(60)
-    onWarning?.()
+    showWarningRef.current = true
+    setCountdown(Math.round(logoutTimeRef.current / 1000))
+    onWarningRef.current?.()
 
-    // Start countdown interval
     countdownIntervalRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          // Auto logout when countdown reaches 0
-          if (countdownIntervalRef.current) {
-            clearInterval(countdownIntervalRef.current)
-          }
-          logout()
-          onLogout?.()
+          doLogout("inactivity_timeout")
           return 0
         }
         return prev - 1
       })
     }, 1000)
-  }, [logout, onWarning, onLogout])
+  }, [doLogout])
 
-  // Handle user activity
+  // Stable activity handler — never recreated, so event listeners never need
+  // to be re-added and the useEffect below only runs once.
   const handleActivity = useCallback(() => {
-    if (!isAdmin) return
+    if (!isAdminRef.current) return
 
-    setIsActive(true)
-    lastActivityRef.current = Date.now()
-
-    // If warning is showing, hide it and reset
-    if (showWarning) {
-      resetTimers()
+    // If the warning is visible, just dismiss it and reset
+    if (showWarningRef.current) {
+      clearAllTimers()
+      setShowWarning(false)
+      showWarningRef.current = false
+      setCountdown(Math.round(logoutTimeRef.current / 1000))
+    } else {
+      // Clear any pending warning timer
+      if (warningTimerRef.current !== undefined) {
+        clearTimeout(warningTimerRef.current)
+        warningTimerRef.current = undefined
+      }
     }
 
-    // Clear existing timers
-    if (warningTimerRef.current) {
-      clearTimeout(warningTimerRef.current)
-    }
-    if (logoutTimerRef.current) {
-      clearTimeout(logoutTimerRef.current)
-    }
-
-    // Set new timers
+    // Schedule the next warning
     warningTimerRef.current = setTimeout(() => {
       startWarningCountdown()
-    }, warningTime)
+    }, warningTimeRef.current)
+  }, [clearAllTimers, startWarningCountdown])
 
-    logoutTimerRef.current = setTimeout(() => {
-      logout()
-      onLogout?.()
-    }, logoutTime)
-  }, [isAdmin, showWarning, warningTime, logoutTime, startWarningCountdown, resetTimers, logout, onLogout])
-
-  // Extend session (reset timers without user activity)
+  // Extend session from the UI button
   const extendSession = useCallback(() => {
     handleActivity()
   }, [handleActivity])
 
-  // Logout immediately
+  // Immediate logout from the UI button
   const logoutNow = useCallback(() => {
-    resetTimers()
-    logout()
-    onLogout?.()
-  }, [resetTimers, logout, onLogout])
+    doLogout()
+  }, [doLogout])
 
+  // Register event listeners exactly once
   useEffect(() => {
-    // Only activate for admins
-    if (!isAdmin) {
-      resetTimers()
-      return
-    }
+    if (!isAdmin) return
 
-    // List of events that indicate user activity
     const events = [
-      'mousedown',
-      'mousemove',
-      'keypress',
-      'keydown',
-      'scroll',
-      'touchstart',
-      'click',
-      'focus',
-    ]
+      "mousedown",
+      "mousemove",
+      "keypress",
+      "keydown",
+      "scroll",
+      "touchstart",
+      "click",
+    ] as const
 
-    // Add event listeners
     events.forEach((event) => {
       document.addEventListener(event, handleActivity, { passive: true })
     })
 
-    // Start initial timers
+    // Start the first warning timer
     handleActivity()
 
-    // Cleanup on unmount
     return () => {
       events.forEach((event) => {
         document.removeEventListener(event, handleActivity)
       })
-      resetTimers()
+      clearAllTimers()
     }
-  }, [isAdmin, handleActivity, resetTimers])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]) // intentionally only re-run when admin status changes
 
-  // Cleanup timers when admin status changes
+  // Clean up if admin logs out externally
   useEffect(() => {
     if (!isAdmin) {
-      resetTimers()
+      clearAllTimers()
+      setShowWarning(false)
+      showWarningRef.current = false
     }
-  }, [isAdmin, resetTimers])
+  }, [isAdmin, clearAllTimers])
 
   return {
     showWarning,
     countdown,
-    isActive,
     extendSession,
     logoutNow,
-    resetTimers,
   }
 }

@@ -306,11 +306,13 @@ export const approveWithdrawal = mutation({
       processedBy: admin.phone ?? admin._id.toString(),
     });
 
-    // Log the action
+    // Look up admin session for name and audit log
+    let adminName: string | undefined;
     if (args.sessionToken) {
       const adminSession = await getAdminSessionByTokenInternal(ctx, args.sessionToken);
 
       if (adminSession) {
+        adminName = adminSession.adminName;
         await logAdminActionInternal(ctx, {
           adminName: adminSession.adminName,
           userId: admin._id,
@@ -340,7 +342,7 @@ export const approveWithdrawal = mutation({
     await notifyAdmins(ctx, {
       type: "withdrawal",
       title: "Withdrawal approved",
-      message: `${formatKes(request.amount)} withdrawal was approved by ${admin.phone ?? "an admin"}.`,
+      message: `${formatKes(request.amount)} withdrawal was approved by ${adminName ?? admin.phone ?? "an admin"}.`,
       href: "/admin/withdrawals",
       dedupeKey: `withdrawal-approved:${args.requestId}`,
       metadata: {
@@ -386,11 +388,13 @@ export const rejectWithdrawal = mutation({
       rejectionReason: args.rejectionReason,
     });
 
-    // Log the action
+    // Look up admin session for name and audit log
+    let adminName: string | undefined;
     if (args.sessionToken) {
       const adminSession = await getAdminSessionByTokenInternal(ctx, args.sessionToken);
 
       if (adminSession) {
+        adminName = adminSession.adminName;
         await logAdminActionInternal(ctx, {
           adminName: adminSession.adminName,
           userId: admin._id,
@@ -421,7 +425,7 @@ export const rejectWithdrawal = mutation({
     await notifyAdmins(ctx, {
       type: "withdrawal",
       title: "Withdrawal rejected",
-      message: `${formatKes(request.amount)} withdrawal was rejected by ${admin.phone ?? "an admin"}.`,
+      message: `${formatKes(request.amount)} withdrawal was rejected by ${adminName ?? admin.phone ?? "an admin"}.`,
       href: "/admin/withdrawals",
       dedupeKey: `withdrawal-rejected:${args.requestId}`,
       metadata: {
