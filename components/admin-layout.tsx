@@ -178,21 +178,16 @@ export function AdminLayout({ children, pageTitle }: AdminLayoutProps) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false)
 
   // Admin inactivity detection
+  // warningTime: inactivity before warning appears
+  // logoutTime: countdown duration shown in the warning dialog
   const {
     showWarning,
     countdown,
     extendSession,
     logoutNow,
   } = useAdminInactivity({
-    warningTime: 9 * 60 * 1000, // 9 minutes
-    logoutTime: 10 * 60 * 1000, // 10 minutes
-    onWarning: () => {
-      console.log('[AdminLayout] Admin inactivity warning triggered')
-    },
-    onLogout: () => {
-      console.log('[AdminLayout] Admin auto-logout triggered')
-      router.push("/")
-    },
+    warningTime: 1 * 60 * 1000, // show warning after 9 min of inactivity
+    logoutTime: 60 * 1000,       // 60-second countdown before auto-logout
   })
 
   // Check admin access on mount
