@@ -148,11 +148,11 @@ function AdminLogsContent() {
   const [search, setSearch] = useState<string>("")
   const [selectedAdmin, setSelectedAdmin] = useState<string>("")
   const [selectedActionType, setSelectedActionType] = useState<string>("")
-  const [cursor, setCursor] = useState<string | null>(null)
+  const [cursor, setCursor] = useState<string | undefined>(undefined)
   const [allLogs, setAllLogs] = useState<AdminLog[]>([])
   const [hasMore, setHasMore] = useState<boolean>(false)
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
-  const [previousCursors, setPreviousCursors] = useState<(string | null)[]>([null])
+  const [nextCursor, setNextCursor] = useState<string | undefined>(undefined)
+  const [previousCursors, setPreviousCursors] = useState<(string | undefined)[]>([undefined])
 
   const PAGE_SIZE = 20
 
@@ -167,7 +167,7 @@ function AdminLogsContent() {
     if (logs) {
       setAllLogs(logs.logs)
       setHasMore(logs.hasMore)
-      setNextCursor(logs.nextCursor)
+      setNextCursor(logs.nextCursor ?? undefined)
     }
   }, [logs])
 
