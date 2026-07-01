@@ -122,7 +122,7 @@ export function AdminScraperPanel() {
     if (settings) {
       setSelectedSport(String(settings.selectedSports?.[0] ?? 1))
       setDateWindowDays(String(settings.dateWindowDays ?? 2))
-      setMatchLimit(String(settings.matchLimit ?? 50))
+      setMatchLimit(String(settings.matchLimit ?? 5))
     }
   }, [settings])
 
