@@ -1,16 +1,12 @@
 "use client"
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Clock, Shield } from "lucide-react"
+import { LogOut, ShieldAlert, ArrowRight } from "lucide-react"
 
 interface AdminInactivityWarningProps {
   open: boolean
@@ -29,64 +25,65 @@ export function AdminInactivityWarning({
   const seconds = countdown % 60
 
   return (
-    <AlertDialog open={open} onOpenChange={() => {}}>
-      <AlertDialogContent className="max-w-md">
-        <AlertDialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/20">
-              <Shield className="h-5 w-5 text-amber-600 dark:text-amber-500" />
-            </div>
-            <div>
-              <AlertDialogTitle className="text-lg font-semibold">
-                Session Timeout Warning
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-sm text-muted-foreground mt-1">
-                Your admin session will expire due to inactivity
-              </AlertDialogDescription>
-            </div>
-          </div>
-        </AlertDialogHeader>
+    <Dialog open={open} onOpenChange={() => { }} modal={true}>
+      <DialogContent
+        className="sm:max-w-sm border-2 border-primary/20 shadow-2xl"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
+        <DialogTitle className="sr-only">Session Timeout Warning</DialogTitle>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-center p-6 bg-muted/30 rounded-lg">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Clock className="h-5 w-5 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground">
-                  Auto-logout in:
-                </span>
-              </div>
-              <div className="text-3xl font-mono font-bold tabular-nums">
-                {minutes.toString().padStart(2, '0')}:
-                {seconds.toString().padStart(2, '0')}
-              </div>
-            </div>
+        {/* Header */}
+        <div className="flex flex-col items-center gap-4 py-6 px-2">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
+            <ShieldAlert className="h-7 w-7 text-primary" />
           </div>
 
-          <div className="text-sm text-muted-foreground text-center">
-            <p>
-              You've been inactive for 9 minutes. Your session will automatically 
-              log out in <strong className="text-foreground">{countdown} seconds</strong> for security.
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-foreground">Session Timeout</h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              You've been inactive. Your session will expire soon.
             </p>
           </div>
         </div>
 
-        <AlertDialogFooter className="gap-2 sm:gap-2">
+        {/* Countdown */}
+        <div className="px-2 pb-2">
+          <div className="flex flex-col items-center justify-center py-5 rounded-lg bg-muted/40 border border-border">
+            <span className="text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wider">
+              Auto-logout in
+            </span>
+            <span className="text-4xl font-mono font-bold tabular-nums text-foreground">
+              {minutes.toString().padStart(2, "0")}:
+              {seconds.toString().padStart(2, "0")}
+            </span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="space-y-3 px-2 pb-4">
           <Button
+            type="button"
+            onClick={onExtendSession}
+            className="w-full h-11 text-base font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
+            size="lg"
+          >
+            <span>Stay Logged In</span>
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+
+          <Button
+            type="button"
             variant="outline"
             onClick={onLogoutNow}
-            className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+            className="w-full h-11 text-base font-semibold text-destructive border-destructive/40 hover:bg-destructive hover:text-destructive-foreground"
+            size="lg"
           >
+            <LogOut className="mr-2 h-5 w-5" />
             Logout Now
           </Button>
-          <AlertDialogAction
-            onClick={onExtendSession}
-            className="bg-primary hover:bg-primary/90"
-          >
-            Stay Logged In
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
